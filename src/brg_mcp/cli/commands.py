@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 COMMANDS: dict[str, str] = {
     "/help": "list the commands",
-    "/model": "/model <name>  switch model: opus, sonnet, haiku, codex, gpt-6-astra, ... (/models lists them)",
+    "/model": "/model  opens the model list; /model <name> switches directly (opus, sonnet, codex, gpt-6-astra, ...)",
     "/models": "list the models you can switch to and which account each one uses",
     "/login": "/login claude | codex  sign in with your own account (opens the CLI's login in this terminal)",
     "/provider": "/provider claude | codex | anthropic | openai  (advanced: pick the engine directly)",
@@ -38,7 +38,7 @@ def parse(line: str) -> Command | None:
 
 def help_text() -> str:
     width = max(len(k) for k in COMMANDS)
-    lines = ["Commands (type / and Tab to complete):", ""]
+    lines = ["Commands (type / alone for a list, or / and Tab to complete):", ""]
     for name, doc in COMMANDS.items():
         lines.append(f"  {name:<{width}}  {doc}")
     lines += ["", "Anything else is sent to the model, which can call the BRG tools while answering."]

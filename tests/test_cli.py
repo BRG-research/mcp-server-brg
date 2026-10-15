@@ -76,3 +76,27 @@ def test_model_registry_routes_to_engines():
     assert models.resolve("api:gpt-5").provider == "openai"
     assert models.resolve("nonsense-model") is None
     assert "opus" in models.listing() and "codex" in models.listing()
+
+
+@pytest.mark.asyncio
+async def test_model_picker_opens_and_selects():
+    from brg_mcp.cli.app import BRGTerminal, Message
+    from brg_mcp.cli.pickers import Picker
+    app = BRGTerminal(ROOT, provider="claude")
+    async with app.run_test(size=(100, 30)) as pilot:
+        await pilot.pause(2.0)
+        app.query_one("#prompt").value = "/model"
+        await pilot.press("enter")
+        await pilot.pause(0.3)
+        assert isinstance(app.screen, Picker)
+        await pilot.press("down", "enter")            # second entry: opus
+        await pilot.pause(0.8)
+        assert not isinstance(app.screen, Picker)
+        assert app.provider.model == "opus"
+        app.query_one("#prompt").value = "/"
+        await pilot.press("enter")
+        await pilot.pause(0.3)
+        assert isinstance(app.screen, Picker)
+        await pilot.press("escape")
+        await pilot.pause(0.2)
+        assert not isinstance(app.screen, Picker)

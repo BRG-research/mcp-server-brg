@@ -20,6 +20,7 @@ from textual.suggester import SuggestFromList
 from textual.widgets import Input, Static
 
 from brg_mcp.cli import banner, commands, models
+from brg_mcp.cli.pickers import Picker
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
 
@@ -103,7 +104,8 @@ class BRGTerminal(App):
         yield Static(Text("─" * 200, style="#30363d"), id="rule-top")
         with Horizontal(id="prompt-row"):
             yield Static(Text("> ", style="bold #8b949e"), id="caret")
-            yield Input(placeholder="", id="prompt", suggester=SuggestFromList(list(commands.COMMANDS), case_sensitive=False))
+            suggestions = list(commands.COMMANDS) + [f"/model {e.name}" for e in models.catalog()]
+            yield Input(placeholder="", id="prompt", suggester=SuggestFromList(suggestions, case_sensitive=False))
         yield Static(Text("─" * 200, style="#30363d"), id="rule-bottom")
         yield Static("? for shortcuts", id="hint")
 
@@ -173,6 +175,9 @@ class BRGTerminal(App):
         if line == "?":
             self.post("event", commands.help_text())
             return
+        if line == "/":
+            self.pick_command()
+            return
         command = commands.parse(line)
         if command:
             await self.run_command(command)
@@ -201,7 +206,10 @@ class BRGTerminal(App):
         elif name == "/provider":
             await self.set_provider(arg or self.provider_name)
         elif name == "/model":
-            await self.switch_model(arg)
+            if arg:
+                await self.switch_model(arg)
+            else:
+                self.pick_model()
         elif name == "/models":
             self.post("event", models.listing())
         elif name == "/login":
@@ -223,6 +231,40 @@ class BRGTerminal(App):
             self.post("event", "conversation cleared")
         else:
             self.post("error", f"unknown command {name}; type /help")
+
+    def pick_model(self) -> None:
+        """`/model` with nothing after it: a list to choose from."""
+        current = None
+        if self.provider is not None:
+            for e in models.catalog():
+                if e.provider == self.provider_name and e.model == self.provider.model:
+                    current = e.name
+        entries = [(e.name, e.name, e.note) for e in models.catalog()]
+        entries.append(("api:", "api:<model>", "type /model api:<id> for the direct Anthropic or OpenAI API with a key"))
+
+        def chosen(name: str | None) -> None:
+            if name and name != "api:":
+                self.run_worker(self.switch_model(name), exclusive=False)
+            self.query_one("#prompt", Input).focus()
+
+        self.push_screen(Picker("Choose a model", entries, current), chosen)
+
+    def pick_command(self) -> None:
+        """`/` alone: the command list; choosing one puts it in the prompt (with a space for its argument)."""
+        entries = [(name, name, doc) for name, doc in commands.COMMANDS.items()]
+
+        def chosen(name: str | None) -> None:
+            prompt = self.query_one("#prompt", Input)
+            if name:
+                takes_argument = "<" in commands.COMMANDS[name] or name in ("/provider", "/login", "/model")
+                prompt.value = name + (" " if takes_argument else "")
+                prompt.cursor_position = len(prompt.value)
+                if not takes_argument:
+                    self.run_worker(self.run_command(commands.parse(name)), exclusive=False)
+                    prompt.value = ""
+            prompt.focus()
+
+        self.push_screen(Picker("Commands", entries), chosen)
 
     async def switch_model(self, name: str) -> None:
         """One command for every engine: the registry says which account the model lives on."""

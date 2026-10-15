@@ -57,7 +57,7 @@ and notes, the model's reply renders as Markdown below them.
 
 ## Commands
 
-Type `/` and Tab to complete.
+Type `/` alone and press Enter for a list of commands; `/model` alone opens the model list (arrow keys, Enter). `/` plus Tab completes while typing.
 
 | command | effect |
 |---|---|
