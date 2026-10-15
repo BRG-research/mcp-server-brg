@@ -23,7 +23,7 @@ Resolved by the October 2026 rescan: pp. 26, 105, 187, 199, 342.
 
 The volume ends on p. 418 with the printer's imprint; there are no plates or errata after it.
 
-## Block, Gengnagel, Peters, *Faustformel Tragwerksentwurf* (private, not in the public bucket)
+## Block, Gengnagel, Peters, *Faustformel Tragwerksentwurf* (`faustformel-tragwerksentwurf/`)
 
 | Page(s) | Problem | Needed |
 |---|---|---|
