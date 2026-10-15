@@ -33,63 +33,77 @@ answer, only how fast it is reached.
 Model assumptions are those of the force density method (Schek 1974, see
 [compas_fd](compas_fd.md)): straight axial members, pinned nodes, nodal loads,
 free and fixed nodes. Sign conventions are the same: positive force density and
-force are tension, residual *r = p − CᵗQu* is zero at free nodes at convergence
-and equals the branch resultant on a support at fixed nodes (reaction = *−r*).
+force are tension, the residual $r = p - C^{t} Q u$ is zero at free nodes at
+convergence and equals the branch resultant on a support at fixed nodes
+(reaction $= -r$).
 
 **Where force densities enter.** For every edge the solver composes a force
 density from four optional contributions:
 
-$$q_j = q^{pre}_j + \frac{f^{pre}_j}{l_j} + \frac{f_j}{l^{pre}_j} + \frac{E_j A_j\,(l_j − l^{init}_j)}{l^{init}_j\, l_j}$$
+$$
+q_j = q^{\mathrm{pre}}_j
+    + \frac{f^{\mathrm{pre}}_j}{l_j}
+    + \frac{f_j}{l^{\mathrm{pre}}_j}
+    + \frac{E_j A_j \ (l_j - l^{\mathrm{init}}_j)}{l^{\mathrm{init}}_j \  l_j}
+$$
 
 | term | input | meaning |
 |---|---|---|
-| *q^{pre}* | `qpre` | prescribed force density, exactly Schek's *q* |
-| *f^{pre} / l* | `fpre` | prescribed force: the density that gives force *f^{pre}* at the current length |
-| *f / l^{pre}* | `lpre` | prescribed length: current force divided by target length |
-| *EA (l − l^{init}) / (l^{init} l)* | `E`, `radius`, `linit` | linear-elastic bar with cross-section *A = π r²*, unstrained length *l^{init}* (Hooke's law, force *EA (l − l_0)/l_0*, divided by *l*) |
+| $q^{\mathrm{pre}}$ | `qpre` | prescribed force density, exactly Schek's $q$ |
+| $f^{\mathrm{pre}} / l$ | `fpre` | prescribed force: the density that gives force $f^{\mathrm{pre}}$ at the current length |
+| $f / l^{\mathrm{pre}}$ | `lpre` | prescribed length: current force divided by target length |
+| $E A (l - l^{\mathrm{init}}) / (l^{\mathrm{init}} l)$ | `E`, `radius`, `linit` | linear-elastic bar with cross-section $A = \pi r^{2}$ and unstrained length $l^{\mathrm{init}}$ (Hooke's law, force $E A (l - l_0) / l_0$, divided by $l$) |
 
 Division by zero (a term not used) is set to zero. With only `qpre` given, every
-iteration uses the constant *q* of Schek and DR converges to the force density
+iteration uses the constant $q$ of Schek and DR converges to the force density
 solution (verified below). The `fpre`/`lpre`/`EA` terms are the DR counterpart of
 Schek's §3 force, distance, and unstrained-length conditions: instead of solving
-for a correction *Δq* by damped least squares, DR updates *q* from the current
+for a correction $\Delta q$ by damped least squares, DR updates $q$ from the current
 geometry at every step.
 
 **Units** as commented in the source: coordinates m, loads and forces kN,
-`E` in kN/mm² (= GPa), `radius` in mm, so *EA* comes out in kN. The code comments
+`E` in kN/mm² (= GPa), `radius` in mm, so $E A$ comes out in kN. The code comments
 on `lpre`/`fpre` have the units swapped; `fpre` is a force, `lpre` a length. Any
 consistent system works if `E`/`radius` are not used.
 
 ## Formulation (compas_dr.solvers.dr_numpy)
 
-Per iteration *k*, with *C* the full branch-node matrix, *C_i* its free columns,
-and *Q* the diagonal matrix of the composed *q*:
+Per iteration $k$, with $C$ the full branch-node matrix, $C_i$ its free columns,
+and $Q$ the diagonal matrix of the composed $q$:
 
-1. **Stiffness-like matrix and residual.** *D = C_iᵗ Q C* (free rows, all columns), so
-   *r_free = p_free − D x* is Schek's eq. (7) rearranged; at the fixed nodes the
-   residual is *p − CᵗQ(Cx)*.
-2. **Lumped mass.** For every node, *m = ½ dt² Σ_{edges at node}
-   (q^{pre} + f^{pre}/l + f/l^{pre} + EA/l^{init})*, i.e. half the time step squared
-   times the sum of the edge "stiffness densities" at the node (`Ct2 = (Cᵗ)²`
-   element-wise gives the unsigned incidence). This is the usual DR choice that keeps
-   the explicit integration stable for *dt = 1*.
+1. **Stiffness-like matrix and residual.** $D = C_i^{t} Q C$ (free rows, all columns), so
+   $r_{\mathrm{free}} = p_{\mathrm{free}} - D x$ is Schek's equation (7) rearranged; at the
+   fixed nodes the residual is $p - C^{t} Q (C x)$.
+2. **Lumped mass.** For every node,
+
+$$
+m = \tfrac{1}{2}\  \mathrm{d}t^{2} \sum_{\text{edges at node}}
+\left( q^{\mathrm{pre}} + \frac{f^{\mathrm{pre}}}{l} + \frac{f}{l^{\mathrm{pre}}} + \frac{E A}{l^{\mathrm{init}}} \right)
+$$
+
+   i.e. half the time step squared times the sum of the edge "stiffness densities"
+   at the node (`Ct2`, the element-wise square of $C^{t}$, gives the unsigned
+   incidence). This is the usual DR choice that keeps the explicit integration
+   stable for $\mathrm{d}t = 1$.
 3. **Viscous damping** by the coefficients of De Laet et al. (2013):
-   *a = (1 − c/2)/(1 + c/2)*, *b = (1 + a)/2*. The velocity carried into the step
-   is *a · v*; the acceleration used is *b · r / m*.
-4. **Runge–Kutta integration** of *dv = ∫ b r(x(t)) / m dt* over one step, with
+   $a = (1 - c/2) / (1 + c/2)$ and $b = (1 + a) / 2$. The velocity carried into the
+   step is $a \cdot v$; the acceleration used is $b \cdot r / m$.
+4. **Runge–Kutta integration** of $\mathrm{d}v = \int b\  r(x(t)) / m \quad  \mathrm{d}t$ over one step, with
    `rk_steps` = 1 (explicit Euler), 2 (default; Butcher weights [0, 1], i.e.
    the midpoint method), or 4 (classic RK4 with weights [1/6, 1/3, 1/3, 1/6]).
    Inside each stage the residual is re-evaluated at the trial position
-   *x₀ + v t*, with *D* held fixed for the step.
-5. **Update.** *v_free += dv*, *dx = v dt*, *x_free += dx*; then
-   *u = Cx*, *l = ‖u‖*, *f = q l*, *r = p − CᵗQu*.
-6. **Convergence.** Stop when *‖r_free‖ < tol1* (residual norm over all free
-   nodes) **or** *‖dx_free‖ < tol2* (displacement norm), or after `kmax` steps.
+   $x_0 + v\ t$, with $D$ held fixed for the step.
+5. **Update.** $v_{\mathrm{free}} \mathrel{+}= \mathrm{d}v$, $\mathrm{d}x = v\ \mathrm{d}t$,
+   $x_{\mathrm{free}} \mathrel{+}= \mathrm{d}x$; then $u = C x$, $l = \lVert u \rVert$
+   per edge, $f = q\ l$, $r = p - C^{t} Q u$.
+6. **Convergence.** Stop when $\lVert r_{\mathrm{free}} \rVert \lt$ `tol1` (residual norm
+   over all free nodes) **or** $\lVert \mathrm{d}x_{\mathrm{free}} \rVert \lt$ `tol2`
+   (displacement norm), or after `kmax` steps.
 
-Because *q* is recomposed from the new lengths at the start of the next step,
+Because $q$ is recomposed from the new lengths at the start of the next step,
 prescribed forces and lengths are approached progressively; with `qpre` only, the
 problem is linear and DR behaves as a damped iterative linear solver for
-Schek's eq. (8).
+Schek's equation (8).
 
 ## Implementation in compas_dr 0.3.1
 
@@ -121,7 +135,7 @@ result.update_mesh(mesh)   # write xyz back to a compas Mesh in vertex order
   is empty (not serialisable yet).
 - `InputData.linit` all zero (the default) means "use the initial lengths" for the
   elastic term; `q0` (all ones) and `l0` (initial lengths) seed the first
-  iteration's *f = q l* for the `lpre` term.
+  iteration's $f = q\ l$ for the `lpre` term.
 - The `callback(k, x, crit1, crit2, callback_args)` runs every iteration; use it to
   draw intermediate states or log convergence.
 - `dr_constrained_numpy(*, indata, constraints, kmax, dt, tol1, tol2, c, rk_steps,
@@ -139,7 +153,7 @@ result.update_mesh(mesh)   # write xyz back to a compas Mesh in vertex order
 
 - `dr_constrained_numpy` prints the iteration counter every step (`print(k)`),
   which floods the console in long runs (0.3.1).
-- `A = 3.14159 * radius**2` uses a truncated π (relative error 8e−7).
+- `A = 3.14159 * radius**2` uses a truncated $\pi$ (relative error $8 \times 10^{-7}$).
 - The default `tol1 = 1e-3` is an absolute norm over all free nodes; scale it with
   the load level and node count. A mesh with hundreds of nodes under kN loads may
   need a smaller tolerance for a visually converged shape, or a larger `kmax`.
@@ -150,13 +164,13 @@ result.update_mesh(mesh)   # write xyz back to a compas Mesh in vertex order
 ## Verification
 
 Benchmark from the chapter README (four anchors at (±1, ±1, 0), free node at the
-origin, *q^{pre} = 1* on all edges, load (0, 0, −1) on the free node, analytical
-*z = −0.25*). With `dr_numpy(indata, kmax=10000, tol1=1e-10, tol2=1e-12)` and
+origin, $q^{\mathrm{pre}} = 1$ on all edges, load $(0, 0, -1)$ on the free node,
+analytical $z = -0.25$). With `dr_numpy(indata, kmax=10000, tol1=1e-10, tol2=1e-12)` and
 defaults `dt = 1`, `c = 0.1`, `rk_steps = 2`:
 
 | quantity | value |
 |---|---|
-| free node *z* | −0.25, error 9.4e−12 |
+| free node $z$ | $-0.25$, error $9.4 \times 10^{-12}$ |
 | forces | 1.436141 (all four edges), equal to the `compas_fd` result |
 | residual at free node | (0, 0, 0) to printed precision |
 
@@ -172,7 +186,7 @@ numpy 2.4.6, scipy 1.17.1.
   solver docstring for the damping coefficients and integration scheme.
 - Schek, H.-J. (1974). *The force density method for form finding and computation
   of general networks.* CMAME 3, 115–134. Source of the branch-node matrix,
-  *q = s / l*, and the equilibrium form *r = p − CᵗQu* reused by DR; see
+  $q = s / l$, and the equilibrium form $r = p - C^{t} Q u$ reused by DR; see
   [compas_fd](compas_fd.md) for the full derivation.
 - Veenendaal, D., Block, P. (2012). *An overview and comparison of structural form
   finding methods for general networks.* Int. J. Solids Struct. 49, 3741–3753.

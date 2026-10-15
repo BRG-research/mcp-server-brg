@@ -46,9 +46,9 @@ with these defaults (`datastructures/cablemesh.py`):
 | vertex | `px`, `py`, `pz` | 0 | nodal load components |
 | vertex | `thickness` | 0 | surface thickness for selfweight (0 = no selfweight) |
 | vertex | `_residual` | — | computed residual vector |
-| edge | `q` | 1.0 | force density (Schek's *q = s / l*) |
+| edge | `q` | 1.0 | force density (Schek's $q = s / l$) |
 | edge | `f`, `l`, `l0`, `E`, `radius` | 0 | stored for the DR inputs; unused by the FD command |
-| edge | `_f` | — | computed force *q · l* |
+| edge | `_f` | — | computed force $q \cdot l$ |
 
 Constraints are stored on the mesh in a `constraints` dictionary keyed by GUID
 and are `compas_fd.constraints.Constraint` objects (line, plane, circle, curve,
@@ -95,24 +95,29 @@ to magnitude; reactions are green arrows scaled by `scale_reactions`.
 3. Build a `SelfweightCalculator(cablemesh, density, thickness_attr_name="thickness")`;
    with the default thickness 0 the selfweight is zero.
 4. Loop up to `kmax` times: linear force density solve (`_solve_fd`, selfweight
-   subtracted from *p_z*), then `_update_constraints` (move each constrained vertex by
+   subtracted from $p_z$), then `_update_constraints` (move each constrained vertex by
    `damping × tangential residual` and re-project), until the tangential residuals
    are below `tol_residuals`. (The displacement test is always satisfied, see the
    caveat in [compas_fd](compas_fd.md).)
 5. One final linear solve, then write back `x, y, z`, `_residual` per vertex and
    `_f` per edge; mark the mesh `is_solved`.
 
-So the equilibrium shown in Rhino is exactly Schek's eq. (9) for the current *q*,
+So the equilibrium shown in Rhino is exactly Schek's equation (9) for the current $q$,
 anchors, and loads, with anchors on constraints relaxed iteratively. The GitBook
 theory page explains the method with a single free node attached to four anchors:
 nodal equilibrium with direction cosines is nonlinear because the edge lengths
-depend on the unknown coordinates; replacing *F_j / L_j* by a prescribed *q_j*
+depend on the unknown coordinates; replacing $F_j / L_j$ by a prescribed $q_j$
 removes the lengths and leaves the linear system
-*Σ q_j (x_j − x_0) = 0* per axis. The page's NumPy snippet is the body of
-`fd_numpy` (connectivity matrix in CSR form, `A = Ciᵗ Q Ci`,
-`b = p_free − Ciᵗ Q Cf x_fixed`, `spsolve`, then lengths, forces `q · l`, and
-residuals `p − Cᵗ Q C x`). The full derivation and the nonlinear extension of the
-original paper are in [compas_fd](compas_fd.md).
+
+$$
+\sum_{j} q_j \ (x_j - x_0) = 0 \qquad \text{per axis}
+$$
+
+The page's NumPy snippet is the body of `fd_numpy`: connectivity matrix in CSR
+form, $A = C_i^{t} Q C_i$, $b = p_{\mathrm{free}} - C_i^{t} Q C_f x_{\mathrm{fixed}}$,
+`spsolve`, then lengths, forces $q \cdot l$, and residuals $p - C^{t} Q C x$.
+The full derivation and the nonlinear extension of the original paper are in
+[compas_fd](compas_fd.md).
 
 ## Workflow from the tutorial (hypar)
 
@@ -121,13 +126,13 @@ original paper are in [compas_fd](compas_fd.md).
 3. `FF_solve_fd` → flat equilibrium with uniform *q = 1*.
 4. `FF_anchors_move` → Z → Manual → lift two opposite corners; the mesh updates to a hypar.
 5. `FF_edges_q` → scale the force densities of one boundary to straighten or
-   curve it (higher *q* in the boundary cables straightens them, as in Schek's
-   example with *q = 100* on the border).
+   curve it (higher $q$ in the boundary cables straightens them, as in Schek's
+   example with $q = 100$ on the border).
 6. `FF_anchors_constraints` → constrain a vertex to a line; `FF_solve_fd`.
 
 Documented example families: tensile form-active (mechanically prestressed hypar,
 conical, wave, arch-supported; funicular catenary cables), compressive form-active
-(catenary arch with corrugations, vault with lips, obtained with negative *q*),
+(catenary arch with corrugations, vault with lips, obtained with negative $q$),
 mixed (compressive arch supported), and advanced constraint cases (line constraints
 for a convertible wave, curve constraints for geometry generation). Example JSON
 sessions are in `gitbook/.gitbook/assets/`.
@@ -139,10 +144,10 @@ sessions are in `gitbook/.gitbook/assets/`.
   "constrained force-density and constrained dynamic relaxation solvers", but
   `compas_fofin` 0.15.3 contains no DR command; `E`, `radius`, `l0` edge attributes
   are stored for future use.
-- Compression-only or mixed structures use negative *q*; a wrong sign
+- Compression-only or mixed structures use negative $q$; a wrong sign
   distribution can make the system singular or flip the shape. Inspect the
   residual display and the coloured pipes.
-- A free vertex not connected to any anchor through positive-*q* edges has no
+- A free vertex not connected to any anchor through positive-$q$ edges has no
   unique position (singular matrix); anchor it or change *q*.
 - Constrained vertices must be anchors (`is_support = True`), otherwise the
   constraint is ignored by the solve.

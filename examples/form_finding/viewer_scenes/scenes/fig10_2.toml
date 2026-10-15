@@ -1,0 +1,6 @@
+name = "fig10_2"
+
+[[items]]
+file = "pb/fig10_2.pb"
+name = "fig10_2"
+at = [0, 0, 0]

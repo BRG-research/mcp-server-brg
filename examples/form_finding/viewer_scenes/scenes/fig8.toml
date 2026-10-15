@@ -1,0 +1,16 @@
+name = "fig8"
+
+[[items]]
+file = "pb/fig8_1.pb"
+name = "fig8_1"
+at = [0.0, 0, 0]
+
+[[items]]
+file = "pb/fig8_2.pb"
+name = "fig8_2"
+at = [46.0, 0, 0]
+
+[[items]]
+file = "pb/fig8_3.pb"
+name = "fig8_3"
+at = [92.0, 0, 0]

@@ -1,0 +1,6 @@
+name = "fig2_graph"
+
+[[items]]
+file = "pb/fig2_graph.pb"
+name = "fig2_graph"
+at = [0, 0, 0]

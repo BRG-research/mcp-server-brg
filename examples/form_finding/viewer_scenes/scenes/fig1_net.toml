@@ -1,0 +1,6 @@
+name = "fig1_net"
+
+[[items]]
+file = "pb/fig1_net.pb"
+name = "fig1_net"
+at = [0, 0, 0]

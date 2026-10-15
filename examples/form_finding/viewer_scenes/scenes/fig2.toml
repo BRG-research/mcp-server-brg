@@ -1,0 +1,11 @@
+name = "fig2"
+
+[[items]]
+file = "pb/fig2_graph.pb"
+name = "fig2_graph"
+at = [0, -2.3, 0]
+
+[[items]]
+file = "pb/fig2_matrix.pb"
+name = "fig2_matrix"
+at = [3.2, 0, 0]
