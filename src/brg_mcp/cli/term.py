@@ -32,6 +32,10 @@ from rich.text import Text
 from brg_mcp.cli import banner, commands, models
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
+from brg_mcp.cli.providers.base import Event
+from brg_mcp.cli.trace import GREY, Trace, metrics_line
+
+BACKGROUND = os.environ.get("BRG_BACKGROUND", "#0b1220")      # the terminal's background while brg runs (OSC 11)
 
 try:
     VERSION = package_version("brg-mcp")
@@ -41,6 +45,8 @@ except PackageNotFoundError:
 PROMPT_STYLE = Style.from_dict({
     "caret": "bold #58a6ff",
     "bottom-toolbar": "#6e7681 noreverse",
+    "bottom-toolbar.model": "#8b949e noreverse",
+    "bottom-toolbar.idle": "#3fb950 noreverse",
     "completion-menu": "bg:#161b22 #c9d1d9",
     "completion-menu.completion.current": "bg:#1f6feb #ffffff bold",
     "completion-menu.meta.completion": "bg:#161b22 #8b949e",
@@ -100,6 +106,8 @@ class Terminal:
         self.provider: Provider | None = None
         self.model_entries: list[models.ModelEntry] = []
         self.turn: asyncio.Task | None = None
+        self.trace: Trace | None = None          # the steps of the last reply (/trace)
+        self.context_pct: float | None = None
         history_path = Path(os.environ.get("BRG_HISTORY", Path.home() / ".brg_history"))
         self.session = session or PromptSession(
             message=[("class:caret", "> ")],
@@ -107,8 +115,13 @@ class Terminal:
             complete_while_typing=True,
             history=FileHistory(str(history_path)),
             style=PROMPT_STYLE,
-            bottom_toolbar=lambda: HTML(" ? for shortcuts · ↑↓ history · / commands · Ctrl+C interrupts"),
+            bottom_toolbar=self.toolbar,
         )
+
+    def toolbar(self):
+        ctx = f" · ctx {self.context_pct:.0f}%" if self.context_pct is not None else ""
+        return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}"),
+                ("class:bottom-toolbar", " · ? for shortcuts · ↑↓ history · / commands · Ctrl+C interrupts")]
 
     # ------------------------------------------------------------------ output
     def print(self, *args, **kwargs) -> None:
@@ -259,6 +272,11 @@ class Terminal:
             self.print(Markdown(await self.bridge.read_resource(f"brg://knowledge/{arg}")))
         elif name == "/books":
             self.print(await self.bridge.call_tool("search_books", {"query": arg}))
+        elif name == "/trace":
+            if self.trace is None or not self.trace.steps:
+                self.event("no steps yet: ask something first")
+            else:
+                self.print(self.trace.table())
         elif name == "/clear":
             if self.provider:
                 await self.reset_provider()
@@ -269,38 +287,88 @@ class Terminal:
 
     # ------------------------------------------------------------------ a model turn
     async def ask(self, line: str) -> None:
-        """Stream the reply below the prompt line; the spinner shows until the first text arrives."""
-        buffer: list[str] = []
+        """Stream the reply below the prompt.  Steps (thinking, tool calls) are drawn as a chain of badges;
+        the chain is printed for good when text follows it, finished paragraphs are printed as they complete,
+        so only the current chain or paragraph is redrawn and everything else lives in the scrollback."""
+        trace = Trace()
+        self.trace = trace
         started = time.monotonic()
-        state = {"label": "Thinking", "last": 0.0}
+        buffer: list[str] = []                       # the paragraph being streamed
+        notes: list[Text] = []
 
         def spinner():
-            return Spinner("dots", text=Text.assemble((f" {state['label']}… ", "#c9d1d9"),
-                                                      (f"{time.monotonic() - started:.0f}s", "#6e7681"),
+            return Spinner("dots", text=Text.assemble((f" {trace.running()} ", "#c9d1d9"),
+                                                      (f"{time.monotonic() - started:.0f}s", GREY),
                                                       ("   (Ctrl+C to interrupt)", "#484f58")), style="#58a6ff")
 
         def renderable():
+            parts = []
+            if trace.chain:
+                parts.append(trace.chain_text())
             if buffer:
-                return Group(Text("● ", style="bold #c9d1d9", end=""), Markdown("".join(buffer)))
-            return spinner()
+                parts.append(Markdown("".join(buffer)))
+            else:
+                parts.append(spinner())
+            return Group(*parts)
 
         with Live(get_renderable=renderable, console=self.console, refresh_per_second=12,
-                  vertical_overflow="visible", transient=False) as live:
-            def on_text(fragment: str) -> None:
-                buffer.append(fragment)
+                  vertical_overflow="visible", transient=True) as live:
+            def flush_chain() -> None:
+                if trace.chain:
+                    live.console.print(trace.chain_text())
+                    trace.text_started()
 
-            def on_event(note: str) -> None:
-                state["label"] = "Working"
-                live.console.print(Text.assemble(("● ", "bold #3fb950"), (note, "#c9d1d9")))
+            def flush_text(final: bool = False) -> None:
+                """Print the finished paragraphs (never inside an open code fence)."""
+                text = "".join(buffer)
+                if final:
+                    done, rest = text, ""
+                else:
+                    cut = -1
+                    for i in range(len(text) - 2, -1, -1):
+                        if text.startswith("\n\n", i) and text[:i].count("```") % 2 == 0:
+                            cut = i
+                            break
+                    if cut < 0:
+                        return
+                    done, rest = text[:cut], text[cut + 2:]
+                if done.strip():
+                    live.console.print(Markdown(done))
+                buffer[:] = [rest] if rest else []
+
+            def on_text(fragment: str) -> None:
+                if not fragment:
+                    return
+                if not buffer:
+                    flush_chain()
+                buffer.append(fragment)
+                flush_text()
+
+            def on_event(event: Event) -> None:
+                if event.kind in ("note", "error"):
+                    style = "#c9d1d9" if event.kind == "note" else "#f85149"
+                    live.console.print(Text.assemble(("● ", f"bold {style}"), (event.detail, style)))
+                    return
+                if event.kind in ("thinking", "tool_call") and buffer:
+                    flush_text(final=True)
+                trace.add(event)
 
             try:
                 await self.provider.send(line, on_text, on_event)
-                if not buffer:
-                    buffer.append("(no text in the reply)")
+                if not buffer and not trace.steps:
+                    buffer.append("*(no text in the reply)*")
             except asyncio.CancelledError:
                 buffer.append("\n\n*(interrupted)*")
             except Exception as exc:                                  # noqa: BLE001
                 buffer.append(f"\n\n**{type(exc).__name__}**: {exc}")
+            flush_chain()
+            flush_text(final=True)
+        if self.provider is not None:
+            usage = await self.provider.context_usage()
+            if usage and usage.get("percentage") is not None:
+                self.context_pct = float(usage["percentage"])
+        self.print(metrics_line(trace.usage, self.context_pct, time.monotonic() - started,
+                                show_cost=self.provider_name in ("anthropic", "openai")))   # accounts: no $
         self.print()
 
     async def send(self, line: str) -> None:
@@ -320,7 +388,15 @@ class Terminal:
             self.turn = None
 
     # ------------------------------------------------------------------ main loop
+    def paint(self, on: bool) -> None:
+        """Set (or restore) the terminal's background colour; most terminals honour OSC 11 / 111."""
+        if not self.console.is_terminal or not BACKGROUND:
+            return
+        self.console.file.write(f"\x1b]11;{BACKGROUND}\x07" if on else "\x1b]111\x07")
+        self.console.file.flush()
+
     async def run(self) -> None:
+        self.paint(True)
         self.header()
         try:
             await self.bridge.start()
@@ -369,6 +445,7 @@ class Terminal:
             if self.provider is not None and hasattr(self.provider, "close"):
                 await self.provider.close()
             await self.bridge.stop()
+            self.paint(False)
 
 
 def main(argv: list[str] | None = None) -> None:

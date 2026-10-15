@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import time
 import os
 
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .base import SYSTEM_PROMPT, OnEvent, OnText, Provider
+from .base import Event, preview, SYSTEM_PROMPT, OnEvent, OnText, Provider
 
 MAX_TOOL_ROUNDS = 12
 MODEL_ALIASES = {"codex": "gpt-5-codex", "gpt": "gpt-5"}
@@ -41,6 +42,8 @@ class OpenAIProvider(Provider):
         client = self._get_client()
         pending_input: list = [{"role": "user", "content": user_text}]
         reply = []
+        totals = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "tools": 0}
+        started_at = time.monotonic()
         for _ in range(MAX_TOOL_ROUNDS):
             stream = await client.responses.create(
                 model=self.model,
@@ -60,17 +63,27 @@ class OpenAIProvider(Provider):
             if response is None:
                 break
             self.previous_response_id = response.id
+            u = getattr(response, "usage", None)
+            if u is not None:
+                totals["input"] += u.input_tokens or 0; totals["output"] += u.output_tokens or 0
+                details = getattr(u, "input_tokens_details", None)
+                totals["cache_read"] += getattr(details, "cached_tokens", 0) or 0
+            if any(item.type == "reasoning" for item in response.output):
+                on_event(Event("thinking"))
             calls = [item for item in response.output if item.type == "function_call"]
+            totals["tools"] += len(calls)
             if not calls:
                 break
             pending_input = []
             for call in calls:
                 arguments = json.loads(call.arguments or "{}")
-                on_event(f"⚙ {call.name} {json.dumps(arguments)[:160]}")
+                on_event(Event("tool_call", call.name, json.dumps(arguments)))
                 try:
                     text = await self.bridge.call_tool(call.name, arguments)
+                    on_event(Event("tool_result", call.name, preview(text), ok=True))
                 except Exception as exc:                      # noqa: BLE001
                     text = f"tool error: {exc}"
+                    on_event(Event("tool_result", call.name, text, ok=False))
                 pending_input.append({"type": "function_call_output", "call_id": call.call_id, "output": text[:40000]})
             if reply:
                 on_text("\n\n")

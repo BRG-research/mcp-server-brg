@@ -101,7 +101,35 @@ Options: `--provider`, `--model`, `--data-root`, or the environment variables `B
 
 [Main README](../README.md) · [Local development](development/README.md)
 
+## Reading a reply
+
+A reply is laid out like a pipeline view. Between the text messages a
+chain of badges shows the steps the model took, in order, joined by
+chevrons:
+
+| badge | meaning |
+|---|---|
+| `◐` blue | the model is thinking |
+| `≣` | a read: a knowledge note, a book section, a search |
+| `⚙` | any other tool (in Codex also a shell command) |
+| amber / green / red | running / returned / failed |
+
+The chain is as long as the number of steps between two messages: one
+search is `◐ › ≣`, a stale read followed by a second search is twice that.
+A terminal has no tooltips, so each badge is a hyperlink whose target is
+the tool name and its arguments: GNOME Terminal, VS Code and iTerm2 show it
+when you hover the badge. `/trace` prints every step of the last reply
+with its arguments, duration and a preview of the result, for any terminal.
+
+Under each reply a dim line gives the tokens read and written, the cached
+part, the number of tools, the share of the context window in use and the
+time. API-key engines also show the cost; account engines do not.
+
 ## Look and feel
+
+The terminal's background is painted dark blue while `brg` runs and
+restored when you leave (set `BRG_BACKGROUND` to another colour, or empty
+to keep your own).
 
 The terminal is the terminal: nothing is drawn full-screen. The banner, the
 events and the replies are printed into the terminal's own scrollback, so the

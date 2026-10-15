@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 import os
 import shutil
 import tempfile
 from pathlib import Path
 
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .base import OnEvent, OnText, Provider
+from .base import Event, OnEvent, OnText, Provider, preview, tool_name
 
 
 def mcp_config_file(bridge: MCPBridge) -> Path:
@@ -107,8 +108,10 @@ class ClaudeCliProvider(Provider):
         reply: list[str] = []
         streamed_any = False
 
+        tools = 0
+
         def on_line(line: str) -> None:
-            nonlocal streamed_any
+            nonlocal streamed_any, tools
             try:
                 event = json.loads(line)
             except json.JSONDecodeError:
@@ -116,23 +119,41 @@ class ClaudeCliProvider(Provider):
             kind = event.get("type")
             if kind == "stream_event":
                 inner = event.get("event") or {}
-                delta = inner.get("delta") or {}
-                if inner.get("type") == "content_block_delta" and delta.get("type") == "text_delta":
-                    on_text(delta.get("text", "")); reply.append(delta.get("text", "")); streamed_any = True
+                if inner.get("type") == "content_block_delta":
+                    delta = inner.get("delta") or {}
+                    if delta.get("type") == "text_delta":
+                        on_text(delta.get("text", "")); reply.append(delta.get("text", "")); streamed_any = True
+                elif inner.get("type") == "content_block_start":
+                    block = inner.get("content_block") or {}
+                    if block.get("type") == "thinking":
+                        on_event(Event("thinking"))
+                    elif block.get("type") == "tool_use" and block.get("name") != "ToolSearch":
+                        tools += 1
+                        on_event(Event("tool_call", tool_name(str(block.get("name", "")))))
             elif kind == "assistant":
                 for block in (event.get("message") or {}).get("content") or []:
-                    if block.get("type") == "tool_use":
-                        name = str(block.get("name", ""))
-                        if name == "ToolSearch":                      # Claude Code's internal tool lookup
-                            continue
-                        name = name.removeprefix("mcp__brg__")
-                        on_event(f"{name}({json.dumps(block.get('input', {}))[:140]})")
+                    if block.get("type") == "tool_use" and block.get("name") != "ToolSearch":
+                        on_event(Event("tool_args", tool_name(str(block.get("name", ""))), json.dumps(block.get("input", {}))))
+            elif kind == "user":
+                content = (event.get("message") or {}).get("content") or []
+                for block in content if isinstance(content, list) else []:
+                    if isinstance(block, dict) and block.get("type") == "tool_result":
+                        on_event(Event("tool_result", "", preview(block.get("content")), ok=not block.get("is_error")))
             elif kind == "result":
                 self.session_id = event.get("session_id", self.session_id)
                 if not streamed_any and event.get("result"):
                     on_text(event["result"]); reply.append(event["result"])
                 if event.get("is_error"):
-                    on_event(f"claude reported an error: {str(event.get('result'))[:300]}")
+                    on_event(Event.error(f"claude reported an error: {str(event.get('result'))[:300]}"))
+                usage = event.get("usage") or {}
+                window = max((m.get("contextWindow", 0) for m in (event.get("modelUsage") or {}).values()), default=0)
+                on_event(Event("usage", data={
+                    "input": usage.get("input_tokens", 0), "output": usage.get("output_tokens", 0),
+                    "cache_read": usage.get("cache_read_input_tokens", 0),
+                    "cache_write": usage.get("cache_creation_input_tokens", 0),
+                    "duration_ms": event.get("duration_ms", 0), "api_ms": event.get("duration_api_ms", 0),
+                    "turns": event.get("num_turns", 0), "tools": tools, "cost": event.get("total_cost_usd") or 0.0,
+                    "context_window": window}))
 
         code, err = await stream_lines(cmd, user_text, str(self.bridge.data_root), on_line)
         if code != 0 and not reply:
@@ -180,7 +201,11 @@ class CodexCliProvider(Provider):
         cmd.append(user_text)
         reply: list[str] = []
 
+        tools = 0
+        started_at = time.monotonic()
+
         def on_line(line: str) -> None:
+            nonlocal tools
             try:
                 event = json.loads(line)
             except json.JSONDecodeError:
@@ -190,11 +215,24 @@ class CodexCliProvider(Provider):
             if kind == "item.completed" and itype == "agent_message":
                 text = item.get("text", "")
                 on_text(("\n\n" if reply else "") + text); reply.append(text)
+            elif kind == "item.started" and itype == "reasoning":
+                on_event(Event("thinking"))
             elif kind == "item.started" and itype in ("mcp_tool_call", "command_execution"):
+                tools += 1
                 label = item.get("tool") or item.get("command") or itype
-                on_event(f"{label}")
+                on_event(Event("tool_call", str(label), json.dumps(item.get("arguments", item.get("command", "")))))
+            elif kind == "item.completed" and itype in ("mcp_tool_call", "command_execution"):
+                ok = item.get("status", "completed") not in ("failed", "error")
+                on_event(Event("tool_result", "", preview(item.get("result") or item.get("aggregated_output") or item.get("error") or ""), ok=ok))
+            elif kind == "turn.completed":
+                usage = event.get("usage") or {}
+                on_event(Event("usage", data={
+                    "input": usage.get("input_tokens", 0), "output": usage.get("output_tokens", 0),
+                    "cache_read": usage.get("cached_input_tokens", 0), "cache_write": 0,
+                    "duration_ms": int((time.monotonic() - started_at) * 1000), "api_ms": 0,
+                    "turns": 0, "tools": tools, "cost": 0.0, "context_window": 0}))
             elif kind == "error":
-                on_event(f"codex error: {event.get('message', '')[:300]}")
+                on_event(Event.error(f"codex error: {event.get('message', '')[:300]}"))
 
         code, err = await stream_lines(cmd, None, str(self.bridge.data_root), on_line)
         self.started = True

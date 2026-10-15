@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import time
 import os
 
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .base import SYSTEM_PROMPT, OnEvent, OnText, Provider
+from .base import Event, preview, SYSTEM_PROMPT, OnEvent, OnText, Provider
 
 MAX_TOOL_ROUNDS = 12
 
@@ -42,6 +43,8 @@ class AnthropicProvider(Provider):
         self.messages.append({"role": "user", "content": user_text})
         tools = anthropic_tools(self.bridge)
         reply = []
+        totals = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "tools": 0}
+        started_at = time.monotonic()
         for _ in range(MAX_TOOL_ROUNDS):
             kwargs = dict(
                 model=self.model,
@@ -61,27 +64,39 @@ class AnthropicProvider(Provider):
                         reply.append(event.text)
                 response = await stream.get_final_message()
             self.messages.append({"role": "assistant", "content": response.content})
+            u = response.usage
+            totals["input"] += u.input_tokens; totals["output"] += u.output_tokens
+            totals["cache_read"] += getattr(u, "cache_read_input_tokens", 0) or 0
+            totals["cache_write"] += getattr(u, "cache_creation_input_tokens", 0) or 0
+            for block in response.content:
+                if block.type == "thinking":
+                    on_event(Event("thinking"))
             if response.stop_reason == "refusal":
-                on_event("the model declined this request" + (
-                    f" ({response.stop_details.category})" if getattr(response, "stop_details", None) else ""))
+                on_event(Event.note("the model declined this request" + (
+                    f" ({response.stop_details.category})" if getattr(response, "stop_details", None) else "")))
                 break
             tool_uses = [b for b in response.content if b.type == "tool_use"]
             if not tool_uses or response.stop_reason == "max_tokens":
                 break
             results = []
+            totals["tools"] += len(tool_uses)
             for tool in tool_uses:
                 arguments = tool.input if isinstance(tool.input, dict) else json.loads(tool.input or "{}")
-                on_event(f"⚙ {tool.name} {json.dumps(arguments)[:160]}")
+                on_event(Event("tool_call", tool.name, json.dumps(arguments)))
                 try:
                     text = await self.bridge.call_tool(tool.name, arguments)
                     results.append({"type": "tool_result", "tool_use_id": tool.id, "content": text[:40000]})
+                    on_event(Event("tool_result", tool.name, preview(text), ok=True))
                 except Exception as exc:                      # noqa: BLE001 - reported to the model
                     results.append({"type": "tool_result", "tool_use_id": tool.id,
                                     "content": f"tool error: {exc}", "is_error": True})
+                    on_event(Event("tool_result", tool.name, f"tool error: {exc}", ok=False))
             self.messages.append({"role": "user", "content": results})
             if reply:
                 on_text("\n\n")
                 reply.append("\n\n")
+        on_event(Event("usage", data={**totals, "duration_ms": int((time.monotonic() - started_at) * 1000), "api_ms": 0,
+                                      "turns": 0, "cost": 0.0, "context_window": 0}))
         return "".join(reply)
 
     def status(self) -> str:

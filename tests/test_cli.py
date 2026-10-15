@@ -60,7 +60,8 @@ def test_model_registry_from_the_accounts():
     ]
     entries = models.claude_entries(server_models) + [models.ModelEntry("Codex Astra", "codex", "gpt-6-astra", "gpt-6-astra", ("gpt-6-astra",))]
     assert [e.name for e in entries] == ["Claude Opus 5.5", "Claude Fable 5.1", "Codex Astra"]   # no "default"
-    assert models.claude_default_model(server_models) == "claude-opus-5-5"
+    assert models.claude_default_model(server_models) == "claude-fable-5-1"      # the strongest, not "default"
+    assert models.claude_default_model(server_models[:2]) == "claude-opus-5-5"
     assert models.resolve("fable", entries).model == "claude-fable-5-1"
     assert models.resolve("Claude Opus 5.5", entries).model == "claude-opus-5-5"
     assert models.resolve("astra", entries).provider == "codex"
@@ -80,7 +81,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
         session = PromptSession(input=pipe, output=DummyOutput())
         terminal = Terminal(ROOT, provider="claude", console=console, session=session)
         session.completer = SlashCompleter(terminal)
-        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/quit"]:
+        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/quit"]:
             pipe.send_text(line + "\n")
         await asyncio.wait_for(terminal.run(), timeout=90)
     text = out.getvalue()
@@ -89,8 +90,33 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
     assert "Codex Astra" in text                                            # switched engine
     assert "Claude Fable 5.1" in text                                       # and back, named in /status
     assert terminal.provider_name == "claude" and terminal.provider.model == "claude-fable-5-1"
+    assert "no steps yet" in text                                           # /trace before any reply
     # the completer offers commands after "/" and models after "/model "
     from prompt_toolkit.document import Document
     comp = SlashCompleter(terminal)
     assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/model", "/models"}
     assert any("Fable 5.1" in c.text for c in comp.get_completions(Document("/model fab"), None))
+
+
+def test_trace_chain_and_table():
+    """The step chain: thinking and tool badges, results colour them, text starts a new chain."""
+    from brg_mcp.cli.providers.base import Event
+    from brg_mcp.cli.trace import Trace, metrics_line
+    t = Trace()
+    assert t.add(Event("thinking"))
+    assert t.add(Event("tool_call", "search_knowledge"))
+    assert not t.add(Event("tool_args", "search_knowledge", '{"query": "force density"}'))
+    assert t.add(Event("tool_result", "", "3 notes", ok=True))
+    assert t.running() == "Working…"
+    chain = t.chain_text()
+    assert chain.plain == " ◐  ›  ≣ "
+    assert any("link brg://step/search_knowledge" in str(span.style) for span in chain.spans)   # hover target
+    t.text_started()
+    assert t.chain == [] and len(t.steps) == 2
+    t.add(Event("tool_call", "read_book_section")); t.add(Event("tool_result", "", "boom", ok=False))
+    assert t.chain_text().plain == " ✗ "
+    table = Console(file=io.StringIO(), width=100); table.print(t.table())
+    out = table.file.getvalue()
+    assert 'query="force density"' in out and "→ 3 notes" in out and "(failed)" in out
+    line = metrics_line({"input": 1000, "output": 200, "cache_read": 800, "tools": 2, "cost": 0.5}, 24.0, 55, show_cost=False).plain
+    assert "in 3k" in line and "2 tools" in line and "ctx ▰▰▱▱▱▱▱▱ 24%" in line and "$" not in line
