@@ -1,0 +1,6 @@
+name = "icon_transpose"
+
+[[items]]
+file = "pb/icon_transpose.pb"
+name = "icon_transpose"
+at = [0, 0, 0]

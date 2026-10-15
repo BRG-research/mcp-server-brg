@@ -34,7 +34,7 @@ def to_pb(src: Path, dst: Path):
         # width put it on the viewer's text lane (drawn last, no edge ink)
         contours = [[Point(*xyz) for xyz in c] for c in mesh["contours"]]
         m = Mesh.from_polygon_with_holes(contours, sort_by_bbox=True)
-        m.name = "text"
+        m.name = mesh.get("kind", "text")          # "text" lane for glyphs, "fill" (print lane) for coloured cells
         m.set_linecolors([Color(*mesh["color"])], widths=[0.0])
         m.set_objectcolor(Color(*mesh["color"]))
         s.add_mesh(m)

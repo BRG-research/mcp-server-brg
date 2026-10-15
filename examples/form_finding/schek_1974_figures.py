@@ -142,7 +142,12 @@ class Scene:
 
     def text(self, glyphs, s, origin, height, align="left", color=(0, 0, 0, 1)):
         for group in glyphs.text(s, origin, height, align):
-            self.meshes.append({"contours": group, "color": list(color)})
+            self.meshes.append({"contours": group, "color": list(color), "kind": "text"})
+
+    def fill(self, x, y, w, h, color):
+        """A filled rectangle (viewer print-fill lane, drawn under the ink)."""
+        self.meshes.append({"contours": [[[x, y, 0], [x + w, y, 0], [x + w, y + h, 0], [x, y + h, 0]]],
+                            "color": list(color), "kind": "fill"})
 
     def rect(self, x, y, w, h, width=None, color=(0, 0, 0, 1)):
         self.polyline([[x, y, 0], [x + w, y, 0], [x + w, y + h, 0], [x, y + h, 0], [x, y, 0]], color, width)
@@ -231,6 +236,219 @@ def matrix_drawing(sc, gl, cells, cell_w, cell_h, text_h, row_labels=None, col_l
     sc.polyline([[x1 - b, oy, 0], [x1, oy, 0], [x1, oy - h, 0], [x1 - b, oy - h, 0]])
 
 
+
+# =============================================================================
+# matrix icons: a matrix as a grid of cells, with highlighted rows / columns
+# =============================================================================
+
+PLUS, MINUS, ZERO, HI, HI2, GREY = (0.80, 0.88, 1.0, 1), (1.0, 0.84, 0.80, 1), (1, 1, 1, 1), (1.0, 0.95, 0.55, 1), (0.85, 1.0, 0.85, 1), (0.93, 0.93, 0.93, 1)
+
+
+def matrix_icon(sc, gl, M, x0, y0, cell=0.5, name=None, row_labels=None, col_labels=None, hi_rows=(), hi_cols=(),
+                hi_cells=(), fmt="{:g}", text_h=None, value_colors=True, stroke=None):
+    """Draw matrix M (2-D) with its top-left corner at (x0, y0) going down. Returns (x1, y_bottom)."""
+    M = np.atleast_2d(np.asarray(M, float))
+    nr, nc = M.shape
+    th = text_h or cell * 0.42
+    st = stroke or sc.stroke
+    for r in range(nr):
+        for c in range(nc):
+            x, y = x0 + c * cell, y0 - (r + 1) * cell
+            v = M[r, c]
+            col = ZERO
+            if value_colors and abs(v) > 1e-12:
+                col = PLUS if v > 0 else MINUS
+            if r in hi_rows or c in hi_cols or (r, c) in hi_cells:
+                col = HI if col == ZERO else tuple(0.5 * (a + b) for a, b in zip(col, HI))
+            sc.fill(x, y, cell, cell, col)
+            sc.polyline([[x, y, 0], [x + cell, y, 0], [x + cell, y + cell, 0], [x, y + cell, 0], [x, y, 0]], GREY, st * 0.6)
+            label = "." if abs(v) < 1e-12 else fmt.format(v)
+            sc.text(gl, label, [x + cell / 2, y + cell / 2 - 0.35 * th, 0], th, "center")
+    # brackets
+    bw = cell * 0.25
+    sc.polyline([[x0 + bw, y0, 0], [x0, y0, 0], [x0, y0 - nr * cell, 0], [x0 + bw, y0 - nr * cell, 0]], (0, 0, 0, 1), st)
+    x1 = x0 + nc * cell
+    sc.polyline([[x1 - bw, y0, 0], [x1, y0, 0], [x1, y0 - nr * cell, 0], [x1 - bw, y0 - nr * cell, 0]], (0, 0, 0, 1), st)
+    if col_labels is not None:
+        for c, lab in enumerate(col_labels):
+            sc.text(gl, str(lab), [x0 + (c + 0.5) * cell, y0 + 0.25 * cell, 0], th * 0.85, "center")
+    if row_labels is not None:
+        for r, lab in enumerate(row_labels):
+            sc.text(gl, str(lab), [x0 - 0.3 * cell, y0 - (r + 0.5) * cell - 0.35 * th, 0], th * 0.85, "right")
+    if name:
+        sc.text(gl, name, [x0 + nc * cell / 2, y0 - nr * cell - 0.9 * cell, 0], th * 1.1, "center")
+    return x1, y0 - nr * cell
+
+
+def op_symbol(sc, gl, sym, x, y_mid, h):
+    sc.text(gl, sym, [x, y_mid - 0.35 * h, 0], h, "center")
+
+
+def flow_diagram(sc, gl):
+    """Figure 3 of the paper, redrawn as a clean pipeline: inputs on the left, the loop-backs on the right.
+    Box widths are computed from their text (JetBrains Mono advances 0.6 of the text height per character)."""
+    H = 0.26                                    # text height
+    cw = 0.6 * H                                # width of one character
+    def width(lines, pad=0.6):
+        return max(len(t) for t in lines) * cw + pad
+    main = [("start", ["Start form finding"], True),
+            ("cmat", ["1. form the branch-node matrix  C_s = [C  C_f]"], False),
+            ("dmat", ["2. form D = C^t Q C  and  D_f = C^t Q C_f,", "   prepare the right-hand sides  p - D_f x_f"], False),
+            ("solve", ["3. solve  D x = p_x - D_f x_f  (and y, z)   (9)", "   lengths  l = |C x + C_f x_f|          (1)", "   forces   s = L q                      (10)"], False),
+            ("out", ["4. output the equilibrium shape", "   (plotter, display), analyse"], False),
+            ("q1", ["changes in the fixed points or the load?"], False),
+            ("q2", ["changes in the force densities?"], False),
+            ("q3", ["changes in the interconnections?"], False),
+            ("end", ["End of form finding.  Additional conditions", "(prescribed lengths or forces): section 3"], True)]
+    inputs = [("branch list  i(j), k(j)", "cmat"), ("force densities  q", "dmat"), ("fixed points  x_f, y_f, z_f", "solve"), ("loads  p_x, p_y, p_z", "solve")]
+    W_in = width(["input: " + t for t, _ in inputs])
+    X = 0.2 + W_in + 1.2                        # main column left edge
+    W = max(width(lines) for _, lines, _ in main)
+    def box(x, y, w, h, lines, bold=False, fill=None):
+        if fill:
+            sc.fill(x, y, w, h, fill)
+        sc.rect(x, y, w, h)
+        if bold:
+            sc.rect(x - 0.06, y - 0.06, w + 0.12, h + 0.12)
+        for i, t in enumerate(lines):
+            sc.text(gl, t, [x + 0.3, y + h - 0.2 - (i + 1) * (H * 1.45) + 0.45 * H, 0], H)
+    def arrow_down(x, y0, y1, label=None):
+        sc.arrow([x, y0, 0], [x, y1, 0], head=0.22)
+        if label:
+            sc.text(gl, label, [x + 0.15, (y0 + y1) / 2 - 0.35 * H * 0.9, 0], H * 0.9)
+    # lay the main column out from the top
+    ys, y = {}, 14.0
+    for key, lines, bold in main:
+        h = 0.3 + len(lines) * H * 1.45 + 0.2
+        y -= h
+        ys[key] = (y, h)
+        box(X, y, W, h, lines, bold, fill=(0.96, 0.96, 0.96, 1) if key.startswith("q") else None)
+        y -= 0.75 if key != "out" else 0.75
+    xc = X + W / 2
+    order = [k for k, _, _ in main]
+    for a, b in zip(order, order[1:]):
+        arrow_down(xc, ys[a][0], ys[b][0] + ys[b][1], "no" if a.startswith("q") else None)
+    # inputs on the left, each feeding the step that consumes it
+    per_target = {}
+    for text, target in inputs:
+        y0, h = ys[target]
+        k = per_target.get(target, 0); per_target[target] = k + 1
+        yy = y0 + h - 0.45 - k * 0.75
+        box(0.2, yy - 0.3, W_in, 0.6, ["input: " + text])
+        sc.arrow([0.2 + W_in, yy, 0], [X, yy, 0], head=0.22)
+    # loop-backs on the right: "yes" returns to the step that has to be redone
+    for src, dst, dx in [("q1", "solve", 0.8), ("q2", "dmat", 1.4), ("q3", "cmat", 2.0)]:
+        y_src = ys[src][0] + ys[src][1] / 2
+        y_top = ys[dst][0] + ys[dst][1]
+        xr = X + W + dx
+        sc.polyline([[X + W, y_src, 0], [xr, y_src, 0], [xr, y_top + 0.38, 0], [xc + 0.8, y_top + 0.38, 0]])
+        sc.arrow([xc + 0.8, y_top + 0.38, 0], [xc + 0.8, y_top, 0], head=0.22)
+        sc.text(gl, "yes", [X + W + 0.1, y_src + 0.08, 0], H * 0.9)
+
+
+def icon_scenes(gl, out, layout):
+    """The matrix icons used by the tutorial."""
+    n, n_f = 5, 4
+    C_s = branch_node_matrix(FIG2_BRANCHES, n + n_f); m = len(FIG2_BRANCHES)
+    C, C_f = C_s[:, :n], C_s[:, n:]
+    q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], float)
+    x_all = np.array([-1, 0, 1, 0, 0, -2, 0, 2, 0], float)
+    u = C_s @ x_all
+    f = np.arange(1, m + 1, dtype=float)
+    D = C.T @ np.diag(q) @ C
+    rows, cols = [str(i) for i in range(1, m + 1)], [str(i) for i in range(1, n + n_f + 1)]
+    cell = 0.5
+
+    def scene(name, caption):
+        sc = Scene(name, stroke=0.012)
+        return sc
+
+    # icon 1: the branch-node matrix with its two column blocks
+    sc = scene("icon_split", "")
+    x1, yb = matrix_icon(sc, gl, C_s, 0, 0, cell, "C_s  (12 x 9)", rows, cols, hi_cols=range(n), value_colors=False)
+    sc.fill(0, yb, n * cell, m * cell, (1, 0.95, 0.55, 0.35))
+    x_, yb2 = matrix_icon(sc, gl, C, x1 + 1.2, 0, cell, "C  (12 x 5)  free nodes", rows, cols[:n])
+    matrix_icon(sc, gl, C_f, x_ + 1.2, 0, cell, "C_f  (12 x 4)  fixed nodes", rows, cols[n:])
+    sc.text(gl, "C_s = [C  C_f]: the columns of the free nodes form C, those of the fixed nodes C_f", [0, yb - 1.9, 0], 0.26)
+    sc.dump(out / "icon_split.json")
+    layout["icon_split"] = {"panels": [["icon_split.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+    # icon 2: matrix times vector, row 1 highlighted
+    sc = scene("icon_matvec", "")
+    x1, yb = matrix_icon(sc, gl, C_s, 0, 0, cell, "C_s  (12 x 9)", rows, cols, hi_rows=[0])
+    op_symbol(sc, gl, "x", x1 + 0.5, -m * cell / 2, 0.4)
+    x2, _ = matrix_icon(sc, gl, x_all[:, None], x1 + 1.0, 0, cell, "x  (9)", cols, None, hi_rows=[0, 5])
+    op_symbol(sc, gl, "=", x2 + 0.5, -m * cell / 2, 0.4)
+    matrix_icon(sc, gl, u[:, None], x2 + 1.0, 0, cell, "u = C_s x  (12)", rows, None, hi_rows=[0])
+    sc.text(gl, "row 1 of C_s has +1 at node 1 and -1 at node 6:   u_1 = (+1)(x_1) + (-1)(x_6) = -1 - (-2) = 1", [0, yb - 1.9, 0], 0.26)
+    sc.text(gl, "every other entry of the row is 0, so the other seven coordinates do not matter for branch 1", [0, yb - 2.4, 0], 0.26)
+    sc.dump(out / "icon_matvec.json")
+    layout["icon_matvec"] = {"panels": [["icon_matvec.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+    # icon 3: the transpose sums at the nodes, column 5 highlighted
+    sc = scene("icon_transpose", "")
+    x1, yb = matrix_icon(sc, gl, C_s.T, 0, 0, cell, "C_s^t  (9 x 12): rows are nodes now", cols, rows, hi_rows=[4])
+    op_symbol(sc, gl, "x", x1 + 0.5, -(n + n_f) * cell / 2, 0.4)
+    x2, yb = matrix_icon(sc, gl, f[:, None], x1 + 1.0, 0, cell, "f  (12)", rows, None, hi_rows=[8, 9, 10, 11])
+    op_symbol(sc, gl, "=", x2 + 0.5, -(n + n_f) * cell / 2, 0.4)
+    matrix_icon(sc, gl, (C_s.T @ f)[:, None], x2 + 1.0, 0, cell, "C_s^t f  (9)", cols, None, hi_rows=[4])
+    sc.text(gl, "row 5 of C_s^t (= column 5 of C_s) says which branches touch node 5: branches 9, 10, 11, 12 end there (-1)", [0, yb - 1.9, 0], 0.26)
+    sc.text(gl, "(C_s^t f)_5 = -f_9 - f_10 - f_11 - f_12 = -(9 + 10 + 11 + 12) = -42:  a sum of branch values at a node", [0, yb - 2.4, 0], 0.26)
+    sc.dump(out / "icon_transpose.json")
+    layout["icon_transpose"] = {"panels": [["icon_transpose.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+    # icon 4: the diagonal matrix scales entry by entry
+    sc = scene("icon_diag", "")
+    x1, yb = matrix_icon(sc, gl, np.diag(q), 0, 0, cell, "Q = diag(q)  (12 x 12)", rows, rows, hi_cells=[(1, 1)])
+    op_symbol(sc, gl, "x", x1 + 0.5, -m * cell / 2, 0.4)
+    x2, _ = matrix_icon(sc, gl, u[:, None], x1 + 1.0, 0, cell, "u  (12)", rows, None, hi_rows=[1])
+    op_symbol(sc, gl, "=", x2 + 0.5, -m * cell / 2, 0.4)
+    matrix_icon(sc, gl, (q * u)[:, None], x2 + 1.0, 0, cell, "Q u = q * u  (12)", rows, None, hi_rows=[1])
+    sc.text(gl, "a diagonal matrix only scales: (Q u)_2 = q_2 u_2.  That is why U q = Q u (eq. 6): both are the entry-wise product", [0, yb - 1.9, 0], 0.26)
+    sc.dump(out / "icon_diag.json")
+    layout["icon_diag"] = {"panels": [["icon_diag.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+    # icon 5: D = C^t Q C, one entry built from the contributing cells
+    sc = scene("icon_D", "")
+    x1, yb = matrix_icon(sc, gl, C.T, 0, 0, cell, "C^t  (5 x 12)", cols[:n], rows, hi_rows=[0])
+    op_symbol(sc, gl, "x", x1 + 0.5, -n * cell / 2, 0.4)
+    x2, yb = matrix_icon(sc, gl, np.diag(q), x1 + 1.0, 0, cell, "Q  (12 x 12)", rows, rows, hi_cells=[(0, 0), (4, 4), (5, 5), (9, 9)])
+    op_symbol(sc, gl, "x", x2 + 0.5, -n * cell / 2, 0.4)
+    x3, _ = matrix_icon(sc, gl, C, x2 + 1.0, 0, cell, "C  (12 x 5)", rows, cols[:n], hi_cols=[0])
+    op_symbol(sc, gl, "=", x3 + 0.5, -n * cell / 2, 0.4)
+    matrix_icon(sc, gl, D, x3 + 1.0, 0, cell, "D  (5 x 5)", cols[:n], cols[:n], hi_cells=[(0, 0)])
+    sc.text(gl, "D[1,1] = sum over the branches j of  C[j,1] * q_j * C[j,1] = q_1 + q_5 + q_6 + q_10 = 2 + 1 + 1 + 1 = 5  (the branches at node 1)", [0, yb - 1.9, 0], 0.26)
+    sc.text(gl, "D[1,2] = sum of  C[j,1] * q_j * C[j,2]: only branch 6 touches both nodes, with opposite signs, so  D[1,2] = -q_6 = -1   (figure 4)", [0, yb - 2.4, 0], 0.26)
+    sc.dump(out / "icon_D.json")
+    layout["icon_D"] = {"panels": [["icon_D.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+    # icon 6: the linear system D x = b, solved
+    sc = scene("icon_solve", "")
+    x_f = x_all[n:]; D_f = C.T @ np.diag(q) @ C_f; b = np.zeros(n) - D_f @ x_f
+    xs = np.linalg.solve(D, b)
+    x1, yb = matrix_icon(sc, gl, D, 0, 0, cell, "D  (5 x 5)  known", cols[:n], cols[:n])
+    op_symbol(sc, gl, "x", x1 + 0.5, -n * cell / 2, 0.4)
+    x2, _ = matrix_icon(sc, gl, xs[:, None], x1 + 1.0, 0, cell, "x  (5)  unknown", cols[:n], None, fmt="{:.2f}", hi_rows=range(n))
+    op_symbol(sc, gl, "=", x2 + 0.5, -n * cell / 2, 0.4)
+    x3, _ = matrix_icon(sc, gl, b[:, None], x2 + 1.0, 0, cell, "b = p_x - D_f x_f  (5)  known", cols[:n], None, fmt="{:.2f}")
+    sc.text(gl, "np.linalg.solve(D, b) finds the five numbers x that make every row of D times x equal to the row's b", [0, yb - 1.9, 0], 0.26)
+    sc.text(gl, "row 1: 5 x_1 - x_2 - x_4 - x_5 = -4  ...  five equations, five unknowns, one solution because D is positive definite", [0, yb - 2.4, 0], 0.26)
+    sc.dump(out / "icon_solve.json")
+    layout["icon_solve"] = {"panels": [["icon_solve.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+    # icon 7: the right-hand side, fixed nodes move to the known side
+    sc = scene("icon_rhs", "")
+    x1, yb = matrix_icon(sc, gl, D_f, 0, 0, cell, "D_f = C^t Q C_f  (5 x 4)", cols[:n], cols[n:])
+    op_symbol(sc, gl, "x", x1 + 0.5, -n * cell / 2, 0.4)
+    x2, _ = matrix_icon(sc, gl, x_f[:, None], x1 + 1.0, 0, cell, "x_f  (4)  anchors", cols[n:], None)
+    op_symbol(sc, gl, "=", x2 + 0.5, -n * cell / 2, 0.4)
+    x3, _ = matrix_icon(sc, gl, (D_f @ x_f)[:, None], x2 + 1.0, 0, cell, "D_f x_f  (5)", cols[:n], None)
+    sc.text(gl, "eq. (8):  D x = p_x - D_f x_f.  The anchors are known, so their part D_f x_f is computed and moved to the right-hand side", [0, yb - 1.9, 0], 0.26)
+    sc.text(gl, "moving an anchor changes only this vector; D stays the same  (figure 6 of the paper)", [0, yb - 2.4, 0], 0.26)
+    sc.dump(out / "icon_rhs.json")
+    layout["icon_rhs"] = {"panels": [["icon_rhs.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+
+
 # =============================================================================
 # main
 # =============================================================================
@@ -255,36 +473,12 @@ def main(out: Path):
     layout["fig2"] = {"panels": [["fig2_graph.json", [0, -2.3, 0]], ["fig2_matrix.json", [3.2, 0, 0]]], "views": ["top"],
                       "caption": "Fig. 2. Graph and branch-node matrix C_s = [C C_f]."}
 
-    # ------------------------------------------------------------------ figure 3: flow diagram
+    # ------------------------------------------------------------------ figure 3: flow diagram (clean redraw)
     sc = Scene("fig3_flow", stroke=0.018)
-    H = 0.22
-    def box(x, y, w, h, lines, bold=False):
-        sc.rect(x, y, w, h)
-        if bold:
-            sc.rect(x - 0.04, y - 0.04, w + 0.08, h + 0.08)
-        for i, t in enumerate(lines):
-            sc.text(gl, t, [x + 0.15, y + h - (i + 1) * (H * 1.35) + 0.05, 0], H)
-    box(4.0, 11.0, 5.6, 0.5, ["Start form finding"], True)
-    box(4.0, 10.1, 5.6, 0.5, ["form the branch-node matrix"])
-    box(4.0, 8.3, 5.6, 1.35, ["form the general Gaussian", "transformation D, prepare", "the right-hand sides of (8),", "compute the inverse of D"])
-    box(4.0, 6.7, 5.6, 1.1, ["compute the equilibrium shape", "with (9), compute the branch", "lengths and forces with (10)"])
-    box(2.4, 5.4, 7.2, 0.8, ["output equilibrium shape by plotter", "or display, analyse"])
-    box(2.4, 4.6, 7.2, 0.5, ["changes in the fixed points or load?"])
-    box(2.4, 3.8, 7.2, 0.5, ["changes in the force densities?"])
-    box(2.4, 3.0, 7.2, 0.5, ["changes in the interconnections?"])
-    box(2.4, 1.3, 7.2, 1.2, ["End form finding, introduction of", "additional constraints, see", "chapter 3!"], True)
-    box(0.2, 10.3, 3.3, 0.8, ["input network", "interconnections"])
-    box(0.2, 9.1, 3.3, 0.8, ["input force", "densities"])
-    box(0.2, 7.1, 3.3, 0.8, ["input fixed points", "and load"])
-    for y0, y1 in [(11.0, 10.6), (10.1, 9.65), (8.3, 7.8), (6.7, 6.2), (5.4, 5.1), (4.6, 4.3), (3.8, 3.5), (3.0, 2.5)]:
-        sc.arrow([6.8, y0, 0], [6.8, y1, 0])
-    sc.arrow([3.5, 10.7, 0], [4.0, 10.35, 0]); sc.arrow([3.5, 9.5, 0], [4.0, 8.97, 0]); sc.arrow([3.5, 7.5, 0], [4.0, 7.25, 0])
-    # the three questions loop back to the input boxes on the left, as in the paper
-    for yq, xr, yb in [(4.85, 1.9, 7.5), (4.05, 1.5, 9.5), (3.25, 1.1, 10.7)]:
-        sc.polyline([[2.4, yq, 0], [xr, yq, 0], [xr, yb, 0]])
-        sc.arrow([xr, yb, 0], [3.5, yb, 0])
+    flow_diagram(sc, gl)
     sc.dump(out / "fig3_flow.json")
     layout["fig3"] = {"panels": [["fig3_flow.json", [0, 0, 0]]], "views": ["top"], "caption": "Fig. 3. Diagram of the form finding."}
+    icon_scenes(gl, out, layout)
 
     # ------------------------------------------------------------------ figure 4: matrix D (symbolic)
     sc = Scene("fig4_matrix", stroke=0.016)

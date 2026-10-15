@@ -36,6 +36,14 @@ def main():
     source = APP.read_text()
     namespace = {"__name__": "schek_app", "__file__": str(APP)}
     sys.path.insert(0, str(HERE))
+    PARTS = {"a": "Part A. The network as data", "b": "Part B. Equilibrium, the nonlinear form",
+             "c": "Part C. The force density trick: a linear system", "d": "Part D. The form-finding loop",
+             "e": "Part E. What the force densities mean", "f": "Part F. Additional conditions",
+             "g": "Part G. The paper's examples, computed and drawn"}
+    def anchor(title):
+        t = "".join(ch for ch in title.lower() if ch.isalnum() or ch in " -_")
+        return t.replace(" ", "-")
+    all_cells = list(cells(source))
     out = [START, "", "## The application, section by section",
            "",
            "This is one program, `examples/form_finding/schek_app.py`, read from top to",
@@ -43,8 +51,18 @@ def main():
            "lines that add it to the program, and what those lines print when the file is",
            "run. The program is derived from the paper only (NumPy, nothing else); the",
            "comparison with `compas_fd` comes after it. This section is generated from the",
-           "program by `build_note.py`, so code, output and text cannot drift apart.", ""]
-    for cid, title, prose, code in cells(source):
+           "program by `build_note.py`, so code, output and text cannot drift apart.", "",
+           "Contents", ""]
+    last_part = None
+    for cid, title, prose, code in all_cells:
+        if cid[0] != last_part:
+            out.append(f"- **{PARTS[cid[0]]}**"); last_part = cid[0]
+        out.append(f"  - [{title}](#{anchor(title)})")
+    out.append("")
+    last_part = None
+    for cid, title, prose, code in all_cells:
+        if cid[0] != last_part:
+            out += [f"## {PARTS[cid[0]]}", ""]; last_part = cid[0]
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             exec(compile(code, f"{APP.name}[{cid}]", "exec"), namespace)
@@ -59,7 +77,7 @@ def main():
     note = NOTE.read_text()
     i, j = note.index(START), note.index(END) + len(END)
     NOTE.write_text(note[:i] + "\n".join(out) + note[j:])
-    print(f"wrote {sum(1 for _ in cells(source))} subsections into {NOTE.name}")
+    print(f"wrote {len(all_cells)} subsections into {NOTE.name}")
 
 
 if __name__ == "__main__":

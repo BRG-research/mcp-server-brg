@@ -1,0 +1,6 @@
+name = "icon_diag"
+
+[[items]]
+file = "pb/icon_diag.pb"
+name = "icon_diag"
+at = [0, 0, 0]

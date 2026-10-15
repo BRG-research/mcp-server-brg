@@ -1,0 +1,6 @@
+name = "icon_split"
+
+[[items]]
+file = "pb/icon_split.pb"
+name = "icon_split"
+at = [0, 0, 0]
