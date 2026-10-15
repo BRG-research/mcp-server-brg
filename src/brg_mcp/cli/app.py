@@ -89,34 +89,34 @@ class Spinner(Static):
 
 
 class BRGTerminal(App):
-    # The terminal's own colours everywhere (ansi_color=True below): no painted background, so
-    # resizing, transparency and the user's theme behave exactly as in any other terminal program.
+    # A plain black background everywhere, painted by the app itself, so every cell of the window
+    # (including after a resize) is black regardless of the terminal's own theme.
     CSS = """
-    Screen { background: ansi_default; color: ansi_default; }
-    #header { height: auto; padding: 1 2 0 2; background: ansi_default; }
-    #logo { width: auto; margin-right: 3; background: ansi_default; }
-    #title { width: 1fr; background: ansi_default; }
-    #transcript { height: 1fr; padding: 1 2; background: ansi_default; }
-    #transcript > * { background: ansi_default; }
+    Screen { background: black; color: #e6edf3; }
+    #header { height: auto; padding: 1 2 0 2; background: black; }
+    #logo { width: auto; margin-right: 3; background: black; }
+    #title { width: 1fr; background: black; }
+    #transcript { height: 1fr; padding: 1 2; background: black; }
+    #transcript > * { background: black; }
     .msg { margin-bottom: 1; }
     .user { padding: 0 1; }
     .assistant { padding: 0 1 0 1; }
     .event { padding: 0 1; }
     .spinner { padding: 0 1; }
     .error { padding: 0 1; }
-    #rule-top, #rule-bottom { height: 1; background: ansi_default; }
-    #prompt-row { height: 1; padding: 0 1; background: ansi_default; }
-    #caret { width: 2; background: ansi_default; }
-    #prompt { border: none; background: ansi_default; padding: 0; height: 1; }
-    #prompt:focus { border: none; background: ansi_default; }
-    #suggest { display: none; height: auto; max-height: 12; padding: 0 3; background: ansi_default; }
+    #rule-top, #rule-bottom { height: 1; background: black; }
+    #prompt-row { height: 1; padding: 0 1; background: black; }
+    #caret { width: 2; background: black; }
+    #prompt { border: none; background: black; padding: 0; height: 1; }
+    #prompt:focus { border: none; background: black; }
+    #suggest { display: none; height: auto; max-height: 12; padding: 0 3; background: black; }
     #suggest.visible { display: block; }
-    #hint { background: ansi_default; }
+    #hint { background: black; }
     """
     BINDINGS = [("ctrl+c", "quit", "quit"), ("escape", "cancel", "cancel")]
 
     def __init__(self, data_root: Path, provider: str = "claude", model: str | None = None) -> None:
-        super().__init__(ansi_color=True)
+        super().__init__()
         self.data_root = data_root
         self.bridge = MCPBridge(data_root)
         self.provider_name = provider

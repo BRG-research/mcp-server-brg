@@ -103,7 +103,7 @@ Options: `--provider`, `--model`, `--data-root`, or the environment variables `B
 
 ## Look and feel
 
-The terminal paints nothing of its own: it runs on your terminal's colours (Textual's ANSI mode),
-so resizing, transparency and your theme behave as in any other terminal program. While a reply is
+The terminal paints a plain black background over the whole window,
+so resizing never shows another colour underneath. While a reply is
 being prepared an animated indicator with the elapsed time is shown; it disappears with the first
 streamed character.
