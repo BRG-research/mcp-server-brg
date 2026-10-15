@@ -26,6 +26,7 @@ copyable first example using `compas_fd`.
 
 ## Start here
 
+- [BRG terminal](docs/terminal.md) — `uv run brg`: chat with your own Claude or ChatGPT account over the BRG tools.
 - [Local development](docs/development/README.md) — run, test, and connect your checkout.
 - [Other users](docs/users/README.md) — install and connect on another computer.
 - [Books](docs/books/README.md) — read, upload, process, and publish books.

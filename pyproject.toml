@@ -11,10 +11,16 @@ requires-python = ">=3.11"
 dependencies = ["mcp>=1.28,<2", "PyYAML>=6,<7", "httpx>=0.28,<1"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10"]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.23,<2"]
+cli = [
+    "anthropic>=1.15,<2",
+    "openai>=3,<4",
+    "textual>=8,<9",
+]
 
 [project.scripts]
 brg-mcp = "brg_mcp.server:main"
+brg = "brg_mcp.cli.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/brg_mcp"]
@@ -24,3 +30,4 @@ packages = ["src/brg_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"

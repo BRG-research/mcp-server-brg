@@ -1,0 +1,65 @@
+"""The BRG terminal without any model: banner, commands, MCP bridge, and the app driven headless."""
+
+import asyncio
+import json
+from pathlib import Path
+
+import pytest
+
+from brg_mcp.cli import banner, commands
+from brg_mcp.cli.mcp_bridge import MCPBridge
+from brg_mcp.cli.providers.agent_cli import mcp_config_file
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_logo_is_pixel_art_in_blues():
+    text = banner.logo()
+    assert "▀" in text.plain or "▄" in text.plain
+    assert len(text.plain.splitlines()) == 4          # 8 pixel rows -> 4 terminal lines
+    styles = {span.style for span in text.spans}
+    assert any("#1f6feb" in str(s) or "#5fb3ff" in str(s) for s in styles)
+
+
+def test_command_parsing_and_help():
+    assert commands.parse("hello") is None
+    cmd = commands.parse("/model  claude-opus-5-5 ")
+    assert cmd.name == "/model" and cmd.argument == "claude-opus-5-5"
+    assert commands.parse("/exit").name == "/quit"
+    assert "/provider" in commands.help_text()
+
+
+def test_bridge_lists_tools_and_calls_them():
+    async def check():
+        bridge = MCPBridge(ROOT)
+        await bridge.start()
+        try:
+            assert {t.name for t in bridge.tools} >= {"search_knowledge", "list_domains", "search_books"}
+            result = await bridge.call_tool("search_knowledge", {"query": "force density"})
+            assert "form-finding-compas-fd" in result
+            note = await bridge.read_resource("brg://knowledge/equilibrium")
+            assert "A f + p = 0" in note
+            config = json.loads(mcp_config_file(bridge).read_text())
+            assert config["mcpServers"]["brg"]["args"][-1] == str(ROOT)
+        finally:
+            await bridge.stop()
+    asyncio.run(asyncio.wait_for(check(), timeout=30))
+
+
+@pytest.mark.asyncio
+async def test_app_headless_commands():
+    from brg_mcp.cli.app import BRGTerminal, Message
+    app = BRGTerminal(ROOT, provider="claude")
+    async with app.run_test(size=(100, 30)) as pilot:
+        await pilot.pause(2.0)                               # the MCP server starts in on_mount
+        prompt = app.query_one("#prompt")
+        for line in ["/help", "/tools", "/search force density", "/status"]:
+            prompt.value = line
+            await pilot.press("enter")
+            await pilot.pause(0.5)
+        texts = [m.text for m in app.query(Message)]
+        assert any("/provider" in t for t in texts)
+        assert any("search_knowledge" in t for t in texts)
+        assert any("form-finding-compas-fd" in t for t in texts)
+        assert any("claude account" in t for t in texts)
+        assert "BRG tools" in str(app.query_one("#title").content)
