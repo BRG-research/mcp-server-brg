@@ -1,0 +1,4 @@
+# Future source catalog. Not loaded by the starter server yet.
+# Each entry should contain id, title, authors, year, URL/DOI, access/rights,
+# and extraction provenance. Document citations should reference these IDs.
+[]

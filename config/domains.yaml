@@ -1,0 +1,21 @@
+- id: history
+  title: History of Computational Structural Design
+  path: knowledge/01_history
+- id: computational_design
+  title: Computational Structural Design with COMPAS
+  path: knowledge/02_computational_design
+- id: graphic_statics
+  title: Graphic Statics
+  path: knowledge/03_graphic_statics
+- id: form_finding
+  title: Form Finding
+  path: knowledge/04_form_finding
+- id: thrust_network_analysis
+  title: Thrust Network Analysis
+  path: knowledge/05_thrust_network_analysis
+- id: constructability
+  title: Materialization / Constructability
+  path: knowledge/06_constructability
+- id: research_projects
+  title: Individual Project
+  path: knowledge/07_research_projects

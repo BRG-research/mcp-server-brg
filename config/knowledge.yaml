@@ -1,0 +1,5 @@
+- id: equilibrium
+  title: Structural equilibrium
+  domain: graphic_statics
+  path: knowledge/concepts/equilibrium.md
+  sources: []  # Original starter note; add verified literature before scholarly use.

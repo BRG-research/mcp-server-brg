@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "brg": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/mcp-server-brg",
+        "run",
+        "brg-mcp",
+        "--data-root",
+        "/absolute/path/to/mcp-server-brg"
+      ]
+    }
+  }
+}
