@@ -5,10 +5,10 @@ Scripts behind the figures and printed matrices of
 
 | Script | Needs | Does |
 |---|---|---|
-| `schek_app.py` | numpy | The force density application written from the paper, section by section: one cell per section of Schek (1974), prose docstring plus the code that adds it. Run it top to bottom. |
+| `schek_app.py` | numpy | The force density application written from the paper, section by section: one cell per section of Schek (1974), prose docstring plus the code that adds it, including a matrix primer. Run it top to bottom; section 5 computes every shape of figures 1 and 5 to 10 and writes `viewer_scenes/json/shapes.json`. |
 | `build_note.py` | numpy | Executes the cells of `schek_app.py` and writes them (prose, code, printed output) into the tutorial section of `knowledge/04_form_finding/compas_fd.md`. |
 | `schek_equations.py` | numpy, scipy | Every numbered equation as a separate function with finite-difference checks of all Jacobians; the test bench behind the application. |
-| `schek_1974_figures.py` | numpy, fonttools | Rebuilds the paper's figures 1 to 10 as scene descriptions (JSON: lines, polylines, points, glyph meshes). Text is filled: glyph outlines from the viewer's JetBrains Mono font, triangulated by the session kernel onto the viewer's text lane. |
+| `schek_1974_figures.py` | numpy, fonttools | Draws figures 2 to 4 and turns the tutorial's `shapes.json` into scene descriptions for figures 1 and 5 to 10 (JSON: lines, polylines, points, glyph meshes); it computes nothing itself. Text is filled: glyph outlines from the viewer's JetBrains Mono font, triangulated by the session kernel onto the viewer's text lane. |
 | `viewer_scenes.py` | `session_py` matching the viewer's `session_rust` | Converts the JSON scenes into session `.pb` files and `session_viewer` manifests in `viewer_scenes/`. |
 | `render_figures.sh` | the viewer's headless harness, Pillow | Renders every manifest to PNG in `knowledge/04_form_finding/images/`. |
 
@@ -21,7 +21,10 @@ python examples/form_finding/build_note.py
 ## Rebuild the figures
 
 ```bash
-# 1. scene data (any Python with numpy + fonttools)
+# 0. the tutorial program computes every shape of figures 1 and 5-10 and writes viewer_scenes/json/shapes.json
+python examples/form_finding/schek_app.py
+
+# 1. scene data from those shapes (any Python with numpy + fonttools)
 python examples/form_finding/schek_1974_figures.py
 
 # 2. .pb files and manifests (the viewer repository's own Python, so the .pb schema matches)
