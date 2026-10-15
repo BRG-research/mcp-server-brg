@@ -69,7 +69,10 @@ Switching provider or model starts a new conversation.
   (`--resume`). The generated config points at this checkout's server
   (`python -m brg_mcp.server --data-root …`).
 - **codex**: each turn runs `codex exec --json` with the server passed as inline config
-  (`-c mcp_servers.brg.command=… -c mcp_servers.brg.args=…`); later turns use `codex exec resume --last`.
+  (`-c mcp_servers.brg.command=… -c mcp_servers.brg.args=…`), approvals off
+  (`approval_policy="never"`, read-only sandbox) and the BRG tools auto-approved
+  (`mcp_servers.brg.default_tools_approval_mode="approve"`, they only read); later turns use
+  `codex exec resume --last`. `/model` takes Codex model names, e.g. `/model gpt-6-astra`.
 - **anthropic** / **openai**: the terminal runs the tool loop itself over the MCP connection it
   holds. These are for people who prefer API billing; the account backends are the default.
 

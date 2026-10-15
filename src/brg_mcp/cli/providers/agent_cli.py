@@ -144,13 +144,16 @@ class CodexCliProvider(Provider):
 
     def _config_args(self) -> list[str]:
         command, args = self.bridge.server_command()
-        return ["-c", f'mcp_servers.brg.command="{command}"', "-c", "mcp_servers.brg.args=" + json.dumps(args)]
+        return ["-c", f'mcp_servers.brg.command="{command}"', "-c", "mcp_servers.brg.args=" + json.dumps(args),
+                "-c", 'mcp_servers.brg.default_tools_approval_mode="approve"']   # the BRG tools only read
 
     async def send(self, user_text: str, on_text: OnText, on_event: OnEvent) -> str:
         exe = shutil.which("codex")
         if not exe:
             raise RuntimeError("the `codex` CLI is not installed or not on PATH")
-        cmd = [exe, "exec", "--json", "--skip-git-repo-check"] + self._config_args()
+        # never ask for approvals (there is nobody to answer in exec mode) but keep a read-only sandbox:
+        # the BRG tools only read notes and books
+        cmd = [exe, "exec", "--json", "--skip-git-repo-check", "-c", "approval_policy=\"never\"", "--sandbox", "read-only"] + self._config_args()
         if self.model:
             cmd += ["-m", self.model]
         if self.started:
