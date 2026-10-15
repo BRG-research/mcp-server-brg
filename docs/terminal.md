@@ -20,7 +20,7 @@ login runs in the same window and the terminal resumes afterwards.
 
 ## First run, new user
 
-1. Install the terminal: `uv sync --extra cli`, then `uv run brg`.
+1. Install: `uv sync`, then `uv run brg`.
 2. The header shows which account the current model uses. If nothing is signed in, the first
    lines of the transcript say so and what to do:
    - `/login claude` runs Claude Code's sign-in (`claude auth login`) inside the terminal: a
