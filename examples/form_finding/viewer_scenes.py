@@ -12,7 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
-from session_py import Color, Line, Point, Polyline, Session
+from session_py import Color, Line, Mesh, Point, Polyline, Session
 
 
 def to_pb(src: Path, dst: Path):
@@ -29,13 +29,22 @@ def to_pb(src: Path, dst: Path):
         p.width = float(pl.get("width", 0.02))   # never 1.0: the viewer treats 1.0 as "use the screen pen"
         # and the headless harness renders that pen far too wide (measured 2026-10-15)
         s.add_polyline(p)
+    for mesh in d.get("meshes", []):
+        # filled text: one mesh per glyph outer contour, holes included; name "text" and a zero line
+        # width put it on the viewer's text lane (drawn last, no edge ink)
+        contours = [[Point(*xyz) for xyz in c] for c in mesh["contours"]]
+        m = Mesh.from_polygon_with_holes(contours, sort_by_bbox=True)
+        m.name = "text"
+        m.set_linecolors([Color(*mesh["color"])], widths=[0.0])
+        m.set_objectcolor(Color(*mesh["color"]))
+        s.add_mesh(m)
     for pt in d["points"]:
         p = Point(*pt["p"])
         p.width = float(pt["width"])
         p.pointcolor = Color(*pt["color"])
         s.add_point(p)
     s.pb_dump(str(dst))
-    return len(d["lines"]), len(d["polylines"]), len(d["points"])
+    return len(d["lines"]), len(d["polylines"]), len(d["points"]), len(d.get("meshes", []))
 
 
 def main(scenes: Path, out: Path):
@@ -46,10 +55,10 @@ def main(scenes: Path, out: Path):
         toml = [f'name = "{fig}"']
         for file, at in spec["panels"]:
             pb = out / "pb" / (Path(file).stem + ".pb")
-            nl, npl, npt = to_pb(scenes / file, pb)
+            nl, npl, npt, nm = to_pb(scenes / file, pb)
             toml += ["", "[[items]]", f'file = "pb/{pb.name}"', f'name = "{Path(file).stem}"',
                      f"at = [{at[0]}, {at[1]}, {at[2]}]"]
-            print(f"{pb.name}: {nl} lines, {npl} polylines, {npt} points")
+            print(f"{pb.name}: {nl} lines, {npl} polylines, {npt} points, {nm} glyph meshes")
         (out / "scenes" / f"{fig}.toml").write_text("\n".join(toml) + "\n")
         # one manifest per panel as well, for perspective views rendered panel by panel
         for file, at in spec["panels"]:

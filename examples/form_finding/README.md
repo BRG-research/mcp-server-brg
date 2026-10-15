@@ -5,8 +5,9 @@ Scripts behind the figures and printed matrices of
 
 | Script | Needs | Does |
 |---|---|---|
+| `schek_equations.py` | numpy, scipy | Every numbered equation of Schek (1974) as a small function; runs them on the figure 2 network and checks each Jacobian against finite differences. The note quotes these functions after each formula. |
 | `schek_1974_walkthrough.py` | numpy, scipy (compas_fd optional) | Prints every matrix of the force density derivation on Schek's figure 2 network, checks Theorem 1, the Jacobian (31) and the damped iteration, and cross-checks `compas_fd.fd_numpy`. |
-| `schek_1974_figures.py` | numpy, fonttools | Rebuilds the paper's figures 1 to 10 as scene descriptions (JSON: lines, polylines, points). Text is glyph outlines from the viewer's JetBrains Mono font. |
+| `schek_1974_figures.py` | numpy, fonttools | Rebuilds the paper's figures 1 to 10 as scene descriptions (JSON: lines, polylines, points, glyph meshes). Text is filled: glyph outlines from the viewer's JetBrains Mono font, triangulated by the session kernel onto the viewer's text lane. |
 | `viewer_scenes.py` | `session_py` matching the viewer's `session_rust` | Converts the JSON scenes into session `.pb` files and `session_viewer` manifests in `viewer_scenes/`. |
 | `render_figures.sh` | the viewer's headless harness, Pillow | Renders every manifest to PNG in `knowledge/04_form_finding/images/`. |
 
@@ -35,6 +36,11 @@ Two things learned about the viewer while doing this:
 - A line or polyline width of exactly `1.0` (the kernel default) means "use the
   screen-constant pen", and the headless harness draws that pen far too wide. Every
   stroke in the scenes therefore carries an explicit world-unit width.
+- The viewer has no text lane for strings, but it has one for meshes named `text`
+  with a zero line width (drawn last, no edge ink). Labels are therefore glyph
+  outlines triangulated with `Mesh.from_polygon_with_holes`, one mesh per outer
+  contour with its holes; passing two separate outlines in one call turns the
+  second into a hole.
 - A row of three nets recedes from a perspective camera, so perspective panels are
   rendered one by one and pasted side by side; plan rows are one scene rendered with
   `VIEWER_VIEW=top`.

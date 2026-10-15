@@ -11,8 +11,9 @@ constrained, 112 identical bars in figure 10) follows the text.
 This script writes plain JSON scene descriptions (lines, polylines, points) plus a
 layout file.  `viewer_scenes.py` turns them into session .pb files and manifests,
 and `render_figures.sh` renders them with the session_viewer headless harness.
-Text is drawn as glyph outlines taken from the viewer's JetBrains Mono font, so
-no plotting library is involved anywhere.
+Text is drawn as filled glyphs: the outlines come from the viewer's JetBrains Mono
+font and are triangulated by the session kernel into meshes on the viewer's text
+lane, so no plotting library is involved anywhere.
 
 Run:  python examples/form_finding/schek_1974_figures.py [--out examples/form_finding/viewer_scenes/json]
 """
@@ -166,8 +167,30 @@ class Glyphs:
         self.cache[ch] = (contours, glyph.width)
         return self.cache[ch]
 
+    @staticmethod
+    def _inside(pt, ring):
+        """Even-odd point-in-polygon test in the glyph plane."""
+        x, y = pt; inside = False
+        for (x0, y0), (x1, y1) in zip(ring, ring[1:] + ring[:1]):
+            if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0):
+                inside = not inside
+        return inside
+
+    def _groups(self, contours):
+        """Split a glyph's contours into [outer, hole, hole, ...] groups by nesting depth."""
+        depth = []
+        for i, c in enumerate(contours):
+            depth.append(sum(1 for j, d in enumerate(contours) if j != i and self._inside(c[0], d)))
+        groups = []
+        for i, c in enumerate(contours):
+            if depth[i] % 2 == 0:                               # an outer contour
+                holes = [d for j, d in enumerate(contours) if depth[j] == depth[i] + 1 and self._inside(d[0], c)]
+                groups.append([c] + holes)
+        return groups
+
     def text(self, s, origin, height, align="left"):
-        """Polylines (lists of [x, y, z]) for string s on the z = origin[2] plane."""
+        """Filled glyphs for string s on the z = origin[2] plane: a list of [outer, holes...] groups,
+        each contour a closed list of [x, y, z].  The viewer triangulates them (Mesh.from_polygon_with_holes)."""
         k = height / self.upm
         total = sum(self._outline(ch)[1] for ch in s if ch != " ") + s.count(" ") * 600
         x0 = {"left": 0.0, "center": -0.5 * total * k, "right": -total * k}[align]
@@ -176,8 +199,8 @@ class Glyphs:
             if ch == " ":
                 x += 600 * k; continue
             contours, adv = self._outline(ch)
-            for c in contours:
-                out.append([[origin[0] + x + px * k, origin[1] + py * k, origin[2]] for px, py in c])
+            for group in self._groups([c[:-1] for c in contours]):        # drop the repeated closing point
+                out.append([[[origin[0] + x + px * k, origin[1] + py * k, origin[2]] for px, py in c] for c in group])
             x += adv * k
         return out
 
@@ -190,7 +213,7 @@ class Scene:
     def __init__(self, name, stroke=0.02):
         self.name = name
         self.stroke = stroke          # default stroke width in world units (never 1.0: see viewer_scenes.py)
-        self.lines, self.polylines, self.points = [], [], []
+        self.lines, self.polylines, self.points, self.meshes = [], [], [], []
 
     def line(self, a, b, width=None, color=(0, 0, 0, 1)):
         self.lines.append({"a": [float(v) for v in a], "b": [float(v) for v in b],
@@ -204,8 +227,8 @@ class Scene:
         self.points.append({"p": [float(v) for v in p], "width": width, "color": list(color)})
 
     def text(self, glyphs, s, origin, height, align="left", color=(0, 0, 0, 1)):
-        for pl in glyphs.text(s, origin, height, align):
-            self.polyline(pl, color)
+        for group in glyphs.text(s, origin, height, align):
+            self.meshes.append({"contours": group, "color": list(color)})
 
     def rect(self, x, y, w, h, width=None, color=(0, 0, 0, 1)):
         self.polyline([[x, y, 0], [x + w, y, 0], [x + w, y + h, 0], [x, y + h, 0], [x, y, 0]], color, width)
@@ -218,7 +241,8 @@ class Scene:
         self.polyline([(b - d * head + perp * head * 0.4).tolist(), b.tolist(), (b - d * head - perp * head * 0.4).tolist()], color)
 
     def dump(self, path):
-        path.write_text(json.dumps({"name": self.name, "lines": self.lines, "polylines": self.polylines, "points": self.points}))
+        path.write_text(json.dumps({"name": self.name, "lines": self.lines, "polylines": self.polylines,
+                                    "points": self.points, "meshes": self.meshes}))
 
 
 # =============================================================================
@@ -288,24 +312,22 @@ def draw_net(sc, branches, X, fixed_nodes, width=NET_W, node_w=NODE_W):
 
 
 def labelled_graph(sc, gl, branches, XY, fixed_nodes, node_r, text_h, branch_numbers=False):
-    """Plan drawing like the paper's figures 2 and 5: circles for nodes, numbers beside them."""
-    th = np.linspace(0, 2 * np.pi, 25)
+    """Plan drawing like the paper's figures 2 and 5: nodes are dots (fixed nodes larger), node
+    numbers are plain text beside the dot, branch numbers plain text beside the branch midpoint."""
     for i, k in branches:
         sc.line([*XY[i - 1], 0], [*XY[k - 1], 0], sc.stroke * 1.6)
     for n in range(len(XY)):
         fx = (n + 1) in fixed_nodes
-        r = node_r * (1.25 if fx else 1.0)
-        circ = [[XY[n][0] + r * np.cos(t), XY[n][1] + r * np.sin(t), 0.0] for t in th]
-        sc.polyline(circ)
-        if fx:  # the paper draws fixed points with a heavier circle
-            sc.polyline([[XY[n][0] + 0.8 * r * np.cos(t), XY[n][1] + 0.8 * r * np.sin(t), 0.0] for t in th])
-        sc.text(gl, str(n + 1), [XY[n][0] + 1.3 * r, XY[n][1] + 0.9 * r, 0.0], text_h)
+        sc.point([XY[n][0], XY[n][1], 0.0], node_r * (2.6 if fx else 1.6), (0, 0, 0, 1))
+        sc.text(gl, str(n + 1), [XY[n][0] + 0.9 * node_r, XY[n][1] + 0.6 * node_r, 0.0], text_h)
     if branch_numbers:
         for j, (i, k) in enumerate(branches):
-            m = (np.array(XY[i - 1]) + np.array(XY[k - 1])) / 2
-            circ = [[m[0] + node_r * 1.1 * np.cos(t), m[1] + node_r * 1.1 * np.sin(t), 0.0] for t in th]
-            sc.polyline(circ)
-            sc.text(gl, str(j + 1), [m[0], m[1] - 0.35 * text_h, 0.0], text_h * 0.8, "center")
+            a_, b_ = np.array(XY[i - 1], float), np.array(XY[k - 1], float)
+            m = (a_ + b_) / 2
+            d = b_ - a_; d = d / (np.linalg.norm(d) + 1e-12)
+            perp = np.array([-d[1], d[0]])                      # offset the label off the branch
+            pos = m + perp * text_h * 0.9
+            sc.text(gl, str(j + 1), [pos[0], pos[1] - 0.35 * text_h * 0.8, 0.0], text_h * 0.8, "center")
 
 
 def matrix_drawing(sc, gl, cells, cell_w, cell_h, text_h, row_labels=None, col_labels=None, origin=(0, 0)):
@@ -341,7 +363,7 @@ def main(out: Path):
     # ------------------------------------------------------------------ figure 2: graph + branch-node matrix
     sc = Scene("fig2_graph", stroke=0.012)
     XY2 = [FIG2_XY[n] for n in range(1, 10)]
-    labelled_graph(sc, gl, FIG2_BRANCHES, XY2, {6, 7, 8, 9}, 0.09, 0.22, branch_numbers=True)
+    labelled_graph(sc, gl, FIG2_BRANCHES, XY2, {6, 7, 8, 9}, 0.05, 0.2, branch_numbers=True)
     sc.dump(out / "fig2_graph.json")
     C_s = branch_node_matrix(FIG2_BRANCHES, 9)
     sc = Scene("fig2_matrix", stroke=0.012)
@@ -407,7 +429,7 @@ def main(out: Path):
     xy[:, 1] = -xy[:, 1]
     xy = (xy - xy[66]) * scale                     # apex 67 at the plan origin
     sc = Scene("fig5_graph", stroke=0.05)
-    labelled_graph(sc, gl, branches, xy.tolist(), set(range(62, 68)), 0.38, 0.9)
+    labelled_graph(sc, gl, branches, xy.tolist(), set(range(62, 68)), 0.22, 0.85)
     sc.dump(out / "fig5_graph.json")
     layout["fig5"] = {"panels": [["fig5_graph.json", [0, 0, 0]]], "views": ["top"], "caption": "Fig. 5. Graph of the first example."}
     deg = np.bincount(np.array(branches).ravel())[1:]
