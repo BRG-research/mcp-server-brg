@@ -1,10 +1,113 @@
 # Form Finding
 
-Force density, dynamic relaxation, constraints, and optimization.
+## Sub-chapters
 
-Add the first reviewed note here using [the shared template](../../docs/templates/knowledge-note.md).
-As content grows, group it under `concepts/`, `mathematics/`, `methods/`,
-`literature/`, `figures/`, `examples/`, and `benchmarks/` as needed.
-Register searchable Markdown in `config/knowledge.yaml` with domain `form_finding`.
+| Note | Package | Repository |
+|---|---|---|
+| [Force density method with compas_fd](compas_fd.md) | `compas_fd` — linear and constrained force density solvers; full derivation of Schek (1974) | <https://github.com/BlockResearchGroup/compas_fd> |
+| [Dynamic relaxation with compas_dr](compas_dr.md) | `compas_dr` — iterative solver with prescribed forces, lengths, and elastic bars | <https://github.com/BlockResearchGroup/compas_dr> |
+| [COMPAS FormFinder (compas-FoFin)](compas_fofin.md) | Rhino 8 plugin that drives `compas_fd` interactively | <https://github.com/BlockResearchGroup/compas-FoFin> |
 
-This page describes intended scope; it is not a research source.
+Theory source for all three: Schek, H.-J. (1974), *The force density method for
+form finding and computation of general networks*, CMAME 3, 115–134, and the
+[compas-FoFin GitBook theory page](https://blockresearchgroup.gitbook.io/compas-fofin/theoretical-background/force-densities-method).
+
+## Walkthrough
+
+Start with one small `compas_fd` example in plain Python.
+Add `compas_dr` and other form-finding workflows after that.
+
+## Files to add
+
+These are proposed files; the computational integration is not implemented yet.
+Paths are relative to the repository root.
+
+| File | Purpose |
+|---|---|
+| `knowledge/04_form_finding/compas_fd.md` | Explain the method, API, inputs/outputs, and limitations (written) |
+| `examples/form_finding/force_density.py` | Run a small example with visible inputs and outputs |
+| `tests/test_force_density.py` | Verify the result and invalid inputs |
+| `src/brg_mcp/adapters/force_density.py` | Reusable computation and input validation |
+| `src/brg_mcp/tools/form_finding.py` | Expose the adapter through MCP |
+
+## Follow this order
+
+1. **Inspect the package.**
+   Read [the source](https://github.com/BlockResearchGroup/compas_fd/tree/main/src/compas_fd/solvers)
+   and its examples. Record the tested version. Verify the import, solver signature,
+   vertex/edge ordering, dependencies, and returned fields.
+
+2. **Write the knowledge note.**
+   Done: [compas_fd.md](compas_fd.md) follows the
+   [note template](../../docs/templates/knowledge-note.md) and explains
+   `q = force / length`, units, sign conventions, supports, loads, the verified API
+   (0.5.4), common failures, and references. Extend it rather than adding a second
+   force density note. Short explanatory snippets belong here; runnable programs
+   belong in `examples/`.
+
+3. **Run one standalone example.**
+   Create `examples/form_finding/force_density.py` calling the package directly.
+   Use the benchmark below. Keep its small input arrays in the script.
+   Print coordinates, forces, and residuals. Add an example README with the
+   dependency versions, installation command, and exact command to run it.
+
+4. **Verify it.**
+   Compare actual and expected results. Record tolerances and package version.
+   Add `tests/test_force_density.py`, including invalid indices and mismatched arrays.
+   First get this example and test working; then continue.
+
+5. **Extract reusable code.**
+   Put the calculation in `src/brg_mcp/adapters/force_density.py`.
+   Validate inputs and return named results with documented units.
+   Update the example and tests to use the adapter. It must work without MCP.
+
+6. **Connect MCP.**
+   Add a typed wrapper in `src/brg_mcp/tools/form_finding.py`.
+   Register it in `src/brg_mcp/server.py`.
+   Test the MCP call using the same benchmark.
+
+7. **Register and link.**
+   Add the note to `config/knowledge.yaml` as shown below.
+   After tests pass, update `compas_fd` in `config/packages.yaml` with the tested
+   version and only the implemented capabilities. Link the finished note and
+   example from this chapter README. Restart MCP after catalog changes.
+
+## First benchmark
+
+- Units: metres and newtons; positive z points upward.
+- Fixed nodes: `(-1,-1,0)`, `(1,-1,0)`, `(1,1,0)`, `(-1,1,0)`.
+- Free node: `(0,0,0)`; connect it to each fixed node.
+- Force densities: `1 N/m` on all four edges.
+- Loads: `(0,0,-1) N` on the free node; zero elsewhere.
+- Expected free-node position: `(0,0,-0.25) m`; supports unchanged.
+- Check position error below `1e-9 m` and free-node equilibrium residual below
+  `1e-9 N`. Support residuals need not vanish; check the package's reaction convention.
+
+The benchmark was reproduced with `compas_fd` 0.5.4 and `compas_dr` 0.3.1 in a
+throw-away environment (see the Verification sections of the sub-chapters); the
+repository example, adapter, and test are still to be added.
+
+## Register the note
+
+Append to `config/knowledge.yaml` after creating the note:
+
+```yaml
+- id: form-finding-compas-fd
+  title: Force density method with compas_fd
+  domain: form_finding
+  path: knowledge/04_form_finding/compas_fd.md
+  sources: [...]
+```
+
+- The three sub-chapter notes are already registered; keep their `sources`
+  entries in step with the tested source revision.
+- Ask MCP to search for “force density” and read the returned resource.
+- Register the note as soon as it is useful; you need not wait for an executable MCP tool.
+
+## Done when
+
+- **Knowledge:** the explanation is searchable, with API usage and references.
+- **Example:** a documented Python command reproduces the benchmark.
+- **Tool:** adapter and MCP checks pass; package status reflects what works.
+
+[Main README](../../README.md) · [Contribution guide](../../docs/contributing/README.md)

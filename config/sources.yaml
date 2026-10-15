@@ -1,4 +1,5 @@
-# Future source catalog. Not loaded by the starter server yet.
-# Each entry should contain id, title, authors, year, URL/DOI, access/rights,
-# and extraction provenance. Document citations should reference these IDs.
-[]
+# Public storage configuration. Bibliographic/page metadata comes from LIBRARY.md.
+- id: graphic-statics-books
+  type: public_http
+  base_url: https://pub-c082064d3c234b25bcb6abd4240e637c.r2.dev
+  library_path: LIBRARY.md

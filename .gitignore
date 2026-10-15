@@ -4,6 +4,4 @@ __pycache__/
 .pytest_cache/
 dist/
 *.egg-info/
-data/private/
-data/generated/
 .env

@@ -11,13 +11,17 @@ src/brg_mcp/
   catalog.py               Resolve IDs, read Markdown, lexical search
   tools/discovery.py       list_domains, search_knowledge, list_packages
   resources/knowledge.py   brg://knowledge/{document_id}
+  tools/books.py           Public library discovery, summary search, chapter reads
+  prompts/books.py         Client-independent books_process workflow
+  book_guidance.md         Shared reading/processing conventions adapted from Books/CLAUDE.md
+  book_guidance.py         Load the packaged guide; MCP initialization instructions
+  adapters/public_books.py HTTPS retrieval, index parsing, bounded in-memory cache
   adapters/                Future optional computational wrappers
-  indexing/                Future document extraction and indexing
 examples/                  Client connection example
 tests/                     Catalog and MCP protocol checks
 ```
 
-The CLI requires an explicit data root containing `config/` and `knowledge/`.
+The server entry point requires an explicit data root containing `config/` and `knowledge/`.
 Content lives outside the Python wheel; use a checkout or a separately maintained
 content directory. This makes behavior independent of the client's working directory.
 The MCP SDK is bounded to its documented v1 FastMCP API (`mcp<2`); reassess v2 in a
@@ -51,8 +55,25 @@ example before marking the package supported in `config/packages.yaml`.
 
 Add method-specific skills when workflows exist. Add MCP prompts only when a client
 needs a reusable prompt; skills and prompts have different discovery mechanisms.
-Introduce PDF ingestion, figure resources, and an index when the curated collection
-needs them. Keep originals, extractions, and reviewed notes distinguishable.
+Books, extracted text, figures, and page/provenance metadata live in public R2
+storage. `config/sources.yaml` sets the HTTPS base URL and `LIBRARY.md` path.
+`PublicBooks` parses the existing library-map headings and chapter summaries.
+Search checks those summaries; it does not claim full-text or semantic retrieval.
+Only listed chapters and known book indexes can be read by MCP. Fetches are lazy,
+limited to 2 MB of decoded bytes per document, and cached for the server process
+(32 entries). Restart after uploads to refresh. No R2 keys are needed by readers.
+Keep BRG-authored notes in `knowledge/`, without mirroring hosted book folders.
+
+- `book_guidance.md`: shared reading/processing rules, exposed through `get_book_guide`
+  and `brg://books/guide`. Initialization instructions point clients to it.
+- `skills/structural-library/SKILL.md`: optional agent entry point to the same guide.
+- `skills/books-process/SKILL.md`: canonical processing workflow, included in the
+  package and exposed by the `books_process` prompt and `get_book_guide` tool.
+- `.claude/skills/books-process/SKILL.md`: thin slash-command adapter to that workflow.
+- Authoring, review, and conversion are documented workflows, not MCP execution tools.
+
+For full-text search later, publish a compact passage index alongside the collection
+instead of downloading every chapter for each query.
 
 The server exposes only registered Markdown under the knowledge root; paths are
 resolved before reading, including symlinks. Future computation and remote hosting

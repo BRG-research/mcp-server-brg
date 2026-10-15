@@ -6,6 +6,7 @@
         "--directory",
         "/absolute/path/to/mcp-server-brg",
         "run",
+        "--locked",
         "brg-mcp",
         "--data-root",
         "/absolute/path/to/mcp-server-brg"

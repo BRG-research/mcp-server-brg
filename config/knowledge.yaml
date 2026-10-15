@@ -3,3 +3,48 @@
   domain: graphic_statics
   path: knowledge/concepts/equilibrium.md
   sources: []  # Original starter note; add verified literature before scholarly use.
+- id: form-finding-compas-fd
+  title: Force density method with compas_fd
+  domain: form_finding
+  path: knowledge/04_form_finding/compas_fd.md
+  sources:
+    - source_id: schek-1974-force-density
+      citation: "Schek, H.-J. (1974). The force density method for form finding and computation of general networks. CMAME 3, 115-134. doi:10.1016/0045-7825(74)90045-0"
+      pages: "115-134"
+      verified: true
+    - source_id: compas-fofin-gitbook-force-densities-method
+      url: https://blockresearchgroup.gitbook.io/compas-fofin/theoretical-background/force-densities-method
+      verified: true
+    - source_id: compas_fd-source
+      url: https://github.com/BlockResearchGroup/compas_fd
+      revision: 7ee3c5a15bb304a71067638c758f1cad63995a91
+      version: 0.5.4
+      verified: true
+- id: form-finding-compas-dr
+  title: Dynamic relaxation with compas_dr
+  domain: form_finding
+  path: knowledge/04_form_finding/compas_dr.md
+  sources:
+    - source_id: compas_dr-source
+      url: https://github.com/BlockResearchGroup/compas_dr
+      revision: 84a3b4b3b0017280da73054ac811aab020b43beb
+      version: 0.3.1
+      verified: true
+    - source_id: delaet-2013-bending-incorporated
+      citation: "De Laet, L., Veenendaal, D., Van Mele, T., Mollaert, M., Block, P. (2013). Bending incorporated: designing tension structures by integrating bending-active elements. TensiNet Symposium 2013, Istanbul."
+      verified: false
+    - source_id: schek-1974-force-density
+      verified: true
+- id: form-finding-compas-fofin
+  title: COMPAS FormFinder (compas-FoFin) for Rhino 8
+  domain: form_finding
+  path: knowledge/04_form_finding/compas_fofin.md
+  sources:
+    - source_id: compas-fofin-source
+      url: https://github.com/BlockResearchGroup/compas-FoFin
+      revision: 9ce50ac0bb4d9785fe387fba6b2edcfcf16665e1
+      version: 0.15.3
+      verified: true
+    - source_id: compas-fofin-gitbook
+      url: https://blockresearchgroup.gitbook.io/compas-fofin
+      verified: true
