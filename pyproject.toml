@@ -16,12 +16,13 @@ cli = [
     "anthropic>=1.15,<2",
     "claude-agent-sdk>=0.2,<1",
     "openai>=3,<4",
-    "textual>=8,<9",
+    "prompt-toolkit>=3.0.50,<4",
+    "rich>=13,<15",
 ]
 
 [project.scripts]
 brg-mcp = "brg_mcp.server:main"
-brg = "brg_mcp.cli.app:main"
+brg = "brg_mcp.cli.term:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/brg_mcp"]

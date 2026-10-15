@@ -103,7 +103,13 @@ Options: `--provider`, `--model`, `--data-root`, or the environment variables `B
 
 ## Look and feel
 
-The terminal paints a plain black background over the whole window,
-so resizing never shows another colour underneath. While a reply is
-being prepared an animated indicator with the elapsed time is shown; it disappears with the first
-streamed character.
+The terminal is the terminal: nothing is drawn full-screen. The banner, the
+events and the replies are printed into the terminal's own scrollback, so the
+terminal's scrollbar, mouse selection and copy work as usual, exactly as in
+Claude Code. Only the prompt line at the bottom is live (prompt_toolkit): the
+command menu opens under it as soon as you type `/`, `/model ` lists the model
+names, Up/Down walk the history (kept in `~/.brg_history`, or `$BRG_HISTORY`).
+While a reply is being prepared an animated indicator with the elapsed time is
+shown; it is replaced by the reply as it streams in, rendered as Markdown.
+Ctrl+C interrupts a running reply; at an empty prompt Ctrl+C twice, Ctrl+D or
+`/quit` leaves.
