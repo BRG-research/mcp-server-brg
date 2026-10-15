@@ -12,6 +12,8 @@ Scripts behind the figures and printed matrices of
 | `viewer_scenes.py` | `session_py` matching the viewer's `session_rust` | Converts the JSON scenes into session `.pb` files and `session_viewer` manifests in `viewer_scenes/`. |
 | `render_figures.sh` | the viewer's headless harness, Pillow | Renders every manifest to PNG in `knowledge/04_form_finding/images/`. |
 
+The figure script also draws the seven *matrix icons* (grids of cells with the contributing entries highlighted) and the thirteen *shape schemes* (blocks proportional to the matrix sizes with the operators between them) that the tutorial shows next to its code.
+
 ## Regenerate the note's tutorial section
 
 ```bash

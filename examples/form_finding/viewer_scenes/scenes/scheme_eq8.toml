@@ -1,0 +1,6 @@
+name = "scheme_eq8"
+
+[[items]]
+file = "pb/scheme_eq8.pb"
+name = "scheme_eq8"
+at = [0, 0, 0]

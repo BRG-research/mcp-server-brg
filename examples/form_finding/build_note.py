@@ -29,7 +29,12 @@ def cells(source: str):
         m = re.match(r'\s*r?"""(.*?)"""\s*\n', body, flags=re.S)
         prose = m.group(1).strip() if m else ""
         code = body[m.end():] if m else body
-        yield cid, title, prose, code.strip("\n")
+        explain = ""
+        if "# %% explain" in code:
+            code, tail = code.split("# %% explain", 1)
+            e = re.search(r'r?"""(.*?)"""', tail, flags=re.S)
+            explain = e.group(1).strip() if e else ""
+        yield cid, title, prose, code.strip("\n"), explain
 
 
 def main():
@@ -54,13 +59,13 @@ def main():
            "program by `build_note.py`, so code, output and text cannot drift apart.", "",
            "Contents", ""]
     last_part = None
-    for cid, title, prose, code in all_cells:
+    for cid, title, prose, code, explain in all_cells:
         if cid[0] != last_part:
             out.append(f"- **{PARTS[cid[0]]}**"); last_part = cid[0]
         out.append(f"  - [{title}](#{anchor(title)})")
     out.append("")
     last_part = None
-    for cid, title, prose, code in all_cells:
+    for cid, title, prose, code, explain in all_cells:
         if cid[0] != last_part:
             out += [f"## {PARTS[cid[0]]}", ""]; last_part = cid[0]
         buf = io.StringIO()
@@ -71,6 +76,8 @@ def main():
         if prose:
             out += [prose, ""]
         out += ["```python", code, "```", ""]
+        if explain:
+            out += [explain, ""]
         if printed:
             out += ["Printed:", "", "```text", printed, "```", ""]
     out += [END]

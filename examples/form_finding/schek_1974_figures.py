@@ -449,6 +449,101 @@ def icon_scenes(gl, out, layout):
     layout["icon_rhs"] = {"panels": [["icon_rhs.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
 
+
+# =============================================================================
+# shape schemes: matrices as blocks proportional to their size, operators between
+# =============================================================================
+
+BLOCK, VEC, RESULT = (0.90, 0.93, 1.0, 1), (0.85, 1.0, 0.85, 1), (1.0, 0.95, 0.55, 1)
+
+
+def shape_scheme(sc, gl, rows_of_items, scale=0.18, min_size=0.32, gap=0.55, row_gap=1.6, caption=(), th=0.26):
+    """rows_of_items: list of rows; a row is a list of items, each either a string (operator text)
+    or a tuple (name, n_rows, n_cols[, kind]) drawn as a block of size n_cols x n_rows times scale.
+    kind: "result" tints the block yellow, "vec" green. The first block of a row is drawn at x = 0."""
+    y_top = 0.0
+    for row in rows_of_items:
+        heights = [max(it[1] * scale, min_size) for it in row if isinstance(it, tuple)]
+        hmax = max(heights) if heights else 1.0
+        y_mid = y_top - hmax / 2 - 0.3
+        x = 0.0
+        for it in row:
+            if isinstance(it, str):
+                sc.text(gl, it, [x + 0.05, y_mid - 0.35 * th, 0], th)
+                x += len(it) * 0.6 * th + 0.1 + gap
+                continue
+            name, nr, nc = it[0], it[1], it[2]
+            kind = it[3] if len(it) > 3 else ("vec" if nc == 1 else "block")
+            w, h = max(nc * scale, min_size), max(nr * scale, min_size)
+            col = {"result": RESULT, "vec": VEC}.get(kind, BLOCK)
+            sc.fill(x, y_mid - h / 2, w, h, col)
+            sc.rect(x, y_mid - h / 2, w, h)
+            name_w = len(name) * 0.6 * th
+            if name_w + 0.15 <= w and th + 0.1 <= h:
+                sc.text(gl, name, [x + w / 2, y_mid - 0.35 * th, 0], th, "center")
+            else:
+                sc.text(gl, name, [x + w / 2, y_mid + h / 2 + 0.15, 0], th, "center")
+            sc.text(gl, f"{nr} x {nc}" if nc > 1 else f"{nr}", [x + w / 2, y_mid - h / 2 - 0.42 - 0.35 * th * 0.85, 0], th * 0.85, "center")
+            x += w + gap
+        y_top = y_mid - hmax / 2 - row_gap
+    for i, line in enumerate(caption):
+        sc.text(gl, line, [0, y_top - 0.2 - i * 0.5, 0], th)
+
+
+def scheme_scenes(gl, out, layout):
+    """One shape scheme per code cell of the tutorial that multiplies matrices."""
+    S = {}
+    S["eq1"] = ([[("C", 12, 5), "x", ("x", 5, 1), "+", ("C_f", 12, 4), "x", ("x_f", 4, 1), "=", ("u", 12, 1, "result")]],
+                ["u_j = (start-node x) - (end-node x) for every branch j; the free and the fixed end come from the two column blocks.",
+                 "The same two products with y and z give v and w.  l_j = sqrt(u_j^2 + v_j^2 + w_j^2) is entry-wise: no matrix."])
+    S["eq2"] = ([[("C^t", 5, 12), "x", ("U", 12, 12), "x", ("L^-1", 12, 12), "x", ("s", 12, 1), "-", ("p_x", 5, 1), "=", ("out_x", 5, 1, "result")]],
+                ["U L^-1 s is entry-wise:  (u_j / l_j) s_j = the x component of the force in branch j   (12 numbers).",
+                 "C^t adds those 12 numbers up at the 5 free nodes, with the sign of the branch direction.   Zero means equilibrium."])
+    S["eq4"] = ([[("s", 12, 1), "/", ("l", 12, 1), "=", ("q", 12, 1, "result")]],
+                ["entry-wise division: q_j = s_j / l_j.  In the program q is the input, so this line is never executed; (10) runs it backwards."])
+    S["eq8"] = ([[("C^t", 5, 12), "x", ("Q", 12, 12), "x", ("C", 12, 5), "=", ("D", 5, 5, "result")],
+                 [("C^t", 5, 12), "x", ("Q", 12, 12), "x", ("C_f", 12, 4), "=", ("D_f", 5, 4, "result")]],
+                ["D couples free nodes to free nodes, D_f couples free nodes to the fixed ones.  Both use only the topology and q."])
+    S["eq9"] = ([[("D", 5, 5), "x", ("x", 5, 1, "result"), "=", ("p_x", 5, 1), "-", ("D_f", 5, 4), "x", ("x_f", 4, 1)]],
+                ["everything on the right is known; np.linalg.solve finds the 5 unknowns x.  Repeat with p_y, y_f and p_z, z_f."])
+    S["eq10"] = ([[("l", 12, 1), "*", ("q", 12, 1), "=", ("s", 12, 1, "result")]],
+                 ["entry-wise product: the force in branch j is its solved length times its force density."])
+    S["loop"] = ([[("C^t", 5, 12), "x", ("Q", 12, 12), "x", ("C", 12, 5), "=", ("D", 5, 5, "result"), "and", ("C^t", 5, 12), "x", ("Q", 12, 12), "x", ("C_f", 12, 4), "=", ("D_f", 5, 4, "result")],
+                  [("D", 5, 5), "x", ("xyz", 5, 3, "result"), "=", ("p", 5, 3), "-", ("D_f", 5, 4), "x", ("xyz_f", 4, 3)],
+                  [("C", 12, 5), "x", ("xyz", 5, 3), "+", ("C_f", 12, 4), "x", ("xyz_f", 4, 3), "=", ("uvw", 12, 3, "result")],
+                  [("reactions", 4, 3, "result"), "=", "-", ("C_f^t", 4, 12), "x", ("Q", 12, 12), "x", ("uvw", 12, 3)]],
+                 ["the three axes are handled at once: xyz, p, xyz_f and uvw have three columns (x, y, z), so one solve() call does (9) for all of them.",
+                  "lengths l = norm of each row of uvw (12 numbers); forces s = l * q (12).  The last row is (5) evaluated at the fixed nodes."])
+    S["e1"] = ([[("gradient", 5, 3, "result"), "=", "2", ("C^t", 5, 12), "x", ("Q", 12, 12), "x", ("uvw", 12, 3)]],
+               ["derivative of  u^t Q u + v^t Q v + w^t Q w  with respect to the free coordinates; it vanishes at the unloaded equilibrium (Theorem 1)."])
+    S["f2"] = ([[("G^t", 4, 12), "x", ("dq", 12, 1, "result"), "=", ("r", 4, 1)],
+                [("T", 4, 4, "result"), "=", ("G^t", 4, 12), "x", ("G", 12, 4), "+", ("P^-1 A^2", 4, 4)],
+                [("k", 4, 1, "result"), "=", "solve(", ("T", 4, 4), ",", ("A r", 4, 1), ")", "then", ("dq", 12, 1, "result"), "=", ("G", 12, 4), "x", ("k", 4, 1)]],
+               ["r = 4 conditions, m = 12 branches: the linear system (16) is 4 equations for 12 unknowns.  The small 4 x 4 system picks one solution.",
+                "A = diag(a) damping factors, P^-1 the weights of (21); for plain least squares both terms are absent (T = G^t G)."])
+    S["f3"] = ([[("dx/dq", 5, 12, "result"), "=", "-", ("D^-1", 5, 5), "x", ("C^t", 5, 12), "x", ("U", 12, 12)]],
+               ["column j says how all 5 free x coordinates move when q_j changes by one unit.  Same for y with V and z with W.",
+                "D^-1 is the inverse of the 5 x 5 matrix already factorised in (9); C^t U is the matrix of (5)."])
+    S["f4"] = ([[("K", 4, 12, "result"), "=", ("U_bar", 4, 4), "x", ("C_bar", 4, 5), "x", ("D^-1", 5, 5), "x", ("C^t", 5, 12), "x", ("U", 12, 12), "+ (v terms) + (w terms)"],
+                [("G_d^t", 4, 12, "result"), "=", "-", ("L_bar^-1", 4, 4), "x", ("K", 4, 12)],
+                [("G_f^t", 4, 12, "result"), "=", ("L_bar", 4, 12), "+", ("Q_bar", 4, 4), "x", ("G_d^t", 4, 12)]],
+               ["a bar means 'rows of the 4 constrained branches only': C_bar = C[rows] (4 x 5), U_bar = diag(u[rows]) (4 x 4), L_bar^-1 = diag(1 / l[rows]).",
+                "row i of G_d^t = how the length of constrained branch i changes with every q_j.   L_bar in the last line is l_j placed on the own column j."])
+    S["f5"] = ([[("G^t", 8, 12, "result"), "=", "stack of", ("G_d^t", 4, 12), "and", ("G_f^t", 4, 12)],
+                [("T", 8, 8, "result"), "=", ("G^t", 8, 12), "x", ("G", 12, 8), "+", ("P^-1 A^2", 8, 8)]],
+               ["mixed conditions (3.6): length conditions and force conditions are just more rows of G^t; T grows to r x r with r = 8."])
+    S["g1"] = ([[("C_s", 110, 67), "=", ("C", 110, 61), ("C_f", 110, 6)],
+                [("D", 61, 61, "result"), "=", ("C^t", 61, 110), "x", ("Q", 110, 110), "x", ("C", 110, 61), "and", ("D_f", 61, 6, "result"), "=", ("C^t", 61, 110), "x", ("Q", 110, 110), "x", ("C_f", 110, 6)]],
+               ["the same program, larger matrices: 110 branches, 61 free nodes, 6 fixed nodes.  D is 61 x 61 and is solved once per shape;",
+                "the 112-bar grid of figure 10 has 60 free nodes, and its constrained loop has r = 112 conditions, so T is 112 x 112."])
+    for key, (rows, caption) in S.items():
+        sc = Scene(f"scheme_{key}", stroke=0.018)
+        shape_scheme(sc, gl, rows, scale=0.03 if key == "g1" else 0.18, caption=caption)
+        sc.dump(out / f"scheme_{key}.json")
+        layout[f"scheme_{key}"] = {"panels": [[f"scheme_{key}.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
+    return list(S)
+
+
 # =============================================================================
 # main
 # =============================================================================
@@ -479,6 +574,7 @@ def main(out: Path):
     sc.dump(out / "fig3_flow.json")
     layout["fig3"] = {"panels": [["fig3_flow.json", [0, 0, 0]]], "views": ["top"], "caption": "Fig. 3. Diagram of the form finding."}
     icon_scenes(gl, out, layout)
+    scheme_scenes(gl, out, layout)
 
     # ------------------------------------------------------------------ figure 4: matrix D (symbolic)
     sc = Scene("fig4_matrix", stroke=0.016)

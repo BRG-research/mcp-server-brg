@@ -1,0 +1,6 @@
+name = "scheme_f3"
+
+[[items]]
+file = "pb/scheme_f3.pb"
+name = "scheme_f3"
+at = [0, 0, 0]

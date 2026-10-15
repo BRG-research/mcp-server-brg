@@ -1,0 +1,6 @@
+name = "scheme_loop"
+
+[[items]]
+file = "pb/scheme_loop.pb"
+name = "scheme_loop"
+at = [0, 0, 0]
