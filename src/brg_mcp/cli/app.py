@@ -168,7 +168,7 @@ class BRGTerminal(App):
         if claude is not None and hasattr(claude, "warm"):
             try:
                 info = await claude.warm()
-                entries += models.claude_entries(info.get("models") or [], f"Claude account {claude.account}")
+                entries += models.claude_entries(info.get("models") or [], "Claude")
                 if not claude.model:
                     claude.model = models.claude_default_model(info.get("models") or []) or ""
             except Exception as exc:                                  # noqa: BLE001 - keep going with Codex only

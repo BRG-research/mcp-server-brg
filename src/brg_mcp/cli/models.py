@@ -29,7 +29,7 @@ class ModelEntry:
         return t in {self.name.lower(), self.model.lower(), *(a.lower() for a in self.aliases)}
 
 
-def claude_entries(server_models: list[dict], account_note: str = "your Claude account") -> list[ModelEntry]:
+def claude_entries(server_models: list[dict], account_note: str = "Claude") -> list[ModelEntry]:
     """From ClaudeSDKClient.get_server_info()['models']; the 'default' pseudo-entry is skipped."""
     out, seen = [], set()
     for m in server_models:
@@ -39,7 +39,7 @@ def claude_entries(server_models: list[dict], account_note: str = "your Claude a
         seen.add(resolved)
         display = m.get("displayName") or resolved
         aliases = tuple(a for a in {value, resolved} if a and a != display)
-        out.append(ModelEntry(f"Claude {display}", "claude", resolved, f"{m.get('description', '')}, {account_note}", aliases))
+        out.append(ModelEntry(f"Claude {display}", "claude", resolved, f"{m.get('description', '')} · {account_note}", aliases))
     return out
 
 
@@ -56,7 +56,7 @@ def codex_display_name(model_id: str) -> str:
     return f"Codex {tail.capitalize()}" if tail.isalpha() and len(model_id.split('-')) > 1 else f"Codex {model_id}"
 
 
-def codex_entries(path: Path | None = None, account_note: str = "your ChatGPT account") -> list[ModelEntry]:
+def codex_entries(path: Path | None = None, account_note: str = "ChatGPT") -> list[ModelEntry]:
     """Model ids that Codex itself has recorded in ~/.codex/config.toml (its current and offered models)."""
     path = path or Path.home() / ".codex" / "config.toml"
     if tomllib is None or not path.is_file():
@@ -73,7 +73,7 @@ def codex_entries(path: Path | None = None, account_note: str = "your ChatGPT ac
     for model_id in ids:
         if model_id not in seen:
             seen.add(model_id)
-            out.append(ModelEntry(codex_display_name(model_id), "codex", model_id, f"{model_id}, {account_note}", (model_id,)))
+            out.append(ModelEntry(codex_display_name(model_id), "codex", model_id, f"{model_id} · {account_note}", (model_id,)))
     return out
 
 
@@ -98,7 +98,7 @@ def resolve(text: str, entries: list[ModelEntry]) -> ModelEntry | None:
     if t.startswith("claude"):
         return ModelEntry(t, "claude", t, "Claude model by id, your Claude account")
     if re.match(r"^(gpt|o\d|codex)", t):
-        return ModelEntry(codex_display_name(t), "codex", t, f"{t}, your ChatGPT account")
+        return ModelEntry(codex_display_name(t), "codex", t, f"{t} · ChatGPT")
     return None
 
 
