@@ -6,9 +6,10 @@ from dataclasses import dataclass
 
 COMMANDS: dict[str, str] = {
     "/help": "list the commands",
-    "/provider": "/provider claude | codex | anthropic | openai  (claude and codex use your signed-in accounts)",
+    "/model": "/model <name>  switch model: opus, sonnet, haiku, codex, gpt-6-astra, ... (/models lists them)",
+    "/models": "list the models you can switch to and which account each one uses",
     "/login": "/login claude | codex  sign in with your own account (opens the CLI's login in this terminal)",
-    "/model": "/model <name>  e.g. opus, sonnet, claude-opus-5-5, gpt-5-codex (or /model default)",
+    "/provider": "/provider claude | codex | anthropic | openai  (advanced: pick the engine directly)",
     "/status": "current provider, model and tool count",
     "/tools": "list the MCP tools the model can call",
     "/search": "/search <words>  search the knowledge notes directly",

@@ -42,6 +42,21 @@ async def stream_lines(cmd: list[str], stdin_text: str | None, cwd: str, on_line
     return await process.wait(), err
 
 
+INSTALL = {
+    "claude": "install Claude Code:  npm install -g @anthropic-ai/claude-code   (or see https://code.claude.com)",
+    "codex": "install Codex:  npm install -g @openai/codex   (or see https://github.com/openai/codex)",
+}
+
+
+def readiness(which: str, account: str) -> tuple[bool, str]:
+    """(ready, what to do) for an account engine: installed and signed in, or the instruction to fix it."""
+    if not shutil.which(which):
+        return False, f"the `{which}` CLI is not installed. {INSTALL[which]}, then restart brg."
+    if account.startswith("not signed in"):
+        return False, f"{which} is installed but no account is signed in. Type /login {which} and follow the sign-in in this terminal."
+    return True, ""
+
+
 def claude_account() -> str:
     """The signed-in Claude account, read from Claude Code's own config file."""
     path = Path.home() / ".claude.json"
@@ -60,7 +75,8 @@ async def codex_account() -> str:
     process = await asyncio.create_subprocess_exec(exe, "login", "status", stdout=asyncio.subprocess.PIPE,
                                                    stderr=asyncio.subprocess.STDOUT)
     out, _ = await process.communicate()
-    return out.decode(errors="replace").strip().splitlines()[0] if out.strip() else "not signed in (run /login codex)"
+    line = out.decode(errors="replace").strip().splitlines()[0] if out.strip() else ""
+    return line if line.lower().startswith("logged in") else "not signed in (run /login codex)"
 
 
 class ClaudeCliProvider(Provider):
@@ -123,8 +139,11 @@ class ClaudeCliProvider(Provider):
             raise RuntimeError(f"claude exited with {code}: {err.strip()[:500] or 'no output'}")
         return "".join(reply)
 
+    def ready(self) -> tuple[bool, str]:
+        return readiness("claude", self.account)
+
     def status(self) -> str:
-        return f"{self.model or 'Claude Code default'} · claude account · {self.account}"
+        return f"{self.model or 'claude (default)'} · Claude account {self.account}"
 
 
 class CodexCliProvider(Provider):
@@ -183,5 +202,8 @@ class CodexCliProvider(Provider):
             raise RuntimeError(f"codex exited with {code}: {err.strip()[:500] or 'no output'}")
         return "\n\n".join(reply)
 
+    def ready(self) -> tuple[bool, str]:
+        return readiness("codex", self.account)
+
     def status(self) -> str:
-        return f"{self.model or 'Codex default'} · {self.account}"
+        return f"{self.model or 'codex (default)'} · {self.account}"

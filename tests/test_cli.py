@@ -53,7 +53,7 @@ async def test_app_headless_commands():
     async with app.run_test(size=(100, 30)) as pilot:
         await pilot.pause(2.0)                               # the MCP server starts in on_mount
         prompt = app.query_one("#prompt")
-        for line in ["/help", "/tools", "/search force density", "/status"]:
+        for line in ["/help", "/tools", "/search force density", "/status", "/model gpt-6-astra", "/model opus"]:
             prompt.value = line
             await pilot.press("enter")
             await pilot.pause(0.5)
@@ -61,5 +61,18 @@ async def test_app_headless_commands():
         assert any("/provider" in t for t in texts)
         assert any("search_knowledge" in t for t in texts)
         assert any("form-finding-compas-fd" in t for t in texts)
-        assert any("claude account" in t for t in texts)
+        assert any("Claude account" in t for t in texts)
+        assert any("gpt-6-astra" in t and "ChatGPT" in t for t in texts)      # switched engine
+        assert app.provider_name == "claude" and app.provider.model == "opus"  # and back
         assert "BRG tools" in str(app.query_one("#title").content)
+
+
+def test_model_registry_routes_to_engines():
+    from brg_mcp.cli import models
+    assert models.resolve("opus").provider == "claude" and models.resolve("opus").model == "opus"
+    assert models.resolve("gpt-6-astra").provider == "codex"
+    assert models.resolve("claude-opus-5-5").provider == "claude"
+    assert models.resolve("api:claude-opus-5-5").provider == "anthropic"
+    assert models.resolve("api:gpt-5").provider == "openai"
+    assert models.resolve("nonsense-model") is None
+    assert "opus" in models.listing() and "codex" in models.listing()

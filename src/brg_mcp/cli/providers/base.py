@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 
@@ -33,6 +34,12 @@ class Provider:
     async def send(self, user_text: str, on_text: OnText, on_event: OnEvent) -> str:
         """Stream the reply for `user_text`; return the full reply text."""
         raise NotImplementedError
+
+    def ready(self) -> tuple[bool, str]:
+        """(True, "") when a message can be sent, else (False, what the user must do first)."""
+        if self.needs_api_key and not os.environ.get(self.needs_api_key):
+            return False, f"set {self.needs_api_key} in the environment, or use an account model (/models)"
+        return True, ""
 
     def status(self) -> str:
         return f"{self.name} · {self.model}"

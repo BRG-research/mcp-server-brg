@@ -18,6 +18,23 @@ and/or the [Codex](https://github.com/openai/codex) CLI (`codex`) on your PATH, 
 are not signed in yet, type `/login claude` or `/login codex` inside the terminal: the CLI's own
 login runs in the same window and the terminal resumes afterwards.
 
+## First run, new user
+
+1. Install the terminal: `uv sync --extra cli`, then `uv run brg`.
+2. The header shows which account the current model uses. If nothing is signed in, the first
+   lines of the transcript say so and what to do:
+   - `/login claude` runs Claude Code's sign-in (`claude auth login`) inside the terminal: a
+     browser opens, or a URL and a code are printed; the terminal resumes when it finishes.
+   - `/login codex` runs `codex login` the same way for a ChatGPT account.
+   - If the CLI itself is missing, the message gives the install command
+     (`npm install -g @anthropic-ai/claude-code` or `npm install -g @openai/codex`).
+3. `/models` lists the models and the account each one uses; `/model opus` or `/model codex`
+   switches. Nothing is sent to a model until its account is ready, so a new user never sees a raw
+   CLI error.
+
+Without any account, `api:<model>` with `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the
+environment is the fallback.
+
 ## The screen
 
 ```
@@ -45,12 +62,10 @@ Type `/` and Tab to complete.
 | command | effect |
 |---|---|
 | `/help` or `?` | list the commands |
-| `/provider claude` | Claude Code CLI with your Claude account (default) |
-| `/provider codex` | Codex CLI with your ChatGPT account |
-| `/provider anthropic` | Anthropic API directly; needs `ANTHROPIC_API_KEY` or an SDK login profile |
-| `/provider openai` | OpenAI Responses API directly; needs `OPENAI_API_KEY` |
+| `/model <name>` | switch model: `opus`, `sonnet`, `haiku` (Claude account), `codex`, `gpt-6-astra`, … (ChatGPT account), any `claude-*` or `gpt-*` id, or `api:<model>` for the direct APIs |
+| `/models` | list the models and the account each one uses |
 | `/login claude` / `/login codex` | run the CLI's sign-in in this terminal |
-| `/model <name>` | pick a model: `opus`, `sonnet`, `claude-opus-5-5`, `gpt-5-codex`, …; `/model default` restores the provider's own |
+| `/provider claude\|codex\|anthropic\|openai` | advanced: pick the engine directly |
 | `/status` | provider, model, account, tool count |
 | `/tools` | the MCP tools the model can call |
 | `/search <words>` | query the knowledge notes directly (no model) |
@@ -59,7 +74,7 @@ Type `/` and Tab to complete.
 | `/clear` | forget the conversation |
 | `/quit` | leave (also Ctrl+C); Escape cancels a running answer |
 
-Switching provider or model starts a new conversation.
+Switching to a model on the same engine keeps the conversation; switching engine (Claude account to ChatGPT account or back) starts a new one.
 
 ## How the backends work
 

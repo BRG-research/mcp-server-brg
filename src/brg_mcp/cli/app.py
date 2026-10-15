@@ -19,7 +19,7 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.suggester import SuggestFromList
 from textual.widgets import Input, Static
 
-from brg_mcp.cli import banner, commands
+from brg_mcp.cli import banner, commands, models
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
 
@@ -123,9 +123,23 @@ class BRGTerminal(App):
             return
         await self.set_provider(self.provider_name, self.requested_model, announce=False)
         self.post("event", f"BRG MCP connected: {len(self.bridge.tools)} tools. Type a question, or /help.")
+        self.first_run_check()
 
     async def on_unmount(self) -> None:
         await self.bridge.stop()
+
+    def first_run_check(self) -> None:
+        """Tell a new user what is missing before they type anything."""
+        if self.provider is None:
+            return
+        ok, todo = self.provider.ready()
+        if ok:
+            return
+        self.post("error", todo)
+        other = "codex" if self.provider_name == "claude" else "claude"
+        self.post("event", f"Accounts: /login claude (Claude account), /login codex (ChatGPT account). "
+                           f"/models lists the models; /model {other} switches engine. "
+                           f"No account at all? api:<model> with ANTHROPIC_API_KEY or OPENAI_API_KEY also works.")
 
     # ------------------------------------------------------------------ transcript
     def post(self, kind: str, text: str) -> Message:
@@ -169,6 +183,10 @@ class BRGTerminal(App):
         if self.provider is None:
             self.post("error", "no provider; the MCP server did not start")
             return
+        ok, todo = self.provider.ready()
+        if not ok:
+            self.post("error", todo)
+            return
         self.post("user", line)
         self.ask(line)
 
@@ -183,12 +201,9 @@ class BRGTerminal(App):
         elif name == "/provider":
             await self.set_provider(arg or self.provider_name)
         elif name == "/model":
-            if self.provider is None:
-                return
-            self.provider.model = "" if arg in ("", "default") else arg
-            self.provider.reset()
-            self.refresh_header()
-            self.post("event", f"model: {self.provider.model or 'provider default'} (conversation reset)")
+            await self.switch_model(arg)
+        elif name == "/models":
+            self.post("event", models.listing())
         elif name == "/login":
             await self.login(arg or self.provider_name)
         elif name == "/tools":
@@ -209,6 +224,27 @@ class BRGTerminal(App):
         else:
             self.post("error", f"unknown command {name}; type /help")
 
+    async def switch_model(self, name: str) -> None:
+        """One command for every engine: the registry says which account the model lives on."""
+        if self.provider is None:
+            return
+        if name in ("", "default"):
+            self.provider.model = ""
+            self.refresh_header()
+            self.post("event", f"model: {self.provider.name} default")
+            return
+        entry = models.resolve(name)
+        if entry is None:
+            self.post("error", f"unknown model {name!r}; /models lists them")
+            return
+        if entry.provider != self.provider_name:
+            await self.set_provider(entry.provider, entry.model, announce=False)
+            self.post("event", f"model: {entry.name} ({entry.note}); new engine, so a new conversation")
+        else:
+            self.provider.model = entry.model          # same engine: the session continues with the new model
+            self.refresh_header()
+            self.post("event", f"model: {entry.name} ({entry.note})")
+
     async def login(self, which: str) -> None:
         """Run the CLI's own login flow in this terminal (the app is suspended while it runs)."""
         cls = PROVIDERS.get(which)
@@ -222,7 +258,8 @@ class BRGTerminal(App):
         with self.suspend():
             subprocess.run(command)                                # interactive: browser or device code
         await self.set_provider(which, self.provider.model if self.provider else None, announce=False)
-        self.post("event", f"signed in: {self.provider.status()}")
+        ok, todo = self.provider.ready()
+        self.post("event" if ok else "error", f"signed in: {self.provider.status()}" if ok else todo)
 
     # ------------------------------------------------------------------ the model turn
     @work(exclusive=True, group="ask")
@@ -261,7 +298,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--provider", default=os.environ.get("BRG_PROVIDER", "claude"), choices=list(PROVIDERS))
     parser.add_argument("--model", default=os.environ.get("BRG_MODEL"), help="model name for the provider (default: the provider's own)")
     args = parser.parse_args(argv)
-    BRGTerminal(find_data_root(args.data_root), args.provider, args.model).run()
+    provider, model = args.provider, args.model
+    entry = models.resolve(model) if model else None
+    if entry is not None:
+        provider, model = entry.provider, entry.model
+    BRGTerminal(find_data_root(args.data_root), provider, model).run()
 
 
 if __name__ == "__main__":
