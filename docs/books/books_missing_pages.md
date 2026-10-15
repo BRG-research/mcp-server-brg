@@ -18,9 +18,18 @@ Resolved by the October 2026 rescan: pp. 26, 105, 187, 199, 342.
 
 | Page(s) | Problem | Needed |
 |---|---|---|
-| Plates (Pl. XXXIII onward) | The volume is the text only ("Texte"); figures cited on plates are not in the scan | Scan of the Part III atlas |
+| 56–59 | Bresse's Table I: the K = 0.45 column lies in the binding gutter; its values are recomputed and shown in brackets | Flat rescan of pp. 56–59 |
+| Plates XXXIII–XL | The volume is the text only ("Texte"). Figures cited on plates are not in the scan: Pl. XXXIII (Ch. I, fig. A, a, b), XXXIV (Ch. II), XXXV (Ch. IV), XXXVI–XXXVIII (Note I), XXXIX (Note II), XL (Ch. VI) | Scan of the Part III atlas |
 
-Further unreadable pages will be listed here when the translation is finished.
+The volume ends on p. 418 with the printer's imprint; there are no plates or errata after it.
+
+## Block, Gengnagel, Peters, *Faustformel Tragwerksentwurf* (private, not in the public bucket)
+
+| Page(s) | Problem | Needed |
+|---|---|---|
+| 191 | Title page of the chapter "Aussteifung" (Bracing) is missing; only edge strips are in the scan | Rescan of p. 191 |
+| 268–269 | "Autoren und Dank" (authors and acknowledgements) is missing; the scan jumps from p. 267 to p. 270 | Rescan of pp. 268–269 |
+| 66 | The β_T table runs into the gutter; further columns may be hidden | Flat rescan of p. 66 |
 
 ## Lévy, *La Statique graphique*, Part I (`RAW/La_Statique_Graphique_I_Partie_Maurice_Levy.pdf`)
 
