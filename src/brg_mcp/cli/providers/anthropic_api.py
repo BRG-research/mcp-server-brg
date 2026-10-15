@@ -86,4 +86,4 @@ class AnthropicProvider(Provider):
 
     def status(self) -> str:
         key = "key: env" if os.environ.get("ANTHROPIC_API_KEY") else "key: profile/env"
-        return f"anthropic · {self.model} · {key}"
+        return f"Anthropic API ({key})"

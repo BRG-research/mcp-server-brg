@@ -31,6 +31,9 @@ class ClaudeSDKProvider(Provider):
         self._client = None
         self.session_id: str | None = None
         self._fallback: ClaudeCliProvider | None = None
+        self.subscription = ""
+        self.server_models: list[dict] = []
+        self.actual_model: str | None = None        # the model id the last reply came from
 
     def ready(self) -> tuple[bool, str]:
         return readiness("claude", self.account)
@@ -51,6 +54,18 @@ class ClaudeSDKProvider(Provider):
         self.model = model
         if self._client is not None:
             await self._client.set_model(model or None)
+
+    async def warm(self) -> dict:
+        """Connect now (so the first question is fast) and return Claude Code's server info:
+        the account's model list, the default model, the subscription."""
+        client = self._client or await self._connect()
+        info = await client.get_server_info() or {}
+        account = info.get("account") or {}
+        if account.get("email"):
+            self.account = account["email"]
+        self.subscription = account.get("subscriptionType") or ""
+        self.server_models = info.get("models") or []
+        return info
 
     async def _connect(self):
         from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
@@ -88,6 +103,8 @@ class ClaudeSDKProvider(Provider):
                 if event.get("type") == "content_block_delta" and delta.get("type") == "text_delta":
                     on_text(delta.get("text", "")); reply.append(delta.get("text", "")); streamed = True
             elif isinstance(message, AssistantMessage):
+                if message.model:
+                    self.actual_model = message.model
                 for block in message.content:
                     if isinstance(block, ToolUseBlock):
                         name = block.name
@@ -103,5 +120,5 @@ class ClaudeSDKProvider(Provider):
         return "".join(reply)
 
     def status(self) -> str:
-        live = " · session live" if self._client is not None else ""
-        return f"{self.model or 'claude (default)'} · Claude account {self.account}{live}"
+        sub = f" ({self.subscription})" if self.subscription else ""
+        return f"Claude account {self.account}{sub}"

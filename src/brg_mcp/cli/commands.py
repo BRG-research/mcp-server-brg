@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 COMMANDS: dict[str, str] = {
     "/help": "list the commands",
-    "/model": "/model  opens the model list; /model <name> switches directly (opus, sonnet, codex, gpt-6-astra, ...)",
+    "/model": "/model  lists the models; /model <name> switches (Claude Fable 5.1, Claude Opus 5.5, Codex Astra, ... or just fable, astra)",
     "/models": "list the models you can switch to and which account each one uses",
     "/login": "/login claude | codex  sign in with your own account (opens the CLI's login in this terminal)",
     "/provider": "/provider claude | codex | anthropic | openai  (advanced: pick the engine directly)",

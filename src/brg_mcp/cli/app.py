@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import time
 import shutil
 import subprocess
 import sys
@@ -52,10 +53,9 @@ class Message(Static):
 
     def render_now(self) -> None:
         if self.kind == "user":
-            self.update(Text.assemble(("> ", "bold #8b949e"), (self.text, "#e6edf3")))
+            self.update(Text.assemble(("> ", "bold #58a6ff"), (self.text, "bold")))
         elif self.kind == "assistant":
-            body = RichMarkdown(self.text or "…", code_theme="monokai")
-            self.update(body)
+            self.update(RichMarkdown(self.text, code_theme="monokai") if self.text else "")
         elif self.kind == "event":
             self.update(Text.assemble(("● ", "bold #3fb950"), (self.text, "#c9d1d9")))
         else:
@@ -66,37 +66,64 @@ class Message(Static):
         self.render_now()
 
 
+class Spinner(Static):
+    """An animated 'thinking' line shown until the first text of a reply arrives."""
+
+    FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+
+    def __init__(self, label: str = "Thinking") -> None:
+        super().__init__(classes="msg spinner")
+        self.label = label
+        self.frame = 0
+        self.started = time.monotonic()
+
+    def on_mount(self) -> None:
+        self.timer = self.set_interval(0.1, self.tick)
+        self.tick()
+
+    def tick(self) -> None:
+        self.frame = (self.frame + 1) % len(self.FRAMES)
+        elapsed = time.monotonic() - self.started
+        self.update(Text.assemble((f"{self.FRAMES[self.frame]} ", "bold #58a6ff"), (f"{self.label}… ", "#c9d1d9"),
+                                  (f"{elapsed:.0f}s", "#6e7681"), ("   (Esc to cancel)", "#484f58")))
+
+
 class BRGTerminal(App):
+    # The terminal's own colours everywhere (ansi_color=True below): no painted background, so
+    # resizing, transparency and the user's theme behave exactly as in any other terminal program.
     CSS = """
-    Screen { background: #0d1117; }
-    #header { height: auto; padding: 1 2 0 2; }
-    #logo { width: auto; margin-right: 3; }
-    #title { width: 1fr; }
-    #transcript { height: 1fr; padding: 1 2; }
+    Screen { background: ansi_default; color: ansi_default; }
+    #header { height: auto; padding: 1 2 0 2; background: ansi_default; }
+    #logo { width: auto; margin-right: 3; background: ansi_default; }
+    #title { width: 1fr; background: ansi_default; }
+    #transcript { height: 1fr; padding: 1 2; background: ansi_default; }
+    #transcript > * { background: ansi_default; }
     .msg { margin-bottom: 1; }
-    .user { background: #161b22; padding: 0 1; }
+    .user { padding: 0 1; }
     .assistant { padding: 0 1 0 1; }
     .event { padding: 0 1; }
+    .spinner { padding: 0 1; }
     .error { padding: 0 1; }
-    #rule-top, #rule-bottom { height: 1; color: #30363d; }
-    #prompt-row { height: 1; padding: 0 1; }
-    #caret { width: 2; }
-    #prompt { border: none; background: #0d1117; padding: 0; height: 1; }
-    #prompt:focus { border: none; }
-    #suggest { display: none; height: auto; max-height: 12; padding: 0 3; color: #c9d1d9; background: #0d1117; }
+    #rule-top, #rule-bottom { height: 1; background: ansi_default; }
+    #prompt-row { height: 1; padding: 0 1; background: ansi_default; }
+    #caret { width: 2; background: ansi_default; }
+    #prompt { border: none; background: ansi_default; padding: 0; height: 1; }
+    #prompt:focus { border: none; background: ansi_default; }
+    #suggest { display: none; height: auto; max-height: 12; padding: 0 3; background: ansi_default; }
     #suggest.visible { display: block; }
-    #hint { height: 1; color: #6e7681; padding: 0 2; }
+    #hint { background: ansi_default; }
     """
     BINDINGS = [("ctrl+c", "quit", "quit"), ("escape", "cancel", "cancel")]
 
     def __init__(self, data_root: Path, provider: str = "claude", model: str | None = None) -> None:
-        super().__init__()
+        super().__init__(ansi_color=True)
         self.data_root = data_root
         self.bridge = MCPBridge(data_root)
         self.provider_name = provider
         self.requested_model = model
         self.provider: Provider | None = None
         self.busy = False
+        self.model_entries: list[models.ModelEntry] = []
 
     # ------------------------------------------------------------------ layout
     def compose(self) -> ComposeResult:
@@ -115,9 +142,40 @@ class BRGTerminal(App):
     def _header_text(self, model_line: str) -> Text:
         return banner.header_lines(VERSION, model_line, str(self.data_root))
 
+    def current_entry(self) -> models.ModelEntry | None:
+        if self.provider is None:
+            return None
+        model = getattr(self.provider, "actual_model", None) or self.provider.model
+        for e in self.model_entries:
+            if e.provider == self.provider_name and e.model == model:
+                return e
+        return None
+
+    def model_label(self) -> str:
+        entry = self.current_entry()
+        if entry is not None:
+            return entry.name
+        return self.provider.model if self.provider and self.provider.model else "no model"
+
     def refresh_header(self) -> None:
-        line = self.provider.status() if self.provider else "no model"
+        line = f"{self.model_label()} · {self.provider.status()}" if self.provider else "no model"
         self.query_one("#title", Static).update(self._header_text(f"{line} · {len(self.bridge.tools)} BRG tools"))
+
+    async def load_models(self) -> None:
+        """Build the model list from the accounts: Claude Code's own list (needs a live session) and Codex's config."""
+        entries: list[models.ModelEntry] = []
+        claude = self.provider if self.provider_name == "claude" else None
+        if claude is not None and hasattr(claude, "warm"):
+            try:
+                info = await claude.warm()
+                entries += models.claude_entries(info.get("models") or [], f"Claude account {claude.account}")
+                if not claude.model:
+                    claude.model = models.claude_default_model(info.get("models") or []) or ""
+            except Exception as exc:                                  # noqa: BLE001 - keep going with Codex only
+                self.post("error", f"could not read the Claude model list: {exc}")
+        entries += models.codex_entries()
+        self.model_entries = entries
+        self.query_one("#suggest", Suggestions).entries_source = lambda: self.model_entries
 
     async def on_mount(self) -> None:
         self.query_one("#prompt", Input).focus()
@@ -128,6 +186,13 @@ class BRGTerminal(App):
             return
         await self.set_provider(self.provider_name, self.requested_model, announce=False)
         self.post("event", f"BRG MCP connected: {len(self.bridge.tools)} tools. Type a question, or /help.")
+        if self.provider is not None and self.provider.ready()[0]:
+            await self.load_models()
+            if self.provider_name == "codex" and not self.provider.model:
+                first = next((e for e in self.model_entries if e.provider == "codex"), None)
+                if first:
+                    self.provider.model = first.model
+            self.refresh_header()
         self.first_run_check()
 
     async def on_unmount(self) -> None:
@@ -255,7 +320,8 @@ class BRGTerminal(App):
             else:
                 self.query_one("#prompt", PromptInput).set_text("/model ")   # the panel lists the models
         elif name == "/models":
-            self.post("event", models.listing())
+            current = self.provider.model if self.provider else None
+            self.post("event", models.listing(self.model_entries, current))
         elif name == "/login":
             await self.login(arg or self.provider_name)
         elif name == "/tools":
@@ -280,12 +346,9 @@ class BRGTerminal(App):
         """One command for every engine: the registry says which account the model lives on."""
         if self.provider is None:
             return
-        if name in ("", "default"):
-            self.provider.model = ""
-            self.refresh_header()
-            self.post("event", f"model: {self.provider.name} default")
+        if not name:
             return
-        entry = models.resolve(name)
+        entry = models.resolve(name, self.model_entries)
         if entry is None:
             self.post("error", f"unknown model {name!r}; /models lists them")
             return
@@ -322,25 +385,39 @@ class BRGTerminal(App):
         self.busy = True
         reply = self.post("assistant", "")
         transcript = self.query_one("#transcript", VerticalScroll)
+        spinner: Spinner | None = Spinner()
+        transcript.mount(spinner)
+        transcript.scroll_end(animate=False)
+
+        def stop_spinner() -> None:
+            nonlocal spinner
+            if spinner is not None:
+                spinner.remove()
+                spinner = None
 
         def on_text(fragment: str) -> None:
+            stop_spinner()
             reply.append(fragment)
             transcript.scroll_end(animate=False)
 
         def on_event(note: str) -> None:
             transcript.mount(Message("event", note), before=reply)   # events go above the growing reply
+            if spinner is not None:
+                spinner.label = "Working"
             transcript.scroll_end(animate=False)
 
         try:
             await self.provider.send(line, on_text, on_event)
             if not reply.text:
                 reply.append("(no text in the reply)")
+            self.refresh_header()
         except asyncio.CancelledError:
             self.post("event", "cancelled")
             raise
         except Exception as exc:                                  # noqa: BLE001
             self.post("error", f"{type(exc).__name__}: {exc}")
         finally:
+            stop_spinner()
             self.busy = False
 
     def action_cancel(self) -> None:
@@ -354,7 +431,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--model", default=os.environ.get("BRG_MODEL"), help="model name for the provider (default: the provider's own)")
     args = parser.parse_args(argv)
     provider, model = args.provider, args.model
-    entry = models.resolve(model) if model else None
+    entry = models.resolve(model, []) if model else None
     if entry is not None:
         provider, model = entry.provider, entry.model
     BRGTerminal(find_data_root(args.data_root), provider, model).run()

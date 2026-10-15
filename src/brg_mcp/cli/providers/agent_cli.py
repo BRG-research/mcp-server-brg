@@ -143,7 +143,7 @@ class ClaudeCliProvider(Provider):
         return readiness("claude", self.account)
 
     def status(self) -> str:
-        return f"{self.model or 'claude (default)'} · Claude account {self.account}"
+        return f"Claude account {self.account}"
 
 
 class CodexCliProvider(Provider):
@@ -206,4 +206,4 @@ class CodexCliProvider(Provider):
         return readiness("codex", self.account)
 
     def status(self) -> str:
-        return f"{self.model or 'codex (default)'} · {self.account}"
+        return self.account

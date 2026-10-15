@@ -51,9 +51,9 @@ async def test_app_headless_commands():
     from brg_mcp.cli.app import BRGTerminal, Message
     app = BRGTerminal(ROOT, provider="claude")
     async with app.run_test(size=(100, 30)) as pilot:
-        await pilot.pause(2.0)                               # the MCP server starts in on_mount
+        await pilot.pause(6.0)                               # the MCP server and the Claude session start in on_mount
         prompt = app.query_one("#prompt")
-        for line in ["/help", "/tools", "/search force density", "/status", "/model gpt-6-astra", "/model opus"]:
+        for line in ["/help", "/tools", "/search force density", "/status", "/model astra", "/model fable"]:
             prompt.value = line
             await pilot.press("enter")
             await pilot.pause(0.5)
@@ -62,20 +62,30 @@ async def test_app_headless_commands():
         assert any("search_knowledge" in t for t in texts)
         assert any("form-finding-compas-fd" in t for t in texts)
         assert any("Claude account" in t for t in texts)
-        assert any("gpt-6-astra" in t and "ChatGPT" in t for t in texts)      # switched engine
-        assert app.provider_name == "claude" and app.provider.model == "opus"  # and back
+        assert any("Codex Astra" in t for t in texts)                           # switched engine
+        assert app.provider_name == "claude" and app.provider.model == "claude-fable-5-1"   # and back
+        assert "Claude Fable 5.1" in str(app.query_one("#title").content)
         assert "BRG tools" in str(app.query_one("#title").content)
 
 
-def test_model_registry_routes_to_engines():
+def test_model_registry_from_the_accounts():
     from brg_mcp.cli import models
-    assert models.resolve("opus").provider == "claude" and models.resolve("opus").model == "opus"
-    assert models.resolve("gpt-6-astra").provider == "codex"
-    assert models.resolve("claude-opus-5-5").provider == "claude"
-    assert models.resolve("api:claude-opus-5-5").provider == "anthropic"
-    assert models.resolve("api:gpt-5").provider == "openai"
-    assert models.resolve("nonsense-model") is None
-    assert "opus" in models.listing() and "codex" in models.listing()
+    server_models = [
+        {"value": "default", "resolvedModel": "claude-opus-5-5", "displayName": "Default (recommended)", "description": "x"},
+        {"value": "opus", "resolvedModel": "claude-opus-5-5", "displayName": "Opus 5.5", "description": "For complex work"},
+        {"value": "fable", "resolvedModel": "claude-fable-5-1", "displayName": "Fable 5.1", "description": "For your toughest challenges"},
+    ]
+    entries = models.claude_entries(server_models) + [models.ModelEntry("Codex Astra", "codex", "gpt-6-astra", "gpt-6-astra", ("gpt-6-astra",))]
+    names = [e.name for e in entries]
+    assert names == ["Claude Opus 5.5", "Claude Fable 5.1", "Codex Astra"]        # no "default" entry
+    assert models.claude_default_model(server_models) == "claude-opus-5-5"
+    assert models.resolve("fable", entries).model == "claude-fable-5-1"
+    assert models.resolve("Claude Opus 5.5", entries).model == "claude-opus-5-5"
+    assert models.resolve("opus", entries).model == "claude-opus-5-5"
+    assert models.resolve("astra", entries).provider == "codex"
+    assert models.resolve("api:gpt-5", entries).provider == "openai"
+    assert models.resolve("nonsense-model", entries) is None
+    assert models.codex_display_name("gpt-6.1-sol") == "Codex Sol"
 
 
 @pytest.mark.asyncio
@@ -84,7 +94,7 @@ async def test_inline_suggestions_and_history():
     from brg_mcp.cli.prompt import PromptInput, Suggestions
     app = BRGTerminal(ROOT, provider="claude")
     async with app.run_test(size=(100, 30)) as pilot:
-        await pilot.pause(2.0)
+        await pilot.pause(6.0)
         prompt = app.query_one("#prompt", PromptInput)
         panel = app.query_one("#suggest", Suggestions)
         prompt.set_text("/")
@@ -96,9 +106,9 @@ async def test_inline_suggestions_and_history():
         await pilot.press("tab")                       # accept it into the prompt
         await pilot.pause(0.1)
         assert prompt.value.startswith(second)
-        prompt.set_text("/model g")
+        prompt.set_text("/model fab")
         await pilot.pause(0.2)
-        assert all(c.startswith("/model g") for c, _ in panel.entries) and panel.entries
+        assert panel.entries and all("Fable" in c for c, _ in panel.entries)
         prompt.set_text("/status")
         await pilot.press("enter")
         await pilot.pause(0.3)

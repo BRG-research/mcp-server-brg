@@ -28,8 +28,8 @@ login runs in the same window and the terminal resumes afterwards.
    - `/login codex` runs `codex login` the same way for a ChatGPT account.
    - If the CLI itself is missing, the message gives the install command
      (`npm install -g @anthropic-ai/claude-code` or `npm install -g @openai/codex`).
-3. `/models` lists the models and the account each one uses; `/model opus` or `/model codex`
-   switches. Nothing is sent to a model until its account is ready, so a new user never sees a raw
+3. `/models` lists the models your accounts offer, by name (Claude Fable 5.1, Claude Opus 5.5,
+   Codex Astra, …); `/model fable` or `/model astra` switches. Nothing is sent to a model until its account is ready, so a new user never sees a raw
    CLI error.
 
 Without any account, `api:<model>` with `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the
@@ -66,8 +66,8 @@ through the lines you typed before.
 | command | effect |
 |---|---|
 | `/help` or `?` | list the commands |
-| `/model <name>` | switch model: `opus`, `sonnet`, `haiku` (Claude account), `codex`, `gpt-6-astra`, … (ChatGPT account), any `claude-*` or `gpt-*` id, or `api:<model>` for the direct APIs |
-| `/models` | list the models and the account each one uses |
+| `/model <name>` | switch model by its name: `Claude Fable 5.1`, `Claude Opus 5.5`, `Codex Astra`, … or a word of it (`fable`, `sonnet`, `astra`); also any `claude-*` or `gpt-*` id, or `api:<model>` for the direct APIs |
+| `/models` | the models your accounts offer (Claude Code's own list for your Claude account, Codex's config for your ChatGPT account) and which one is current |
 | `/login claude` / `/login codex` | run the CLI's sign-in in this terminal |
 | `/provider claude\|codex\|anthropic\|openai` | advanced: pick the engine directly |
 | `/status` | provider, model, account, tool count |
@@ -100,3 +100,10 @@ Options: `--provider`, `--model`, `--data-root`, or the environment variables `B
 `BRG_MODEL`.
 
 [Main README](../README.md) · [Local development](development/README.md)
+
+## Look and feel
+
+The terminal paints nothing of its own: it runs on your terminal's colours (Textual's ANSI mode),
+so resizing, transparency and your theme behave as in any other terminal program. While a reply is
+being prepared an animated indicator with the elapsed time is shown; it disappears with the first
+streamed character.

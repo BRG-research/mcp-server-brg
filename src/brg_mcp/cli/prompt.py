@@ -8,7 +8,7 @@ from textual import events
 from textual.message import Message
 from textual.widgets import Input, Static
 
-from brg_mcp.cli import commands, models
+from brg_mcp.cli import commands
 
 
 class PromptInput(Input):
@@ -76,6 +76,7 @@ class Suggestions(Static):
         super().__init__("", **kwargs)
         self.entries: list[tuple[str, str]] = []     # (completion, note)
         self.index = 0
+        self.entries_source = lambda: []           # the app's model list
 
     @property
     def is_open(self) -> bool:
@@ -97,7 +98,9 @@ class Suggestions(Static):
             return []
         head, _, rest = text.partition(" ")
         if head == "/model" and (rest or text.endswith(" ")):
-            return [(f"/model {e.name}", e.note) for e in models.catalog() if e.name.lower().startswith(rest.lower())]
+            r = rest.lower()
+            return [(f"/model {e.name}", e.note) for e in self.entries_source()
+                    if r in e.name.lower() or r in e.model.lower() or any(r in a.lower() for a in e.aliases)]
         if head == "/provider" and (rest or text.endswith(" ")):
             return [(f"/provider {k}", "engine") for k in ("claude", "codex", "anthropic", "openai") if k.startswith(rest)]
         if head == "/login" and (rest or text.endswith(" ")):
