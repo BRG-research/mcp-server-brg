@@ -119,4 +119,4 @@ def test_trace_chain_and_table():
     out = table.file.getvalue()
     assert 'query="force density"' in out and "→ 3 notes" in out and "(failed)" in out
     line = metrics_line({"input": 1000, "output": 200, "cache_read": 800, "tools": 2, "cost": 0.5}, 24.0, 55, show_cost=False).plain
-    assert "in 3k" in line and "2 tools" in line and "ctx ▰▰▱▱▱▱▱▱ 24%" in line and "$" not in line
+    assert "in 2k" in line and "cache 800" in line and "2 tools" in line and "ctx ▰▰▱▱▱▱▱▱ 24%" in line and "$" not in line
