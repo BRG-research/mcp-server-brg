@@ -9,7 +9,7 @@ knowledge notes and the book library while it answers.
 ## Install and run
 
 ```bash
-uv sync --extra cli          # prompt_toolkit, rich, claude-agent-sdk, anthropic, openai
+uv sync                      # everything, including the terminal
 uv run brg                   # from the checkout, or: uv run brg --data-root /path/to/mcp-server-brg
 ```
 
