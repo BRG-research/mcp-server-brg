@@ -30,6 +30,7 @@ The volume ends on p. 418 with the printer's imprint; there are no plates or err
 | 191 | Title page of the chapter "Aussteifung" (Bracing) is missing; only edge strips are in the scan | Rescan of p. 191 |
 | 268–269 | "Autoren und Dank" (authors and acknowledgements) is missing; the scan jumps from p. 267 to p. 270 | Rescan of pp. 268–269 |
 | 66 | The β_T table runs into the gutter; further columns may be hidden | Flat rescan of p. 66 |
+| 137 | Title page of chapter 5 "Tragwerkselemente" (Structural elements): the right half is cut off; its contents list was rebuilt from the page headers | Rescan of p. 137 |
 
 ## Lévy, *La Statique graphique*, Part I (`RAW/La_Statique_Graphique_I_Partie_Maurice_Levy.pdf`)
 
