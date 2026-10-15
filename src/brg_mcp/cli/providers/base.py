@@ -28,8 +28,8 @@ class Provider:
         self.bridge = bridge
         self.model = model or self.default_model
 
-    def reset(self) -> None:
-        """Forget the conversation."""
+    def reset(self):
+        """Forget the conversation.  May be a coroutine (engines with a live session)."""
 
     async def send(self, user_text: str, on_text: OnText, on_event: OnEvent) -> str:
         """Stream the reply for `user_text`; return the full reply text."""

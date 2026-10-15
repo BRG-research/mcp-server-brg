@@ -16,11 +16,12 @@ from rich.text import Text
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, VerticalScroll
-from textual.suggester import SuggestFromList
 from textual.widgets import Input, Static
+from textual import events
 
 from brg_mcp.cli import banner, commands, models
-from brg_mcp.cli.pickers import Picker
+from brg_mcp.cli.prompt import PromptInput, Suggestions
+import inspect
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
 
@@ -82,6 +83,8 @@ class BRGTerminal(App):
     #caret { width: 2; }
     #prompt { border: none; background: #0d1117; padding: 0; height: 1; }
     #prompt:focus { border: none; }
+    #suggest { display: none; height: auto; max-height: 12; padding: 0 3; color: #c9d1d9; background: #0d1117; }
+    #suggest.visible { display: block; }
     #hint { height: 1; color: #6e7681; padding: 0 2; }
     """
     BINDINGS = [("ctrl+c", "quit", "quit"), ("escape", "cancel", "cancel")]
@@ -104,10 +107,10 @@ class BRGTerminal(App):
         yield Static(Text("─" * 200, style="#30363d"), id="rule-top")
         with Horizontal(id="prompt-row"):
             yield Static(Text("> ", style="bold #8b949e"), id="caret")
-            suggestions = list(commands.COMMANDS) + [f"/model {e.name}" for e in models.catalog()]
-            yield Input(placeholder="", id="prompt", suggester=SuggestFromList(suggestions, case_sensitive=False))
+            yield PromptInput(id="prompt")
+        yield Suggestions(id="suggest")
         yield Static(Text("─" * 200, style="#30363d"), id="rule-bottom")
-        yield Static("? for shortcuts", id="hint")
+        yield Static("? for shortcuts · ↑↓ history · / commands", id="hint")
 
     def _header_text(self, model_line: str) -> Text:
         return banner.header_lines(VERSION, model_line, str(self.data_root))
@@ -128,7 +131,14 @@ class BRGTerminal(App):
         self.first_run_check()
 
     async def on_unmount(self) -> None:
+        if self.provider is not None and hasattr(self.provider, "close"):
+            await self.provider.close()
         await self.bridge.stop()
+
+    async def reset_provider(self) -> None:
+        result = self.provider.reset()
+        if inspect.isawaitable(result):
+            await result
 
     def first_run_check(self) -> None:
         """Tell a new user what is missing before they type anything."""
@@ -157,6 +167,8 @@ class BRGTerminal(App):
         if cls is None:
             self.post("error", f"unknown provider {name!r}; choose from {', '.join(PROVIDERS)}")
             return
+        if self.provider is not None and hasattr(self.provider, "close"):
+            await self.provider.close()
         self.provider = cls(self.bridge, model)
         if name == "codex":
             from brg_mcp.cli.providers.agent_cli import codex_account
@@ -167,16 +179,48 @@ class BRGTerminal(App):
             self.post("event", f"provider {name}: {self.provider.status()} (conversation reset)")
 
     # ------------------------------------------------------------------ input
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.query_one("#suggest", Suggestions).refresh_for(event.value)
+
+    async def on_prompt_input_navigate(self, message: PromptInput.Navigate) -> None:
+        """Up/Down: move in the suggestion panel when it is open, else walk the prompt history."""
+        panel = self.query_one("#suggest", Suggestions)
+        prompt = self.query_one("#prompt", PromptInput)
+        if panel.is_open:
+            panel.move(message.direction)
+        else:
+            prompt.recall(message.direction)
+
+    async def on_prompt_input_accept(self, message: PromptInput.Accept) -> None:
+        """Tab: take the highlighted suggestion into the prompt."""
+        panel = self.query_one("#suggest", Suggestions)
+        prompt = self.query_one("#prompt", PromptInput)
+        if panel.is_open and panel.current:
+            prompt.set_text(panel.current + (" " if panel.current_takes_argument else ""))
+
+    async def on_prompt_input_dismiss(self, message: PromptInput.Dismiss) -> None:
+        self.query_one("#suggest", Suggestions).close()
+
     async def on_input_submitted(self, event: Input.Submitted) -> None:
-        line = event.value.strip()
-        event.input.value = ""
+        panel = self.query_one("#suggest", Suggestions)
+        prompt = self.query_one("#prompt", PromptInput)
+        if panel.is_open and panel.current and panel.current != event.value.strip():
+            # Enter on a highlighted suggestion: complete it; run it at once if it takes no argument
+            if panel.current_takes_argument:
+                prompt.set_text(panel.current + " ")
+                return
+            prompt.set_text(panel.current)
+        line = prompt.value.strip()
+        prompt.remember(line)
+        prompt.value = ""
+        panel.close()
         if not line:
             return
         if line == "?":
             self.post("event", commands.help_text())
             return
         if line == "/":
-            self.pick_command()
+            prompt.set_text("/")                    # the panel lists every command
             return
         command = commands.parse(line)
         if command:
@@ -209,7 +253,7 @@ class BRGTerminal(App):
             if arg:
                 await self.switch_model(arg)
             else:
-                self.pick_model()
+                self.query_one("#prompt", PromptInput).set_text("/model ")   # the panel lists the models
         elif name == "/models":
             self.post("event", models.listing())
         elif name == "/login":
@@ -225,46 +269,12 @@ class BRGTerminal(App):
             self.post("event", await self.bridge.call_tool("search_books", {"query": arg}))
         elif name == "/clear":
             if self.provider:
-                self.provider.reset()
+                await self.reset_provider()
             for child in list(self.query_one("#transcript").children):
                 child.remove()
             self.post("event", "conversation cleared")
         else:
             self.post("error", f"unknown command {name}; type /help")
-
-    def pick_model(self) -> None:
-        """`/model` with nothing after it: a list to choose from."""
-        current = None
-        if self.provider is not None:
-            for e in models.catalog():
-                if e.provider == self.provider_name and e.model == self.provider.model:
-                    current = e.name
-        entries = [(e.name, e.name, e.note) for e in models.catalog()]
-        entries.append(("api:", "api:<model>", "type /model api:<id> for the direct Anthropic or OpenAI API with a key"))
-
-        def chosen(name: str | None) -> None:
-            if name and name != "api:":
-                self.run_worker(self.switch_model(name), exclusive=False)
-            self.query_one("#prompt", Input).focus()
-
-        self.push_screen(Picker("Choose a model", entries, current), chosen)
-
-    def pick_command(self) -> None:
-        """`/` alone: the command list; choosing one puts it in the prompt (with a space for its argument)."""
-        entries = [(name, name, doc) for name, doc in commands.COMMANDS.items()]
-
-        def chosen(name: str | None) -> None:
-            prompt = self.query_one("#prompt", Input)
-            if name:
-                takes_argument = "<" in commands.COMMANDS[name] or name in ("/provider", "/login", "/model")
-                prompt.value = name + (" " if takes_argument else "")
-                prompt.cursor_position = len(prompt.value)
-                if not takes_argument:
-                    self.run_worker(self.run_command(commands.parse(name)), exclusive=False)
-                    prompt.value = ""
-            prompt.focus()
-
-        self.push_screen(Picker("Commands", entries), chosen)
 
     async def switch_model(self, name: str) -> None:
         """One command for every engine: the registry says which account the model lives on."""
@@ -283,7 +293,10 @@ class BRGTerminal(App):
             await self.set_provider(entry.provider, entry.model, announce=False)
             self.post("event", f"model: {entry.name} ({entry.note}); new engine, so a new conversation")
         else:
-            self.provider.model = entry.model          # same engine: the session continues with the new model
+            if hasattr(self.provider, "set_model"):
+                await self.provider.set_model(entry.model)   # inside the live session, no reset
+            else:
+                self.provider.model = entry.model
             self.refresh_header()
             self.post("event", f"model: {entry.name} ({entry.note})")
 

@@ -79,24 +79,32 @@ def test_model_registry_routes_to_engines():
 
 
 @pytest.mark.asyncio
-async def test_model_picker_opens_and_selects():
-    from brg_mcp.cli.app import BRGTerminal, Message
-    from brg_mcp.cli.pickers import Picker
+async def test_inline_suggestions_and_history():
+    from brg_mcp.cli.app import BRGTerminal
+    from brg_mcp.cli.prompt import PromptInput, Suggestions
     app = BRGTerminal(ROOT, provider="claude")
     async with app.run_test(size=(100, 30)) as pilot:
         await pilot.pause(2.0)
-        app.query_one("#prompt").value = "/model"
-        await pilot.press("enter")
-        await pilot.pause(0.3)
-        assert isinstance(app.screen, Picker)
-        await pilot.press("down", "enter")            # second entry: opus
-        await pilot.pause(0.8)
-        assert not isinstance(app.screen, Picker)
-        assert app.provider.model == "opus"
-        app.query_one("#prompt").value = "/"
-        await pilot.press("enter")
-        await pilot.pause(0.3)
-        assert isinstance(app.screen, Picker)
-        await pilot.press("escape")
+        prompt = app.query_one("#prompt", PromptInput)
+        panel = app.query_one("#suggest", Suggestions)
+        prompt.set_text("/")
         await pilot.pause(0.2)
-        assert not isinstance(app.screen, Picker)
+        assert panel.is_open and panel.current == "/help" and len(panel.entries) == len(__import__("brg_mcp.cli.commands", fromlist=["COMMANDS"]).COMMANDS)
+        await pilot.press("down")                      # highlight the second command
+        await pilot.pause(0.1)
+        second = panel.current
+        await pilot.press("tab")                       # accept it into the prompt
+        await pilot.pause(0.1)
+        assert prompt.value.startswith(second)
+        prompt.set_text("/model g")
+        await pilot.pause(0.2)
+        assert all(c.startswith("/model g") for c, _ in panel.entries) and panel.entries
+        prompt.set_text("/status")
+        await pilot.press("enter")
+        await pilot.pause(0.3)
+        prompt.set_text("")
+        await pilot.press("up")                        # history
+        await pilot.pause(0.1)
+        assert prompt.value == "/status"
+        await pilot.press("escape")
+        assert not panel.is_open

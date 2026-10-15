@@ -33,7 +33,8 @@ login runs in the same window and the terminal resumes afterwards.
    CLI error.
 
 Without any account, `api:<model>` with `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the
-environment is the fallback.
+environment is the fallback. You do not need a key for speed: the account path keeps one session
+alive and answers short follow-ups in under two seconds.
 
 ## The screen
 
@@ -57,7 +58,10 @@ and notes, the model's reply renders as Markdown below them.
 
 ## Commands
 
-Type `/` alone and press Enter for a list of commands; `/model` alone opens the model list (arrow keys, Enter). `/` plus Tab completes while typing.
+Type `/` and the list of commands appears under the prompt, filtered as you type; `/model ` lists
+the models the same way. Up and Down move in the list, Tab or Enter take the highlighted entry
+(a command without argument runs at once), Esc closes it. With no list open, Up and Down walk
+through the lines you typed before.
 
 | command | effect |
 |---|---|
@@ -78,11 +82,12 @@ Switching to a model on the same engine keeps the conversation; switching engine
 
 ## How the backends work
 
-- **claude**: each turn runs `claude -p --output-format stream-json --include-partial-messages
-  --mcp-config <generated file> --allowedTools "mcp__brg__*"` with your message on stdin, streams
-  the text and tool calls as they happen, and remembers the session id so the next turn resumes it
-  (`--resume`). The generated config points at this checkout's server
-  (`python -m brg_mcp.server --data-root …`).
+- **claude**: one long-lived session through the Claude Agent SDK (`ClaudeSDKClient`), which runs
+  the same Claude Code engine with your Claude login. The session and the BRG MCP server inside it
+  start on your first message and stay alive, so later turns cost only the model call (measured:
+  about 6 s for a first turn with a tool call, 1.6 s for a short follow-up; the per-turn
+  `claude -p` path took about 4 s each). `/model opus` or `sonnet` switches the model inside the
+  session. `/provider claude-cli` is the old one-process-per-turn fallback.
 - **codex**: each turn runs `codex exec --json` with the server passed as inline config
   (`-c mcp_servers.brg.command=… -c mcp_servers.brg.args=…`), approvals off
   (`approval_policy="never"`, read-only sandbox) and the BRG tools auto-approved
