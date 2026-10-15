@@ -1,8 +1,7 @@
 # BRG MCP
 
 A starter MCP server for Block Research Group knowledge and computational design
-workflows. Knowledge follows the seven CAS course chapters; Python connects it to
-AI clients and, gradually, tested COMPAS computations.
+workflows.
 
 ## Run it
 
