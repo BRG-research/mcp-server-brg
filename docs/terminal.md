@@ -204,18 +204,24 @@ pixel rendering (not pretty; off by default); `BRG_FIGURES` sets the mode at
 start. `/show <note id>` lists a note's figures, `/show <image path>` one
 image, `/show open <path>` opens it.
 
-## The header that stays
+## The banner pinned at the top
 
-The banner printed at the start scrolls away with the transcript, like any
-line in the terminal's scrollback. The same header lives permanently in the
-bar under the prompt: the BRG logo with the model, effort, mode and context
-share beside it, the account, and the key hints. While a reply runs, the
-status line names BRG and the model too. The terminal's window title
-carries `BRG · <model> · ctx N%` as well. This is where Claude Code keeps
-its model and mode, below the input; a header pinned to the top row is not
-offered because a terminal only saves scrolled-off lines into its
-scrollback when the scrolling region starts at the top, so a pinned header
-would cost the scrollbar and the mouse-wheel history.
+The BRG banner stays at the top of the terminal: the logo, and beside it
+the model, effort, mode and context share, the account and tool count, the
+directory, and whether the terminal is idle or working. The transcript
+scrolls in the rows below it (a scrolling region), the prompt sits at the
+bottom with one line of hints under it.
+
+A terminal keeps no history of lines that scroll out of such a region, so
+its own scrollbar does not grow while `brg` runs. The terminal keeps that
+history itself: every printed line and every question is remembered, and
+PageUp / PageDown (or Shift+Up / Shift+Down for three lines, End to return)
+page back through it, also while a reply is running. A marker at the top
+right says how far back you are. `BRG_HEADER=scroll` turns the pinned
+banner off: the banner is then printed once, the terminal's own scrollback
+works as usual, and the logo with the model and effort lives in the bar
+under the prompt instead. The window title carries `BRG · <model> · ctx N%`
+in both modes.
 
 ## Logs
 

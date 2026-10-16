@@ -280,3 +280,27 @@ def test_toolbar_carries_logo_model_and_effort(tmp_path, monkeypatch):
     assert text.count("\n") == 3                                             # four lines: the logo height
     assert "BRG Terminal" in text and "effort high" in text and "mode read" in text and "/quit" in text
     assert any("▀" in t for _, t in fragments) and any("fg:#1f6feb" in style for style, _ in fragments)
+
+
+def test_pinned_screen_region_header_and_paging():
+    from brg_mcp.cli.screen import PinnedScreen, ansi_lines
+    from rich.text import Text
+    out = io.StringIO()
+    console = Console(file=out, force_terminal=True, width=80, height=24, color_system="truecolor")
+    screen = PinnedScreen(console, 5)
+    screen.start()
+    assert "\x1b[6;24r" in out.getvalue() and "\x1b[2J" in out.getvalue()      # region below five header rows
+    screen.draw_header(["LOGO 1", "LOGO 2", "LOGO 3", "LOGO 4", ""])
+    assert "\x1b7\x1b[1;1H\x1b[2KLOGO 1" in out.getvalue() and out.getvalue().endswith("\x1b8")
+    screen.remember([f"line {i}" for i in range(60)])
+    assert screen.view_rows == 17
+    screen.page(15)
+    assert screen.offset == 15 and "line 28" in out.getvalue() and "line 44" in out.getvalue() and "15 lines back" in out.getvalue()
+    screen.page(1000)
+    assert screen.offset == 60 - 17                                         # clamped at the oldest page
+    screen.reset_view()
+    assert screen.offset == 0
+    screen.stop()
+    assert out.getvalue().endswith("\x1b[r\x1b[24;1H\n")
+    lines = ansi_lines(console, Text.assemble(("bold ", "bold"), ("plain", "")))
+    assert len(lines) == 1 and "\x1b[1mbold \x1b[0m" in lines[0] and lines[0].endswith("plain")

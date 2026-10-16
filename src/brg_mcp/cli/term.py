@@ -21,6 +21,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
@@ -39,12 +40,14 @@ from brg_mcp.cli.providers import PROVIDERS, Provider
 from brg_mcp.cli import images
 from brg_mcp.cli import markdown as md
 from brg_mcp.cli.providers.base import EFFORTS, MODES, Event, drawings_in
+from brg_mcp.cli.screen import PinnedScreen, ansi_lines
 from brg_mcp.cli.trace import GREY, Trace, legend, metrics_line
 
 TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read, fewer reflow problems
 INDENT = 2                         # replies, chains and metrics sit this far from the left edge
 
 BACKGROUND = os.environ.get("BRG_BACKGROUND", "#0b1220")      # the terminal's background while brg runs (OSC 11)
+HEADER_ROWS = 5                                                # the pinned banner: 4 rows of logo + 1 blank
 
 try:
     VERSION = package_version("brg-mcp")
@@ -188,6 +191,8 @@ class Terminal:
         self.effort = os.environ.get("BRG_EFFORT") if os.environ.get("BRG_EFFORT") in EFFORTS else None
         self.workdir = Path.cwd()                 # where the file tools act in edit/auto mode
         self.live: Live | None = None             # the status line of a running turn, paused for questions
+        self.pinned = os.environ.get("BRG_HEADER", "top") != "scroll" and self.console.is_terminal
+        self.screen = PinnedScreen(self.console, HEADER_ROWS)
         history_path = Path(os.environ.get("BRG_HISTORY", Path.home() / ".brg_history"))
         self.session = session or PromptSession(
             message=[("class:caret", "> ")],
@@ -196,11 +201,24 @@ class Terminal:
             history=FileHistory(str(history_path)),
             style=PROMPT_STYLE,
             bottom_toolbar=self.toolbar,
+            key_bindings=self.key_bindings(),
         )
 
+    def key_bindings(self) -> KeyBindings:
+        """PageUp/PageDown (and Shift+Up/Down) page back through the transcript the terminal no longer holds."""
+        kb = KeyBindings()
+        kb.add("pageup")(lambda event: self.screen.page(self.screen.view_rows - 2))
+        kb.add("pagedown")(lambda event: self.screen.page(-(self.screen.view_rows - 2)))
+        kb.add("s-up")(lambda event: self.screen.page(3))
+        kb.add("s-down")(lambda event: self.screen.page(-3))
+        kb.add("end")(lambda event: self.screen.reset_view())
+        return kb
+
     def toolbar(self):
-        """The bar under the prompt, always on screen: the logo, and beside it the model, effort, mode,
-        context share and the key hints (the header that would otherwise scroll away)."""
+        """The bar under the prompt.  With the banner pinned at the top it is one line of hints; otherwise
+        it carries the logo with the model, effort, mode, context share and the hints."""
+        if self.pinned:
+            return [("class:bottom-toolbar", " ? shortcuts · ↑↓ history · / commands · PgUp/PgDn scroll · Esc interrupts a reply · /quit leaves")]
         ctx = f"ctx {self.context_pct:.0f}%" if self.context_pct is not None else "ctx 0%"
         effort = self.effort or "effort default"
         if self.effort:
@@ -224,6 +242,14 @@ class Terminal:
 
     # ------------------------------------------------------------------ output
     def print(self, *args, **kwargs) -> None:
+        """Print, and with the banner pinned also remember the lines for paging back."""
+        if self.pinned:
+            self.screen.reset_view()
+            try:
+                lines = [""] if not args else [l for a in args for l in ansi_lines(self.console, a)]
+            except Exception:                                          # noqa: BLE001
+                lines = [""]
+            self.screen.remember(lines)
         self.console.print(*args, **kwargs)
 
     def trimmed(self, renderable, width: int | None = None):
@@ -270,12 +296,37 @@ class Terminal:
     def error(self, text: str) -> None:
         self.print(Text.assemble(("● ", "bold #f85149"), (text, "#f85149")))
 
+    def header_text(self) -> Text:
+        """The four lines beside the logo in the pinned banner."""
+        ctx = f"ctx {self.context_pct:.0f}%" if self.context_pct is not None else "ctx 0%"
+        effort = f"effort {self.effort}" if self.effort else "effort default"
+        state = ("● Working", "#d29922") if self.turn is not None else ("● Idle", "#3fb950")
+        text = Text()
+        text.append("BRG Terminal", style="bold #e6edf3")
+        text.append(f"  v{VERSION}   ", style="#8b949e")
+        text.append(state[0], style=state[1])
+        text.append("\n")
+        text.append(f"{self.model_label()} · {effort} · mode {self.mode} · {ctx}", style="#c9d1d9")
+        text.append("\n")
+        account = self.provider.status() if self.provider else "starting the BRG MCP server…"
+        text.append(f"{account} · {len(self.bridge.tools)} BRG tools", style="#8b949e")
+        text.append("\n")
+        text.append(str(self.workdir if self.mode != "read" else self.data_root), style="#6e7681")
+        return text
+
     def header(self) -> None:
         table = Table.grid(padding=(0, 3))
-        table.add_row(banner.logo(), banner.header_lines(VERSION, self.model_line(), str(self.data_root)))
+        table.add_row(banner.logo(), self.header_text())
+        if self.pinned:
+            self.screen.draw_header(ansi_lines(self.console, table))
+            return
         self.print()
         self.print(table)
         self.print()
+
+    def refresh_header(self) -> None:
+        if self.pinned and self.screen.active:
+            self.header()
 
     def current_entry(self) -> models.ModelEntry | None:
         if self.provider is None:
@@ -318,6 +369,7 @@ class Terminal:
             self.provider.account = await codex_account()
         self.provider_name = name
         self.set_title()
+        self.refresh_header()
         if announce:
             self.event(f"{self.model_label()} · {self.provider.status()} (new conversation)")
 
@@ -369,6 +421,7 @@ class Terminal:
                 "auto": " · no confirmations: the model changes files and runs commands on its own"}[mode]
         self.event(f"mode {mode} in {self.workdir}{note} (new conversation)")
         self.set_title()
+        self.refresh_header()
 
     def effort_line(self) -> str:
         if self.effort:
@@ -385,6 +438,7 @@ class Terminal:
             await self.provider.set_effort(self.effort)
         fresh = " (new conversation)" if self.provider_name == "claude" else ""
         self.event(f"{self.effort_line()}{fresh}")
+        self.refresh_header()
 
     async def ask_permission(self, tool: str, tool_input: dict) -> bool:
         """Asked by the engine before a file change or a command in edit mode: show what it wants,
@@ -421,6 +475,7 @@ class Terminal:
                 self.provider.model = entry.model
             self.event(f"model: {entry.name} ({entry.note})")
         self.set_title()
+        self.refresh_header()
 
     async def login(self, which: str) -> None:
         cls = PROVIDERS.get(which)
@@ -560,19 +615,20 @@ class Terminal:
             step_s = trace.current_step_seconds()
             if step_s > 45 and elapsed - slow_noted["at"] > 45:          # a step is taking long: say so, once a while
                 slow_noted["at"] = elapsed
-                live.console.print(Text.assemble(("● ", "bold #d29922"),
-                                                 (f"still waiting on {label.rstrip('…')} ({step_s:.0f}s on this step, {elapsed:.0f}s in all); "
-                                                  "Ctrl+C interrupts, /trace shows the steps afterwards", "#8b949e")))
+                self.print(Text.assemble(("● ", "bold #d29922"),
+                                         (f"still waiting on {label.rstrip('…')} ({step_s:.0f}s on this step, {elapsed:.0f}s in all); "
+                                          "Esc interrupts, /trace shows the steps afterwards", "#8b949e")))
             return spinner
 
+        self.refresh_header()
         with Live(get_renderable=status, console=self.console, refresh_per_second=10,
                   vertical_overflow="crop", transient=True) as live:
             self.live = live
 
             def flush_chain() -> None:
                 if trace.chain:
-                    live.console.print(self.trimmed(trace.chain_text(self.text_width())))
-                    live.console.print()
+                    self.print(self.trimmed(trace.chain_text(self.text_width())))
+                    self.print()
                     trace.text_started()
 
             def flush_text(final: bool = False) -> None:
@@ -586,8 +642,8 @@ class Terminal:
                         return
                     done, rest = text[:cut], text[cut + skip:]
                 if done.strip():
-                    live.console.print(self.trimmed(self.reply_markdown(done)))
-                    live.console.print()                                  # one blank line between blocks
+                    self.print(self.trimmed(self.reply_markdown(done)))
+                    self.print()                                          # one blank line between blocks
                 buffer[:] = [rest] if rest else []
 
             def on_text(fragment: str) -> None:
@@ -609,19 +665,19 @@ class Terminal:
                 for line in str(drawing["text"]).splitlines():
                     block.append("▌ ", style="#3fb950")
                     block.append(line + "\n", style="#e6edf3")
-                live.console.print(self.trimmed(block, width=self.console.width))
+                self.print(self.trimmed(block, width=self.console.width))
                 image = drawing.get("image")
                 if image and Path(image).is_file():
                     try:
                         images.show(self.console, Path(image), drawing.get("title", "").split(":")[0], mode=self.figures_mode)
                     except Exception as exc:                              # noqa: BLE001
                         self.error(f"could not show {image}: {exc}")
-                live.console.print()
+                self.print()
 
             def on_event(event: Event) -> None:
                 if event.kind in ("note", "error"):
                     style = "#c9d1d9" if event.kind == "note" else "#f85149"
-                    live.console.print(Text.assemble(("● ", f"bold {style}"), (event.detail, style)))
+                    self.print(Text.assemble(("● ", f"bold {style}"), (event.detail, style)))
                     return
                 if event.kind in ("thinking", "tool_call") and buffer:
                     flush_text(final=True)
@@ -650,6 +706,8 @@ class Terminal:
         self.print(self.trimmed(metrics_line(trace.usage, self.context_pct, time.monotonic() - started,
                                              show_cost=self.provider_name in ("anthropic", "openai"))))   # accounts: no $
         self.print()
+        self.turn = None
+        self.refresh_header()
 
     async def send(self, line: str) -> None:
         """Run a reply as a task; Esc or Ctrl+C while it runs cancels it (keys are read directly, the
@@ -666,6 +724,11 @@ class Terminal:
                 return
             if any(k.key in (Keys.Escape, Keys.ControlC) for k in keys) and not turn.done():
                 turn.cancel()
+            for k in keys:
+                if k.key == Keys.PageUp:
+                    self.screen.page(self.screen.view_rows - 2)
+                elif k.key == Keys.PageDown:
+                    self.screen.page(-(self.screen.view_rows - 2))
 
         try:
             loop.add_signal_handler(signal.SIGINT, turn.cancel)
@@ -702,6 +765,14 @@ class Terminal:
     async def run(self) -> None:
         self.paint(True)
         self.set_title()
+        loop = asyncio.get_running_loop()
+        if self.pinned:
+            self.screen.start()
+            self.header()
+            try:
+                loop.add_signal_handler(signal.SIGWINCH, self.on_resize)
+            except (NotImplementedError, RuntimeError, AttributeError):
+                pass
         with Live(Spinner("dots", text=Text(" starting the BRG MCP server and your account…", style=GREY), style="#58a6ff"),
                   console=self.console, transient=True, refresh_per_second=10, vertical_overflow="crop"):
             try:
@@ -716,6 +787,8 @@ class Terminal:
         self.set_title()
         self.event("Type a question, or /help. /legend explains the symbols.")
         self.first_run_check()
+        if self.pinned:
+            self.screen.fill_to_bottom()
         interrupts = 0
         try:
             while True:
@@ -731,6 +804,9 @@ class Terminal:
                 except EOFError:
                     break
                 interrupts = 0
+                if self.pinned:                                       # the question stays in the paging memory
+                    self.screen.reset_view()
+                    self.screen.remember(ansi_lines(self.console, Text.assemble(("> ", "bold #58a6ff"), (line, "#e6edf3"))))
                 if not line:
                     continue
                 if line == "?" or line == "/":
@@ -753,7 +829,17 @@ class Terminal:
             if self.provider is not None and hasattr(self.provider, "close"):
                 await self.provider.close()
             await self.bridge.stop()
+            if self.pinned:
+                try:
+                    loop.remove_signal_handler(signal.SIGWINCH)
+                except (NotImplementedError, RuntimeError, AttributeError):
+                    pass
+                self.screen.stop()
             self.paint(False)
+
+    def on_resize(self) -> None:
+        self.screen.resize()
+        self.header()
 
 
 def main(argv: list[str] | None = None) -> None:
