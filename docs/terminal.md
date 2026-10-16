@@ -204,16 +204,18 @@ pixel rendering (not pretty; off by default); `BRG_FIGURES` sets the mode at
 start. `/show <note id>` lists a note's figures, `/show <image path>` one
 image, `/show open <path>` opens it.
 
-## Where the model name is
+## The header that stays
 
-The header printed at the start names the model, the account and the tool
-count. Because the transcript is the terminal's own scrollback, that header
-scrolls away like any other line; the model stays visible in two places
-that do not scroll: the terminal's window or tab title (`BRG · Claude Fable
-5.1 · ctx 9%`) and the bar under the prompt. A header pinned to the top of
-the window is not offered: a terminal only saves scrolled-off lines into
-its scrollback when the scrolling region starts at the top row, so a pinned
-header would cost the scrollbar and the mouse-wheel history.
+The banner printed at the start scrolls away with the transcript, like any
+line in the terminal's scrollback. The same header lives permanently in the
+bar under the prompt: the BRG logo with the model, effort, mode and context
+share beside it, the account, and the key hints. While a reply runs, the
+status line names BRG and the model too. The terminal's window title
+carries `BRG · <model> · ctx N%` as well. This is where Claude Code keeps
+its model and mode, below the input; a header pinned to the top row is not
+offered because a terminal only saves scrolled-off lines into its
+scrollback when the scrolling region starts at the top, so a pinned header
+would cost the scrollbar and the mouse-wheel history.
 
 ## Logs
 

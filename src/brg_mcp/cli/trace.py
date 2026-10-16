@@ -72,7 +72,8 @@ class Step:
         if main is None:
             main = next((v for v in args.values() if isinstance(v, str) and v.strip()), None)
         if main is None:
-            main = next((str(v) for v in args.values() if v not in (None, "", [], {})), "")
+            scalars = [(k, v) for k, v in args.items() if isinstance(v, (int, float)) and not isinstance(v, bool)]
+            main = ", ".join(f"{k} {v:g}" for k, v in scalars[:2])
         main = " ".join(main.split())
         if len(main) > 36:
             main = main[:35] + "…"

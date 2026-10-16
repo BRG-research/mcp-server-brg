@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import math
 import string
+import time
+from pathlib import Path
 
 from .canvas import Drawing
 
@@ -109,9 +111,10 @@ def _draw_load_line(d: Drawing, sol: dict) -> None:
         d.label(x0, (y0 + y1) / 2, f"{load['P']:g}", dx=-4, dy=0, align="right")
 
 
-def drawings(sol: dict, cols: int = 80, rows: int = 22) -> list[dict]:
-    """The step-by-step drawings for one solution."""
+def drawings(sol: dict, cols: int = 80, rows: int = 22, image_dir: Path | None = None) -> list[dict]:
+    """The step-by-step drawings for one solution: text, and a PNG of each when image_dir is given."""
     out: list[dict] = []
+    figures: list[Drawing] = []
     letters = string.ascii_lowercase
     H = sol["pole_distance"]
     nodes = [tuple(n) for n in sol["nodes"]]
@@ -120,23 +123,26 @@ def drawings(sol: dict, cols: int = 80, rows: int = 22) -> list[dict]:
     d = _form_frame(sol, cols, rows)
     _draw_supports_and_loads(d, sol)
     out.append({"title": "Step 1 · form diagram: supports A and B, the loads on their lines of action, the spaces a, b, c … lettered (Bow's notation)", "text": d.render()})
+    figures.append(d)
 
     # 2. load line
     d = _force_frame(sol, cols, rows)
     _draw_load_line(d, sol)
     out.append({"title": f"Step 2 · load line: the loads head to tail, {sol['total_load']:g} in all, the points lettered a … {letters[len(sol['loads'])]} after the spaces they separate", "text": d.render()})
+    figures.append(d)
 
     # 3. pole and rays
     d = _force_frame(sol, cols, rows)
     _draw_load_line(d, sol)
     px, py = sol["force_polygon"]["pole"]
     for (x, y) in sol["force_polygon"]["load_line"]:
-        d.line(px, py, x, y)
+        d.line(px, py, x, y, kind="ray")
     d.mark(px, py, "O")
     d.label(px, py, "pole", dx=2)
     d.dashed(0, py, px, py)
     d.label(px / 2, py, f"H = {H:g}", dx=0, dy=1, align="center")
     out.append({"title": f"Step 3 · pole O at the horizontal distance H = {H:g} from the load line (H is the horizontal pull in the cable); one ray from O to every point", "text": d.render()})
+    figures.append(d)
 
     # 4. funicular polygon, segment by segment
     d = _form_frame(sol, cols, rows)
@@ -149,6 +155,7 @@ def drawings(sol: dict, cols: int = 80, rows: int = 22) -> list[dict]:
         d.mark(x, z, "o")
         d.label(x, z, f"{z:+.2f}", dx=1, dy=1)
     out.append({"title": "Step 4 · funicular polygon: from A, each segment parallel to its ray (a ∥ O-a, b ∥ O-b …) until the next line of action; the last one arrives at B", "text": d.render()})
+    figures.append(d)
 
     # 5. forces: the two diagrams side by side with the table
     rows_t = [f"  {'segment':8}{'ray':8}{'horizontal':>12}{'vertical':>10}{'force':>9}{'slope':>8}",
@@ -160,4 +167,11 @@ def drawings(sol: dict, cols: int = 80, rows: int = 22) -> list[dict]:
     rows_t.append(f"  reactions: A vertical {ra['vertical']:.3g}, B vertical {rb['vertical']:.3g}, horizontal {H:g} at both; "
                   f"lowest point {sol['lowest_point']:+.3g}")
     out.append({"title": "Step 5 · forces: each ray is one segment force; its horizontal part is H, its vertical part the ray's height, its length the force", "text": "\n".join(rows_t)})
+    if image_dir is not None:
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        for i, (fig, entry) in enumerate(zip(figures, out), 1):
+            try:
+                entry["image"] = str(fig.render_png(image_dir / f"cable-{stamp}-step{i}.png", title=entry["title"].split(":")[0]))
+            except Exception:                                   # noqa: BLE001 - the text drawing stands on its own
+                pass
     return out

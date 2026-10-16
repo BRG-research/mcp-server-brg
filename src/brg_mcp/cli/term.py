@@ -54,7 +54,8 @@ except PackageNotFoundError:
 PROMPT_STYLE = Style.from_dict({
     "caret": "bold #58a6ff",
     "bottom-toolbar": "#6e7681 noreverse",
-    "bottom-toolbar.model": "#8b949e noreverse",
+    "bottom-toolbar.title": "bold #e6edf3 noreverse",
+    "bottom-toolbar.model": "#c9d1d9 noreverse",
     "bottom-toolbar.idle": "#3fb950 noreverse",
     "completion-menu": "bg:#161b22 #c9d1d9",
     "completion-menu.completion.current": "bg:#1f6feb #ffffff bold",
@@ -198,11 +199,28 @@ class Terminal:
         )
 
     def toolbar(self):
-        ctx = f" · ctx {self.context_pct:.0f}%" if self.context_pct is not None else ""
-        mode = "" if self.mode == "read" else f" · {self.mode}"
-        effort = f" · {self.effort}" if self.effort else ""
-        return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}{mode}{effort}"),
-                ("class:bottom-toolbar", " · ? for shortcuts · ↑↓ history · / commands · Esc interrupts a reply")]
+        """The bar under the prompt, always on screen: the logo, and beside it the model, effort, mode,
+        context share and the key hints (the header that would otherwise scroll away)."""
+        ctx = f"ctx {self.context_pct:.0f}%" if self.context_pct is not None else "ctx 0%"
+        effort = self.effort or "effort default"
+        if self.effort:
+            effort = f"effort {self.effort}"
+        account = self.provider.status() if self.provider else "starting…"
+        right = [
+            [("class:bottom-toolbar.title", "BRG Terminal"), ("class:bottom-toolbar", f"  v{VERSION}  "), ("class:bottom-toolbar.idle", "● Idle")],
+            [("class:bottom-toolbar.model", f"{self.model_label()} · {effort} · mode {self.mode} · {ctx}")],
+            [("class:bottom-toolbar", account)],
+            [("class:bottom-toolbar", "? shortcuts · ↑↓ history · / commands · Esc interrupts a reply · /quit leaves")],
+        ]
+        out: list[tuple[str, str]] = []
+        for i, (logo_line, text_line) in enumerate(zip(banner.logo_fragments(), right)):
+            if i:
+                out.append(("", "\n"))
+            out.append(("noreverse", " "))
+            out.extend(logo_line)
+            out.append(("noreverse", "   "))
+            out.extend(text_line)
+        return out
 
     # ------------------------------------------------------------------ output
     def print(self, *args, **kwargs) -> None:
@@ -290,6 +308,7 @@ class Terminal:
         if self.provider is not None and hasattr(self.provider, "close"):
             await self.provider.close()
         self.provider = cls(self.bridge, model)
+        self.provider.terminal_width = self.console.width
         self.provider.mode = self.mode
         self.provider.effort = self.effort
         self.provider.workdir = str(self.workdir)
@@ -530,7 +549,8 @@ class Terminal:
         def status() -> Spinner:
             label = "Writing…" if buffer else trace.running()
             elapsed = time.monotonic() - started
-            text = Text.assemble((f" {label} ", "#c9d1d9"), (f"{elapsed:.0f}s", GREY))
+            text = Text.assemble((" BRG ", "bold #58a6ff"), (f"{self.model_label()} · ", "#8b949e"),
+                                 (f"{label} ", "#c9d1d9"), (f"{elapsed:.0f}s", GREY))
             if trace.chain and not buffer:
                 text.append("   ")
                 text.append_text(trace.status_chain(max(10, self.console.width - text.cell_len - 6)))
@@ -590,6 +610,12 @@ class Terminal:
                     block.append("▌ ", style="#3fb950")
                     block.append(line + "\n", style="#e6edf3")
                 live.console.print(self.trimmed(block, width=self.console.width))
+                image = drawing.get("image")
+                if image and Path(image).is_file():
+                    try:
+                        images.show(self.console, Path(image), drawing.get("title", "").split(":")[0], mode=self.figures_mode)
+                    except Exception as exc:                              # noqa: BLE001
+                        self.error(f"could not show {image}: {exc}")
                 live.console.print()
 
             def on_event(event: Event) -> None:

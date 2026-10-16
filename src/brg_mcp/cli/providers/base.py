@@ -109,6 +109,7 @@ class Provider:
         self.workdir: str | None = None       # where file tools act (the directory brg was started in)
         self.ask_permission: AskPermission | None = None
         self.effort: str | None = None        # None: the engine's own default
+        self.terminal_width: int = 100        # for drawings: how wide they may be
 
     async def set_effort(self, effort: str | None) -> None:
         self.effort = effort
@@ -166,7 +167,13 @@ How to answer.
 - Drawings and constructions: never draw with text yourself. funicular_cable solves and draws a hanging
   cable or (mirrored) an arch step by step; draw_diagram draws any line construction from coordinates you
   compute (form and force diagrams, trusses, polygons). The terminal shows these drawings to the user the
-  moment the tool returns, so refer to them by their step or title and explain; do not repeat them."""
+  moment the tool returns, so refer to them by their step or title and explain; do not repeat them.
+- Graphic statics (funicular and force polygons, Cremona, reciprocal diagrams, arches, trusses): the group's
+  notes are thin here; search_books finds Lévy's Graphic Statics, Wolfe's Graphical Analysis and the ETH
+  course; cite them."""
+
+def width_prompt(columns: int) -> str:
+    return f"The user's terminal is {columns} columns wide: ask the drawing tools for width {max(40, min(160, columns - 6))}."
 
 MODE_PROMPT = {
     "read": "You have no file or shell tools in this session: answer from the BRG tools and your knowledge.",

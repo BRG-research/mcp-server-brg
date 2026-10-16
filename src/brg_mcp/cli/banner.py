@@ -68,3 +68,24 @@ def header_lines(version: str, model_line: str, where: str) -> Text:
     text.append("\n")
     text.append(where, style="#8b949e")
     return text
+
+
+def logo_fragments() -> list[list[tuple[str, str]]]:
+    """The logo as prompt_toolkit fragments, one list of (style, text) per terminal line, for the bar
+    under the prompt."""
+    grid = pixel_grid()
+    lines: list[list[tuple[str, str]]] = []
+    for r in range(0, len(grid), 2):
+        top, bottom = grid[r], grid[r + 1] if r + 1 < len(grid) else [None] * len(grid[r])
+        parts: list[tuple[str, str]] = []
+        for t, b in zip(top, bottom):
+            if t and b:
+                parts.append((f"fg:{t} bg:{b} noreverse", "▀"))
+            elif t:
+                parts.append((f"fg:{t} noreverse", "▀"))
+            elif b:
+                parts.append((f"fg:{b} noreverse", "▄"))
+            else:
+                parts.append(("noreverse", " "))
+        lines.append(parts)
+    return lines

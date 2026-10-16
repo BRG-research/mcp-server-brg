@@ -13,7 +13,7 @@ import json
 from brg_mcp.cli import logs
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from .agent_cli import ClaudeCliProvider, claude_account, claude_code_effort, readiness
-from .base import MODE_PROMPT, SYSTEM_PROMPT, Event, OnEvent, OnText, Provider, preview, result_text, tool_name
+from .base import MODE_PROMPT, SYSTEM_PROMPT, Event, OnEvent, OnText, Provider, preview, result_text, tool_name, width_prompt
 
 BRG_INSTRUCTIONS = SYSTEM_PROMPT
 
@@ -100,7 +100,7 @@ class ClaudeSDKProvider(Provider):
             permission_mode="bypassPermissions" if self.mode == "auto" else "default",
             effort=self.effort,                              # None: Claude Code's own setting
             can_use_tool=None if read_only else self._can_use_tool,
-            system_prompt=BRG_INSTRUCTIONS + "\n\n" + MODE_PROMPT[self.mode],   # our own prompt, not the coding preset
+            system_prompt=BRG_INSTRUCTIONS + "\n\n" + MODE_PROMPT[self.mode] + "\n" + width_prompt(self.terminal_width),
             include_partial_messages=True,
             stderr=logs.write,                               # the CLI's stderr goes to the log, not the screen
             cwd=self.workdir or str(self.bridge.data_root),

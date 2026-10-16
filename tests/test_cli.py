@@ -266,3 +266,17 @@ async def test_escape_interrupts_a_reply(tmp_path, monkeypatch):
     elapsed = time.monotonic() - started
     assert elapsed < 5, (elapsed, out.getvalue()[-300:])
     assert "interrupted" in out.getvalue() and "too late" not in out.getvalue()
+
+
+def test_toolbar_carries_logo_model_and_effort(tmp_path, monkeypatch):
+    from prompt_toolkit.output import DummyOutput
+    from brg_mcp.cli.term import Terminal
+    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
+    terminal = Terminal(ROOT, console=Console(file=io.StringIO(), force_terminal=False, width=120),
+                        session=PromptSession(input=create_pipe_input(), output=DummyOutput()))
+    terminal.effort = "high"
+    fragments = terminal.toolbar()
+    text = "".join(t for _, t in fragments)
+    assert text.count("\n") == 3                                             # four lines: the logo height
+    assert "BRG Terminal" in text and "effort high" in text and "mode read" in text and "/quit" in text
+    assert any("▀" in t for _, t in fragments) and any("fg:#1f6feb" in style for style, _ in fragments)
