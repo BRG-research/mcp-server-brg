@@ -25,6 +25,7 @@ from prompt_toolkit.styles import Style
 from rich.console import Console, Group
 from rich.live import Live
 from rich.markdown import Markdown
+from rich.segment import Segment, Segments
 from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
@@ -32,8 +33,12 @@ from rich.text import Text
 from brg_mcp.cli import banner, commands, models
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
+from brg_mcp.cli import images
+from brg_mcp.cli.mathtext import mathify
 from brg_mcp.cli.providers.base import Event
 from brg_mcp.cli.trace import GREY, Trace, metrics_line
+
+TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read, fewer reflow problems
 
 BACKGROUND = os.environ.get("BRG_BACKGROUND", "#0b1220")      # the terminal's background while brg runs (OSC 11)
 
@@ -126,6 +131,40 @@ class Terminal:
     # ------------------------------------------------------------------ output
     def print(self, *args, **kwargs) -> None:
         self.console.print(*args, **kwargs)
+
+    def trimmed(self, renderable, width: int | None = None):
+        """A renderable rendered now, without the padding to the full width: lines keep no trailing
+        spaces, so a later narrowing of the window does not wrap them into blank lines."""
+        width = min(width or TEXT_WIDTH, self.console.width)
+        lines = self.console.render_lines(renderable, self.console.options.update_width(width), pad=False)
+        out: list[Segment] = []
+        for line in lines:
+            while line and not line[-1].control and not line[-1].text.strip():
+                line.pop()
+            if line and not line[-1].control:
+                line[-1] = Segment(line[-1].text.rstrip(), line[-1].style)
+            out.extend(line)
+            out.append(Segment.line())
+        return Segments(out)
+
+    def reply_markdown(self, text: str) -> Markdown:
+        """The reply as Markdown: TeX as Unicode, image lines removed (the figures are shown below the text)."""
+        return Markdown(mathify(images.IMAGE_LINK.sub("", text)))
+
+    def show_figures(self, text: str, limit: int = 4) -> None:
+        """Display the images referenced in a reply (![caption](path)), at most `limit`."""
+        seen: set[Path] = set()
+        for caption, ref in images.IMAGE_LINK.findall(text):
+            if ref.startswith(("http://", "https://")):
+                continue
+            path = images.resolve(ref, [self.data_root, Path.cwd()])
+            if path is None or path in seen or len(seen) >= limit:
+                continue
+            seen.add(path)
+            try:
+                images.show(self.console, path, caption)
+            except Exception as exc:                                  # noqa: BLE001
+                self.error(f"could not show {ref}: {exc}")
 
     def event(self, text: str) -> None:
         self.print(Text.assemble(("● ", "bold #3fb950"), (text, "#c9d1d9")))
@@ -269,9 +308,13 @@ class Terminal:
         elif name == "/search":
             self.print(await self.bridge.call_tool("search_knowledge", {"query": arg}))
         elif name == "/read":
-            self.print(Markdown(await self.bridge.read_resource(f"brg://knowledge/{arg}")))
+            note = await self.bridge.read_resource(f"brg://knowledge/{arg}")
+            self.print(self.trimmed(self.reply_markdown(note)))
+            self.show_figures(note, limit=12)
         elif name == "/books":
             self.print(await self.bridge.call_tool("search_books", {"query": arg}))
+        elif name == "/show":
+            await self.show_command(arg)
         elif name == "/trace":
             if self.trace is None or not self.trace.steps:
                 self.event("no steps yet: ask something first")
@@ -285,6 +328,31 @@ class Terminal:
             self.error(f"unknown command {name}; type /help")
         return True
 
+    async def show_command(self, arg: str) -> None:
+        """/show <image path>  displays that image; /show <note id>  displays the note's figures;
+        /show open <path>  opens the file in the system viewer."""
+        if not arg:
+            self.error("/show <image path> | /show <note id> | /show open <path>")
+            return
+        if arg.startswith("open "):
+            path = images.resolve(arg[5:].strip(), [self.data_root, Path.cwd()])
+            if path is None or not images.open_external(path):
+                self.error("could not open that file")
+            return
+        path = images.resolve(arg, [self.data_root, Path.cwd()])
+        if path is not None and path.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+            images.show(self.console, path)
+            return
+        try:
+            note = await self.bridge.read_resource(f"brg://knowledge/{arg}")
+        except Exception as exc:                                      # noqa: BLE001
+            self.error(f"no image or note {arg!r}: {exc}")
+            return
+        if not images.IMAGE_LINK.search(note):
+            self.event(f"note {arg} has no figures")
+            return
+        self.show_figures(note, limit=12)
+
     # ------------------------------------------------------------------ a model turn
     async def ask(self, line: str) -> None:
         """Stream the reply below the prompt.  Steps (thinking, tool calls) are drawn as a chain of badges;
@@ -294,7 +362,7 @@ class Terminal:
         self.trace = trace
         started = time.monotonic()
         buffer: list[str] = []                       # the paragraph being streamed
-        notes: list[Text] = []
+        full: list[str] = []                         # the whole reply, for the figures
 
         def spinner():
             return Spinner("dots", text=Text.assemble((f" {trace.running()} ", "#c9d1d9"),
@@ -306,7 +374,7 @@ class Terminal:
             if trace.chain:
                 parts.append(trace.chain_text())
             if buffer:
-                parts.append(Markdown("".join(buffer)))
+                parts.append(self.trimmed(self.reply_markdown("".join(buffer))))
             else:
                 parts.append(spinner())
             return Group(*parts)
@@ -333,7 +401,7 @@ class Terminal:
                         return
                     done, rest = text[:cut], text[cut + 2:]
                 if done.strip():
-                    live.console.print(Markdown(done))
+                    live.console.print(self.trimmed(self.reply_markdown(done)))
                 buffer[:] = [rest] if rest else []
 
             def on_text(fragment: str) -> None:
@@ -342,6 +410,7 @@ class Terminal:
                 if not buffer:
                     flush_chain()
                 buffer.append(fragment)
+                full.append(fragment)
                 flush_text()
 
             def on_event(event: Event) -> None:
@@ -363,6 +432,7 @@ class Terminal:
                 buffer.append(f"\n\n**{type(exc).__name__}**: {exc}")
             flush_chain()
             flush_text(final=True)
+        self.show_figures("".join(full))
         if self.provider is not None:
             usage = await self.provider.context_usage()
             if usage and usage.get("percentage") is not None:

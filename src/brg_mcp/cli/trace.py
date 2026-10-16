@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass, field
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from rich.table import Table
 from rich.text import Text
@@ -47,15 +47,40 @@ class Step:
             return BLUE
         return AMBER if self.ok is None else (GREEN if self.ok else RED)
 
+    def arguments(self) -> dict:
+        try:
+            data = json.loads(self.args) if self.args else {}
+        except json.JSONDecodeError:
+            return {"input": self.args}
+        return data if isinstance(data, dict) else {"input": data}
+
     def hover(self) -> str:
         """The badge's link target: what the step queried, shown by terminals that display link targets."""
         if self.kind == "thinking":
-            return "brg://step/thinking"
-        tail = self.args[:300]
-        return f"brg://step/{quote(self.name)}?{quote(tail)}"
+            return "brg://thinking"
+        query = urlencode({k: str(v)[:120] for k, v in self.arguments().items()})
+        return f"brg://{quote(self.name)}" + (f"?{query}" if query else "")
+
+    def label(self) -> str:
+        """The short text after the badge: the tool and its main argument, so the chain reads without hovering."""
+        if self.kind == "thinking":
+            return "thinking"
+        args = self.arguments()
+        main = next((args[k] for k in ("query", "uri", "id", "note_id", "path", "section", "section_id", "book", "title", "domain")
+                     if isinstance(args.get(k), str) and args[k].strip()), None)
+        if main is None:
+            main = next((v for v in args.values() if isinstance(v, str) and v.strip()), None)
+        if main is None:
+            main = next((str(v) for v in args.values() if v not in (None, "", [], {})), "")
+        main = " ".join(main.split())
+        if len(main) > 36:
+            main = main[:35] + "…"
+        return f'{self.name} "{main}"' if main else self.name
 
     def badge(self) -> Text:
-        return Text(f" {self.glyph()} ", style=f"bold {self.colour()} on {TILE} link {self.hover()}")
+        link = f" link {self.hover()}"
+        return Text.assemble((f" {self.glyph()} ", f"bold {self.colour()} on {TILE}{link}"),
+                             (" " + self.label(), f"{GREY}{link}"))
 
 
 class Trace:

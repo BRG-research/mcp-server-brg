@@ -40,7 +40,7 @@ def test_bridge_lists_tools_and_calls_them():
         bridge = MCPBridge(ROOT)
         await bridge.start()
         try:
-            assert {t.name for t in bridge.tools} >= {"search_knowledge", "list_domains", "search_books"}
+            assert {t.name for t in bridge.tools} >= {"search_knowledge", "read_knowledge", "list_domains", "search_books"}
             result = await bridge.call_tool("search_knowledge", {"query": "force density"})
             assert "form-finding-compas-fd" in result
             note = await bridge.read_resource("brg://knowledge/equilibrium")
@@ -109,14 +109,49 @@ def test_trace_chain_and_table():
     assert t.add(Event("tool_result", "", "3 notes", ok=True))
     assert t.running() == "Working…"
     chain = t.chain_text()
-    assert chain.plain == " ◐  ›  ≣ "
-    assert any("link brg://step/search_knowledge" in str(span.style) for span in chain.spans)   # hover target
+    assert chain.plain == ' ◐  thinking ›  ≣  search_knowledge "force density"'      # badge + label
+    assert any("link brg://search_knowledge?query=force+density" in str(span.style) for span in chain.spans)
     t.text_started()
     assert t.chain == [] and len(t.steps) == 2
     t.add(Event("tool_call", "read_book_section")); t.add(Event("tool_result", "", "boom", ok=False))
-    assert t.chain_text().plain == " ✗ "
+    assert t.chain_text().plain == " ✗  read_book_section"
     table = Console(file=io.StringIO(), width=100); table.print(t.table())
     out = table.file.getvalue()
     assert 'query="force density"' in out and "→ 3 notes" in out and "(failed)" in out
     line = metrics_line({"input": 1000, "output": 200, "cache_read": 800, "tools": 2, "cost": 0.5}, 24.0, 55, show_cost=False).plain
     assert "in 2k" in line and "cache 800" in line and "2 tools" in line and "ctx ▰▰▱▱▱▱▱▱ 24%" in line and "$" not in line
+
+
+def test_equations_become_unicode():
+    from brg_mcp.cli.mathtext import mathify, tex_to_unicode
+    assert tex_to_unicode(r"\mathbf{A}\mathbf{f} + \mathbf{p} = \mathbf{0}") == "𝐀𝐟 + 𝐩 = 𝟎"
+    assert tex_to_unicode(r"H = \frac{w L^2}{8 f}") == "H = (w L²)/(8 f)"
+    assert tex_to_unicode(r"\alpha_{max} \le 30^\circ") == "αₘₐₓ ≤ 30°"
+    text = mathify("Fix $q = f/l$ per edge.\n\n$$\\sum_i q_i = Q$$\n\n`$x$` stays; $5 and $6 are prices.")
+    assert "Fix q = f/l per edge." in text and "> ∑ᵢ qᵢ = Q" in text
+    assert "`$x$`" in text and "$5 and $6" in text
+
+
+def test_figures_render_as_blocks(tmp_path):
+    from PIL import Image
+    from brg_mcp.cli import images
+    png = tmp_path / "fig.png"
+    Image.new("RGB", (8, 4), (255, 0, 0)).save(png)
+    out = io.StringIO()
+    console = Console(file=out, force_terminal=True, width=60, color_system="truecolor")
+    images.show(console, png, "a red figure", max_cols=8)
+    text = out.getvalue()
+    assert "▀" in text and "255;0;0" in text and "a red figure" in text and "file://" in text
+    assert images.resolve("nonexistent.png", [ROOT]) is None
+    assert images.IMAGE_LINK.findall("see ![Schek fig 3](images/schek_fig3.png) here") == [("Schek fig 3", "images/schek_fig3.png")]
+
+
+def test_trimmed_output_has_no_trailing_padding():
+    from prompt_toolkit.output import DummyOutput
+    from brg_mcp.cli.term import Terminal
+    out = io.StringIO()
+    terminal = Terminal(ROOT, console=Console(file=out, force_terminal=False, width=120),
+                        session=PromptSession(input=create_pipe_input(), output=DummyOutput()))
+    terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\nSecond paragraph.")))
+    lines = out.getvalue().splitlines()
+    assert lines[0] == "Short line with q = f/l." and all(line == line.rstrip() for line in lines)

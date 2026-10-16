@@ -114,16 +114,30 @@ chevrons:
 | `⚙` | any other tool (in Codex also a shell command) |
 | amber / green / red | running / returned / failed |
 
-The chain is as long as the number of steps between two messages: one
-search is `◐ › ≣`, a stale read followed by a second search is twice that.
-A terminal has no tooltips, so each badge is a hyperlink whose target is
-the tool name and its arguments: GNOME Terminal, VS Code and iTerm2 show it
-when you hover the badge. `/trace` prints every step of the last reply
-with its arguments, duration and a preview of the result, for any terminal.
+Each badge is followed by a short dim label, the tool and its main
+argument, so `≣ search_knowledge "force density"` reads at a glance. The
+chain is as long as the number of steps between two messages. Each badge is
+also a hyperlink whose target repeats the tool and its arguments, for
+terminals that show link targets on hover. `/trace` prints every step of
+the last reply with all arguments, duration and a preview of the result.
 
 Under each reply a dim line gives the tokens read and written, the cached
 part, the number of tools, the share of the context window in use and the
 time. API-key engines also show the cost; account engines do not.
+
+## Equations and figures
+
+TeX in a reply (`$...$`, `$$...$$`) is shown as Unicode mathematics, which
+every terminal can display: bold vectors, sub- and superscripts, Greek,
+operators, fractions as `(a)/(b)`. Display equations are set on their own
+line as a quoted block. `\mathbf{C}^T \mathbf{Q} \mathbf{C}` becomes
+`𝐂ᵀ 𝐐 𝐂`, `\alpha_{max} \le 30^\circ` becomes `αₘₐₓ ≤ 30°`.
+
+Figures referenced in a reply or a note (`![caption](path.png)`) are shown
+under the text: as real images in kitty, Ghostty, WezTerm and iTerm2, and
+as a half-block pixel rendering elsewhere, each with a `file://` link to the
+original. `/show <note id>` displays a note's figures, `/show <image path>`
+one image, `/show open <path>` opens it in the system viewer.
 
 ## Look and feel
 

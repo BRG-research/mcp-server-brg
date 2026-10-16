@@ -18,6 +18,8 @@ dependencies = [
     "claude-agent-sdk>=0.2,<1",
     "anthropic>=1.15,<2",
     "openai>=3,<4",
+    "unicodeit>=0.7,<1",
+    "pillow>=10,<13",
 ]
 
 [project.optional-dependencies]

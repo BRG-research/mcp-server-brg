@@ -15,6 +15,7 @@ COMMANDS: dict[str, str] = {
     "/search": "/search <words>  search the knowledge notes directly",
     "/read": "/read <note id>  read a knowledge note (e.g. form-finding-compas-fd)",
     "/books": "/books <words>  search the public book library",
+    "/show": "/show <note id> | <image path>  display a note's figures or an image; /show open <path> opens it outside",
     "/trace": "the steps of the last reply in full: each tool call with its arguments, timing and result",
     "/clear": "forget the conversation",
     "/quit": "leave the terminal",
@@ -44,6 +45,6 @@ def help_text() -> str:
         lines.append(f"  {name:<{width}}  {doc}")
     lines += ["", "Anything else is sent to the model, which can call the BRG tools while answering.",
               "", "Between the text messages a chain of badges shows the steps the model took:",
-              "  ◐ thinking   ≣ read a note or book   ⚙ other tool   ✓ returned   ✗ failed   (hover a badge for its",
-              "  arguments where the terminal shows link targets; /trace prints all of it)"]
+              "  ◐ thinking   ≣ read a note or book   ⚙ other tool   green returned   ✗ failed; the label after a badge",
+              "  is the tool and its main argument, /trace prints everything in full"]
     return "\n".join(lines)

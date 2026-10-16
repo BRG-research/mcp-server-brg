@@ -69,6 +69,7 @@ class ClaudeSDKProvider(Provider):
         options = ClaudeAgentOptions(
             model=self.model or None,
             mcp_servers={"brg": {"type": "stdio", "command": command, "args": args}},
+            tools=[],                                        # no Bash/Read/Edit: the BRG tools only
             allowed_tools=["mcp__brg__*"],
             system_prompt=BRG_INSTRUCTIONS,                 # our own prompt, not the coding preset
             include_partial_messages=True,
