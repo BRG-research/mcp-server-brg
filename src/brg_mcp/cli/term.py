@@ -48,7 +48,7 @@ try:
 except PackageNotFoundError:
     VERSION = "0.1.0"
 
-BACKGROUND = os.environ.get("BRG_BACKGROUND", "#0b1220")      # the application's background
+BACKGROUND = os.environ.get("BRG_BACKGROUND", "")             # empty: the terminal's own colours
 HEADER_ROWS = 4                                                # the banner: the logo's height
 TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read
 INDENT = 2                         # replies, chains and metrics sit this far from the left edge
@@ -57,7 +57,7 @@ MAX_LINES = 50_000
 _OSC = re.compile("\x1b\\][^\x07\x1b]*(?:\x07|\x1b\\\\)")
 
 APP_STYLE = Style.from_dict({
-    "": f"bg:{BACKGROUND} #c9d1d9" if BACKGROUND else "#c9d1d9",
+    "": f"bg:{BACKGROUND}" if BACKGROUND else "",
     "caret": "bold #58a6ff",
     "input": "#e6edf3",
     "hints": "#6e7681",

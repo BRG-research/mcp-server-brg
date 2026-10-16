@@ -52,9 +52,9 @@ same library that draws its input line. From top to bottom:
 - the input line; Up and Down walk your history, `/` opens the command menu;
 - one line of key hints.
 
-The application paints every cell, so the dark blue background is simply its
-own (set `BRG_BACKGROUND` to another colour, or empty for the terminal's);
-the terminal's scrollbar is unused. With the wheel in use the terminal
+The application uses the terminal's own colours for text and background
+(`BRG_BACKGROUND=#0b1220` paints one, if you want it); the terminal's
+scrollbar is unused. With the wheel in use the terminal
 reports the mouse to `brg`, so selecting text needs Shift held while
 dragging (as in vim or tmux); `/mouse off` (or `BRG_MOUSE=off`) gives plain
 selection back and leaves PageUp / PageDown for scrolling. On exit the
