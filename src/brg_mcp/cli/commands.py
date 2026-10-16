@@ -19,6 +19,7 @@ COMMANDS: dict[str, str] = {
     "/books": "/books <words>  search the public book library",
     "/show": "/show <note id> | <image path>  display a note's figures or an image; /show open <path> opens it outside",
     "/figures": "/figures auto | link | open | blocks  how figures are shown: inline where the terminal can, as links, opened in your viewer",
+    "/mouse": "/mouse on | off  on: the wheel pages the transcript (hold Shift to select text); off: plain selection, PgUp/PgDn page",
     "/legend": "what the symbols mean: the badges of the step chain, the line under a reply, the dots",
     "/trace": "the steps of the last reply in full: each tool call with its arguments, timing and result",
     "/clear": "forget the conversation",

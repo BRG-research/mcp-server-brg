@@ -215,9 +215,12 @@ bottom with one line of hints under it.
 A terminal keeps no history of lines that scroll out of such a region, so
 its own scrollbar does not grow while `brg` runs. The terminal keeps that
 history itself: every printed line and every question is remembered, and
-PageUp / PageDown (or Shift+Up / Shift+Down for three lines, End to return)
-page back through it, also while a reply is running. A marker at the top
-right says how far back you are. `BRG_HEADER=scroll` turns the pinned
+the mouse wheel, PageUp / PageDown (or Shift+Up / Shift+Down for three
+lines, End to return) page back through it, also while a reply is running.
+A marker at the top right says how far back you are. With the wheel in use
+the terminal reports the mouse to `brg`, so selecting text needs Shift held
+while dragging (as in vim or tmux); `/mouse off` (or `BRG_MOUSE=off`) gives
+plain selection back and leaves PageUp / PageDown for paging. `BRG_HEADER=scroll` turns the pinned
 banner off: the banner is then printed once, the terminal's own scrollback
 works as usual, and the logo with the model and effort lives in the bar
 under the prompt instead. The window title carries `BRG · <model> · ctx N%`

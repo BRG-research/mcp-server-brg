@@ -193,6 +193,7 @@ class Terminal:
         self.live: Live | None = None             # the status line of a running turn, paused for questions
         self.pinned = os.environ.get("BRG_HEADER", "top") != "scroll" and self.console.is_terminal
         self.screen = PinnedScreen(self.console, HEADER_ROWS)
+        self.mouse = self.pinned and os.environ.get("BRG_MOUSE", "on") != "off"   # wheel pages the transcript
         history_path = Path(os.environ.get("BRG_HISTORY", Path.home() / ".brg_history"))
         self.session = session or PromptSession(
             message=[("class:caret", "> ")],
@@ -203,6 +204,7 @@ class Terminal:
             bottom_toolbar=self.toolbar,
             key_bindings=self.key_bindings(),
             reserve_space_for_menu=0,            # the input sits right above the bar; a menu scrolls the region
+            mouse_support=self.mouse,
         )
 
     def key_bindings(self) -> KeyBindings:
@@ -213,13 +215,27 @@ class Terminal:
         kb.add("s-up")(lambda event: self.screen.page(3))
         kb.add("s-down")(lambda event: self.screen.page(-3))
         kb.add("end")(lambda event: self.screen.reset_view())
+
+        @kb.add(Keys.Vt100MouseEvent)
+        def _wheel(event) -> None:                 # the mouse wheel, three lines a notch; other mouse events are ignored
+            self.wheel(event.data)
         return kb
+
+    def wheel(self, data: str) -> None:
+        """An SGR mouse report (ESC [ < button ; x ; y M): wheel up pages back, wheel down forward."""
+        m = re.match(r"\x1b\[<(\d+);(\d+);(\d+)[mM]", data or "")
+        if not m:
+            return
+        button = int(m.group(1))
+        if button & 64:
+            self.screen.page(-3 if button & 1 else 3)
 
     def toolbar(self):
         """The bar under the prompt.  With the banner pinned at the top it is one line of hints; otherwise
         it carries the logo with the model, effort, mode, context share and the hints."""
         if self.pinned:
-            return [("class:bottom-toolbar", " ? shortcuts · ↑↓ history · / commands · PgUp/PgDn scroll · Esc interrupts a reply · /quit leaves")]
+            scroll = "wheel or PgUp/PgDn scroll" if self.mouse else "PgUp/PgDn scroll"
+            return [("class:bottom-toolbar", f" ? shortcuts · ↑↓ history · / commands · {scroll} · Esc interrupts a reply · /quit leaves")]
         ctx = f"ctx {self.context_pct:.0f}%" if self.context_pct is not None else "ctx 0%"
         effort = self.effort or "effort default"
         if self.effort:
@@ -500,6 +516,12 @@ class Terminal:
             self.print(commands.help_text())
         elif name == "/quit":
             return False
+        elif name == "/mouse":
+            if arg in ("on", "off"):
+                self.mouse = arg == "on" and self.pinned
+                self.session.mouse_support = self.mouse
+            self.event("mouse wheel pages the transcript; hold Shift to select text" if self.mouse
+                       else "mouse off: the terminal selects text as usual; PageUp/PageDown page the transcript")
         elif name == "/effort":
             if arg:
                 await self.set_effort(arg)
@@ -730,17 +752,23 @@ class Terminal:
                     self.screen.page(self.screen.view_rows - 2)
                 elif k.key == Keys.PageDown:
                     self.screen.page(-(self.screen.view_rows - 2))
+                elif k.key == Keys.Vt100MouseEvent:
+                    self.wheel(k.data)
 
         try:
             loop.add_signal_handler(signal.SIGINT, turn.cancel)
         except (NotImplementedError, RuntimeError):
             pass
+        if self.mouse and self.console.is_terminal:
+            self.console.file.write("\x1b[?1000h\x1b[?1006h"); self.console.file.flush()
         try:
             with self.session.input.raw_mode(), self.session.input.attach(on_keys):
                 await turn
         except Exception:                                              # noqa: BLE001 - attach can fail on odd inputs
             await turn
         finally:
+            if self.mouse and self.console.is_terminal:
+                self.console.file.write("\x1b[?1006l\x1b[?1000l"); self.console.file.flush()
             try:
                 loop.remove_signal_handler(signal.SIGINT)
             except (NotImplementedError, RuntimeError):

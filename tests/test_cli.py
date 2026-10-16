@@ -98,7 +98,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
     # the completer offers commands after "/" and models after "/model "
     from prompt_toolkit.document import Document
     comp = SlashCompleter(terminal)
-    assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/mode", "/model", "/models"}
+    assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/mode", "/model", "/models", "/mouse"}
     assert {c.text for c in comp.get_completions(Document("/mode "), None)} == {"read", "edit", "auto"}
     assert any("Fable 5.1" in c.text for c in comp.get_completions(Document("/model fab"), None))
 
@@ -304,3 +304,27 @@ def test_pinned_screen_region_header_and_paging():
     assert out.getvalue().endswith("\x1b[r\x1b[24;1H\n")
     lines = ansi_lines(console, Text.assemble(("bold ", "bold"), ("plain", "")))
     assert len(lines) == 1 and "\x1b[1mbold \x1b[0m" in lines[0] and lines[0].endswith("plain")
+
+
+@pytest.mark.asyncio
+async def test_wheel_pages_the_pinned_transcript(tmp_path, monkeypatch):
+    """With the banner pinned, a wheel-up report at the prompt pages back through the remembered lines."""
+    from prompt_toolkit.output import DummyOutput
+    from brg_mcp.cli.term import SlashCompleter, Terminal
+    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
+    out = io.StringIO()
+    console = Console(file=out, force_terminal=True, width=100, height=20, color_system="truecolor")
+    with create_pipe_input() as pipe:
+        session = PromptSession(input=pipe, output=DummyOutput())
+        terminal = Terminal(ROOT, console=console, session=session)
+        assert terminal.pinned and terminal.mouse
+        session.completer = SlashCompleter(terminal)
+        session.key_bindings = terminal.key_bindings()
+        terminal.screen.start()
+        terminal.screen.remember([f"old line {i}" for i in range(80)])
+        pipe.send_text("\x1b[<64;10;5M")                 # wheel up, SGR report
+        pipe.send_text("/quit\n")
+        await asyncio.wait_for(terminal.run(), timeout=90)
+    text = out.getvalue()
+    assert "3 lines back" in text and "old line 70" in text          # paged back three lines, view redrawn
+    assert "\x1b[6;20r" in text                                     # the region below the five header rows
