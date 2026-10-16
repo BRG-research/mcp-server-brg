@@ -35,8 +35,8 @@ from brg_mcp.cli import banner, commands, models
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
 from brg_mcp.cli import images
-from brg_mcp.cli.mathtext import mathify
-from brg_mcp.cli.providers.base import Event
+from brg_mcp.cli import markdown as md
+from brg_mcp.cli.providers.base import MODES, Event
 from brg_mcp.cli.trace import GREY, Trace, legend, metrics_line
 
 TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read, fewer reflow problems
@@ -59,6 +59,31 @@ PROMPT_STYLE = Style.from_dict({
     "completion-menu.meta.completion": "bg:#161b22 #8b949e",
     "completion-menu.meta.completion.current": "bg:#1f6feb #ffffff",
 })
+
+
+def describe_action(tool: str, tool_input: dict) -> str:
+    """One readable line (or a few) for a tool call the user must approve; paths relative to the directory."""
+    tool_input = dict(tool_input)
+    for key in ("file_path", "path", "notebook_path"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and os.path.isabs(value):
+            try:
+                tool_input[key] = os.path.relpath(value)
+            except ValueError:
+                pass
+    if tool == "Bash":
+        return f"run: {tool_input.get('command', '')}"
+    if tool in ("Write", "NotebookEdit"):
+        content = str(tool_input.get("content", ""))
+        lines = content.count("\n") + 1 if content else 0
+        return f"write {tool_input.get('file_path', '?')} ({lines} lines)"
+    if tool == "Edit":
+        old, new = str(tool_input.get("old_string", "")), str(tool_input.get("new_string", ""))
+        return f"edit {tool_input.get('file_path', '?')}\n    - {old[:200]!r}\n    + {new[:200]!r}"
+    if tool in ("WebFetch", "WebSearch"):
+        return f"{tool.lower()}: {tool_input.get('url') or tool_input.get('query', '')}"
+    args = ", ".join(f"{k}={str(v)[:80]!r}" for k, v in tool_input.items())
+    return f"{tool}({args})"
 
 
 def find_data_root(start: Path | None = None) -> Path:
@@ -100,13 +125,23 @@ class SlashCompleter(Completer):
             for k in ("claude", "codex"):
                 if k.startswith(rest):
                     yield Completion(k, start_position=-len(rest), display=k, display_meta="sign in")
+        elif head == "/mode":
+            for k, doc in MODES.items():
+                if k.startswith(rest):
+                    yield Completion(k, start_position=-len(rest), display=k, display_meta=doc)
+        elif head == "/figures":
+            for k in images.MODES:
+                if k.startswith(rest):
+                    yield Completion(k, start_position=-len(rest), display=k)
 
 
 class Terminal:
     def __init__(self, data_root: Path, provider: str = "claude", model: str | None = None,
                  console: Console | None = None, session: PromptSession | None = None) -> None:
         self.data_root = data_root
-        self.console = console or Console(highlight=False)
+        self.console = console or Console(highlight=False, theme=md.THEME)
+        if console is not None:
+            self.console.push_theme(md.THEME)
         self.bridge = MCPBridge(data_root)
         self.provider_name = provider
         self.requested_model = model
@@ -118,6 +153,9 @@ class Terminal:
         self.figures_mode = os.environ.get("BRG_FIGURES", "auto")
         if self.figures_mode not in images.MODES:
             self.figures_mode = "auto"
+        self.mode = os.environ.get("BRG_MODE", "read") if os.environ.get("BRG_MODE") in MODES else "read"
+        self.workdir = Path.cwd()                 # where the file tools act in edit/auto mode
+        self.live: Live | None = None             # the status line of a running turn, paused for questions
         history_path = Path(os.environ.get("BRG_HISTORY", Path.home() / ".brg_history"))
         self.session = session or PromptSession(
             message=[("class:caret", "> ")],
@@ -130,7 +168,8 @@ class Terminal:
 
     def toolbar(self):
         ctx = f" · ctx {self.context_pct:.0f}%" if self.context_pct is not None else ""
-        return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}"),
+        mode = "" if self.mode == "read" else f" · {self.mode}"
+        return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}{mode}"),
                 ("class:bottom-toolbar", " · ? for shortcuts · ↑↓ history · / commands · Ctrl+C interrupts")]
 
     # ------------------------------------------------------------------ output
@@ -155,9 +194,10 @@ class Terminal:
             out.pop()
         return Segments(out)
 
-    def reply_markdown(self, text: str) -> Markdown:
-        """The reply as Markdown: TeX as Unicode, image lines removed (the figures are shown below the text)."""
-        return Markdown(mathify(images.IMAGE_LINK.sub("", text)))
+    def reply_markdown(self, text: str):
+        """The reply as renderables: Markdown with plain-notation equations, image lines removed
+        (the figures are shown below the text)."""
+        return md.reply(images.IMAGE_LINK.sub("", text))
 
     def show_figures(self, text: str, limit: int = 4) -> None:
         """Display the images referenced in a reply (![caption](path)), at most `limit`."""
@@ -205,7 +245,8 @@ class Terminal:
     def model_line(self) -> str:
         if self.provider is None:
             return "starting the BRG MCP server…"
-        return f"{self.model_label()} · {self.provider.status()} · {len(self.bridge.tools)} BRG tools"
+        mode = "" if self.mode == "read" else f" · mode {self.mode} in {self.workdir}"
+        return f"{self.model_label()} · {self.provider.status()} · {len(self.bridge.tools)} BRG tools{mode}"
 
     # ------------------------------------------------------------------ engines
     async def set_provider(self, name: str, model: str | None = None, announce: bool = True) -> None:
@@ -216,6 +257,9 @@ class Terminal:
         if self.provider is not None and hasattr(self.provider, "close"):
             await self.provider.close()
         self.provider = cls(self.bridge, model)
+        self.provider.mode = self.mode
+        self.provider.workdir = str(self.workdir)
+        self.provider.ask_permission = self.ask_permission
         if name == "codex":
             from brg_mcp.cli.providers.agent_cli import codex_account
             self.provider.account = await codex_account()
@@ -259,6 +303,38 @@ class Terminal:
         self.event(f"Accounts: /login claude (Claude account), /login codex (ChatGPT account). /models lists the models; "
                    f"/model {other} switches engine. No account at all? api:<model> with ANTHROPIC_API_KEY or OPENAI_API_KEY also works.")
 
+    async def set_mode(self, mode: str) -> None:
+        if mode not in MODES:
+            self.error("/mode read | edit | auto")
+            return
+        if self.provider is None or not self.provider.supports_modes:
+            self.error("this engine has only the BRG tools; /mode works with the Claude and Codex engines")
+            return
+        self.mode = mode
+        await self.provider.set_mode(mode)
+        note = {"read": "", "edit": " · the model may read, change and run things here; you confirm each change and command",
+                "auto": " · no confirmations: the model changes files and runs commands on its own"}[mode]
+        self.event(f"mode {mode} in {self.workdir}{note} (new conversation)")
+        self.set_title()
+
+    async def ask_permission(self, tool: str, tool_input: dict) -> bool:
+        """Asked by the engine before a file change or a command in edit mode: show what it wants,
+        pause the status line, take y/n at the prompt."""
+        if self.live is not None:
+            self.live.stop()
+        what = describe_action(tool, tool_input)
+        self.print(Text.assemble(("? ", "bold #d29922"), (what, "#e6edf3")))
+        try:
+            answer = (await self.session.prompt_async([("class:caret", "  allow? [y/N] ")], completer=None)).strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            answer = "n"
+        finally:
+            if self.live is not None:
+                self.live.start()
+        allowed = answer in ("y", "yes")
+        self.event(("allowed: " if allowed else "declined: ") + what.splitlines()[0])
+        return allowed
+
     async def switch_model(self, name: str) -> None:
         if self.provider is None or not name:
             return
@@ -299,6 +375,11 @@ class Terminal:
             self.print(commands.help_text())
         elif name == "/quit":
             return False
+        elif name == "/mode":
+            if arg:
+                await self.set_mode(arg)
+            else:
+                self.event(f"mode {self.mode}: {MODES[self.mode]} (directory {self.workdir})")
         elif name == "/status":
             self.event(f"{self.model_line()} · data root {self.data_root}")
         elif name == "/provider":
@@ -399,6 +480,8 @@ class Terminal:
 
         with Live(get_renderable=status, console=self.console, refresh_per_second=10,
                   vertical_overflow="crop", transient=True) as live:
+            self.live = live
+
             def flush_chain() -> None:
                 if trace.chain:
                     live.console.print(self.trimmed(trace.chain_text(self.text_width())))
@@ -452,6 +535,7 @@ class Terminal:
                 buffer.append(f"\n\n**{type(exc).__name__}**: {exc}")
             flush_chain()
             flush_text(final=True)
+        self.live = None
         self.show_figures("".join(full))
         if self.provider is not None:
             usage = await self.provider.context_usage()
@@ -556,11 +640,14 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--data-root", type=Path, default=None, help="checkout with config/ and knowledge/ (default: auto-detect)")
     parser.add_argument("--provider", default=os.environ.get("BRG_PROVIDER", "claude"), choices=list(PROVIDERS))
     parser.add_argument("--model", default=os.environ.get("BRG_MODEL"), help="model name (default: the account's)")
+    parser.add_argument("--mode", default=None, choices=list(MODES), help="read (default), edit or auto; see /mode")
     args = parser.parse_args(argv)
     provider, model = args.provider, args.model
     entry = models.resolve(model, []) if model else None
     if entry is not None:
         provider, model = entry.provider, entry.model
+    if args.mode:
+        os.environ["BRG_MODE"] = args.mode
     asyncio.run(Terminal(find_data_root(args.data_root), provider, model).run())
 
 

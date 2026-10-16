@@ -168,11 +168,15 @@ class ClaudeCliProvider(Provider):
 
 
 class CodexCliProvider(Provider):
-    """`codex exec --json` with the BRG server passed as inline config; later turns `codex exec resume --last`."""
+    """`codex exec --json` with the BRG server passed as inline config; later turns `codex exec resume --last`.
+    Modes map to the sandbox: read → read-only, edit → workspace-write, auto → danger-full-access
+    (`codex exec` cannot ask questions, so edit is not confirmed step by step)."""
 
     name = "codex"
     default_model = ""
     login_command = ["codex", "login"]
+    supports_modes = True
+    SANDBOX = {"read": "read-only", "edit": "workspace-write", "auto": "danger-full-access"}
 
     def __init__(self, bridge: MCPBridge, model: str | None = None):
         super().__init__(bridge, model)
@@ -193,7 +197,8 @@ class CodexCliProvider(Provider):
             raise RuntimeError("the `codex` CLI is not installed or not on PATH")
         # never ask for approvals (there is nobody to answer in exec mode) but keep a read-only sandbox:
         # the BRG tools only read notes and books
-        cmd = [exe, "exec", "--json", "--skip-git-repo-check", "-c", "approval_policy=\"never\"", "--sandbox", "read-only"] + self._config_args()
+        cmd = [exe, "exec", "--json", "--skip-git-repo-check", "-c", "approval_policy=\"never\"",
+               "--sandbox", self.SANDBOX.get(self.mode, "read-only"), "-C", self.workdir or str(self.bridge.data_root)] + self._config_args()
         if self.model:
             cmd += ["-m", self.model]
         if self.started:
@@ -234,7 +239,7 @@ class CodexCliProvider(Provider):
             elif kind == "error":
                 on_event(Event.error(f"codex error: {event.get('message', '')[:300]}"))
 
-        code, err = await stream_lines(cmd, None, str(self.bridge.data_root), on_line)
+        code, err = await stream_lines(cmd, None, self.workdir or str(self.bridge.data_root), on_line)
         self.started = True
         if code != 0 and not reply:
             raise RuntimeError(f"codex exited with {code}: {err.strip()[:500] or 'no output'}")

@@ -10,6 +10,7 @@ COMMANDS: dict[str, str] = {
     "/models": "list the models you can switch to and which account each one uses",
     "/login": "/login claude | codex  sign in with your own account (opens the CLI's login in this terminal)",
     "/provider": "/provider claude | codex | anthropic | openai  (advanced: pick the engine directly)",
+    "/mode": "/mode read | edit | auto  read: BRG tools only (default); edit: the model may change files and run commands in the folder you started brg in, each one confirmed; auto: without confirmation",
     "/status": "current provider, model and tool count",
     "/tools": "list the MCP tools the model can call",
     "/search": "/search <words>  search the knowledge notes directly",

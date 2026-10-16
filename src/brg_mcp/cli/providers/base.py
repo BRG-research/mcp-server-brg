@@ -39,6 +39,13 @@ class Event:
 
 OnEvent = Callable[[Event], None]         # called with each Event
 
+MODES = {
+    "read": "the BRG tools only: notes and books, nothing on disk is touched",
+    "edit": "file and shell tools in the working directory; every change or command is confirmed by you",
+    "auto": "file and shell tools without confirmation (as `claude --dangerously-skip-permissions`)",
+}
+AskPermission = Callable[[str, dict], Awaitable[bool]]     # (tool name, input) -> allowed?
+
 READ_TOOLS = {"search_knowledge", "read_knowledge", "list_domains", "get_book_guide", "search_books", "list_book_sections",
               "read_book_section", "ReadMcpResourceTool", "ListMcpResourcesTool"}
 
@@ -62,9 +69,18 @@ class Provider:
     default_model = ""
     needs_api_key: str | None = None      # environment variable, if an API key is required
 
+    supports_modes = False                # engines with file and shell tools
+
     def __init__(self, bridge: MCPBridge, model: str | None = None):
         self.bridge = bridge
         self.model = model or self.default_model
+        self.mode = "read"
+        self.workdir: str | None = None       # where file tools act (the directory brg was started in)
+        self.ask_permission: AskPermission | None = None
+
+    async def set_mode(self, mode: str) -> None:
+        """Switch between read / edit / auto.  Engines with a live session reconnect."""
+        self.mode = mode
 
     def reset(self):
         """Forget the conversation.  May be a coroutine (engines with a live session)."""
@@ -106,3 +122,11 @@ How to answer.
 - Quote at most one sentence from a source; do not reproduce passages.
 - When a note you read has a figure that carries the answer, repeat its image line verbatim
   (![caption](path.png)) at the end of the answer: the terminal displays the figure."""
+
+MODE_PROMPT = {
+    "read": "You have no file or shell tools in this session: answer from the BRG tools and your knowledge.",
+    "edit": "You also have file and shell tools in the working directory; the user confirms each change or command. "
+            "Read before you change, keep changes minimal, and report what you changed.",
+    "auto": "You also have file and shell tools in the working directory, without confirmation. "
+            "Read before you change, keep changes minimal, and report what you changed.",
+}

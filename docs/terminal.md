@@ -101,6 +101,27 @@ Options: `--provider`, `--model`, `--data-root`, or the environment variables `B
 
 [Main README](../README.md) · [Local development](development/README.md)
 
+## Modes: reading, editing, acting
+
+By default (`read`) the model has the BRG tools only: it can search and read
+notes and books, nothing on disk is touched. The engines underneath are the
+same Claude Code and Codex, so the terminal can also work on files:
+
+```
+/mode edit     file and shell tools in the folder you started brg in;
+               every change and every command is shown and you answer y/N
+/mode auto     the same without questions (like claude --dangerously-skip-permissions)
+/mode read     back to the BRG tools only
+```
+
+Start `brg` inside the project you want to work on: that directory is the
+working directory of the file tools (the BRG notes are found on their own).
+`--mode edit` or `BRG_MODE=edit` starts in that mode. Switching the mode
+starts a new conversation, because the tool set is fixed when the engine
+session opens. With the Codex engine `edit` maps to its workspace-write
+sandbox and `auto` to full access; `codex exec` cannot ask questions, so
+Codex does not confirm step by step.
+
 ## Reading a reply
 
 A reply is laid out like a pipeline view. Between the text messages a

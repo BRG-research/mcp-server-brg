@@ -44,9 +44,9 @@ def claude_entries(server_models: list[dict], account_note: str = "Claude") -> l
 
 
 def claude_default_model(server_models: list[dict]) -> str | None:
-    """The strongest model the account offers (Fable), else the account's own default."""
+    """Opus when the account offers it (the user's choice), else the account's own default."""
     for m in server_models:
-        if "fable" in str(m.get("resolvedModel", "")) and m.get("value") != "default":
+        if "opus" in str(m.get("resolvedModel", "")) and m.get("value") != "default":
             return m.get("resolvedModel")
     for m in server_models:
         if m.get("value") == "default":

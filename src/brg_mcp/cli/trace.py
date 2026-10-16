@@ -66,7 +66,8 @@ class Step:
         if self.kind == "thinking":
             return "thinking"
         args = self.arguments()
-        main = next((args[k] for k in ("query", "uri", "id", "note_id", "path", "section", "section_id", "book", "title", "domain")
+        main = next((args[k] for k in ("query", "uri", "id", "note_id", "file_path", "path", "command", "pattern", "section",
+                                       "section_id", "book", "title", "domain", "url", "description")
                      if isinstance(args.get(k), str) and args[k].strip()), None)
         if main is None:
             main = next((v for v in args.values() if isinstance(v, str) and v.strip()), None)

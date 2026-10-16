@@ -60,8 +60,8 @@ def test_model_registry_from_the_accounts():
     ]
     entries = models.claude_entries(server_models) + [models.ModelEntry("Codex Astra", "codex", "gpt-6-astra", "gpt-6-astra", ("gpt-6-astra",))]
     assert [e.name for e in entries] == ["Claude Opus 5.5", "Claude Fable 5.1", "Codex Astra"]   # no "default"
-    assert models.claude_default_model(server_models) == "claude-fable-5-1"      # the strongest, not "default"
-    assert models.claude_default_model(server_models[:2]) == "claude-opus-5-5"
+    assert models.claude_default_model(server_models) == "claude-opus-5-5"       # Opus by default
+    assert models.claude_default_model([server_models[0], server_models[2]]) == "claude-opus-5-5"   # the account default
     assert models.resolve("fable", entries).model == "claude-fable-5-1"
     assert models.resolve("Claude Opus 5.5", entries).model == "claude-opus-5-5"
     assert models.resolve("astra", entries).provider == "codex"
@@ -81,7 +81,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
         session = PromptSession(input=pipe, output=DummyOutput())
         terminal = Terminal(ROOT, provider="claude", console=console, session=session)
         session.completer = SlashCompleter(terminal)
-        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/legend", "/quit"]:
+        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/legend", "/mode", "/quit"]:
             pipe.send_text(line + "\n")
         await asyncio.wait_for(terminal.run(), timeout=90)
     text = out.getvalue()
@@ -92,10 +92,12 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
     assert terminal.provider_name == "claude" and terminal.provider.model == "claude-fable-5-1"
     assert "no steps yet" in text                                           # /trace before any reply
     assert "the model is thinking" in text                                  # /legend
+    assert "mode read" in text                                              # /mode shows the current mode
     # the completer offers commands after "/" and models after "/model "
     from prompt_toolkit.document import Document
     comp = SlashCompleter(terminal)
-    assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/model", "/models"}
+    assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/mode", "/model", "/models"}
+    assert {c.text for c in comp.get_completions(Document("/mode "), None)} == {"read", "edit", "auto"}
     assert any("Fable 5.1" in c.text for c in comp.get_completions(Document("/model fab"), None))
 
 
@@ -127,14 +129,20 @@ def test_trace_chain_and_table():
     assert "in 2k" in line and "cache 800" in line and "2 tools" in line and "ctx ▰▰▱▱▱▱▱▱ 24%" in line and "$" not in line
 
 
-def test_equations_become_unicode():
-    from brg_mcp.cli.mathtext import mathify, tex_to_unicode
-    assert tex_to_unicode(r"\mathbf{A}\mathbf{f} + \mathbf{p} = \mathbf{0}") == "𝐀𝐟 + 𝐩 = 𝟎"
-    assert tex_to_unicode(r"H = \frac{w L^2}{8 f}") == "H = (w L²)/(8 f)"
-    assert tex_to_unicode(r"\alpha_{max} \le 30^\circ") == "αₘₐₓ ≤ 30°"
+def test_equations_in_plain_notation():
+    from brg_mcp.cli.mathtext import blocks, mathify, tex_to_plain
+    assert tex_to_plain(r"\mathbf{C}^T \mathbf{Q} \mathbf{C} \mathbf{x} = \mathbf{p}") == "C^T Q C x = p"
+    assert tex_to_plain(r"H = \frac{w L^2}{8 f}") == "H = (w L²)/(8 f)"
+    assert tex_to_plain(r"\alpha_{max} \le 30^\circ") == "α_max ≤ 30°"
+    assert tex_to_plain(r"\bar{C}^{\mathsf T} Q \hat{x}_{i+1} = \sqrt{a + b}") == "bar(C)^T Q hat(x)_(i+1) = √(a + b)"
+    assert tex_to_plain(r"\sum_{i=1}^{n} q_i l_i^2 \to \infty") == "∑_(i=1)^n q_i l_i² → ∞"
+    assert tex_to_plain(r"L^{-1} s") == "L⁻¹ s"
+    assert tex_to_plain(r"E = \frac{1}{2}\sum_i q_i l_i^2") == "E = 1/2 ∑_i q_i l_i²"
+    assert tex_to_plain(r"\begin{bmatrix} a & b \\ c & d \end{bmatrix}") == "[a b ; c d]"
     text = mathify("Fix $q = f/l$ per edge.\n\n$$\\sum_i q_i = Q$$\n\n`$x$` stays; $5 and $6 are prices.")
-    assert "Fix q = f/l per edge." in text and "> ∑ᵢ qᵢ = Q" in text
-    assert "`$x$`" in text and "$5 and $6" in text
+    assert "Fix `q = f/l` per edge." in text and "`$x$`" in text and "$5 and $6" in text
+    parts = blocks("Text before\n\n$$\\mathbf{D} \\mathbf{x} = \\mathbf{p}$$\n\nafter ```$$ not math $$```")
+    assert [k for k, _ in parts] == ["md", "eq", "md"] and parts[1][1] == "D x = p"
 
 
 def test_figures_render_as_blocks(tmp_path):
@@ -159,9 +167,19 @@ def test_trimmed_output_has_no_trailing_padding():
     out = io.StringIO()
     terminal = Terminal(ROOT, console=Console(file=out, force_terminal=False, width=120),
                         session=PromptSession(input=create_pipe_input(), output=DummyOutput()))
-    terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\nSecond paragraph.")))
+    terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\n$$a = b$$\n\n```python\nx = 1\n```")))
     lines = out.getvalue().splitlines()
     assert lines[0] == "  Short line with q = f/l." and all(line == line.rstrip() for line in lines)   # 2-column margin
+    assert "  ▌ a = b" in lines and any(line.strip() == "x = 1" for line in lines)
     terminal.print(terminal.trimmed(__import__("brg_mcp.cli.trace", fromlist=["legend"]).legend(), width=120))
     text = out.getvalue()
     assert "the model is thinking" in text and "ctx" in text and "an error" in text
+
+
+def test_describe_action_and_modes():
+    from brg_mcp.cli.providers.base import MODES
+    from brg_mcp.cli.term import describe_action
+    assert set(MODES) == {"read", "edit", "auto"}
+    assert describe_action("Bash", {"command": "ls -la"}) == "run: ls -la"
+    assert describe_action("Write", {"file_path": "a.py", "content": "x\ny"}) == "write a.py (2 lines)"
+    assert describe_action("Edit", {"file_path": "a.py", "old_string": "1", "new_string": "2"}).startswith("edit a.py")
