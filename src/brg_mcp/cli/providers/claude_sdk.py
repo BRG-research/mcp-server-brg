@@ -13,7 +13,7 @@ import json
 from brg_mcp.cli import logs
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from .agent_cli import ClaudeCliProvider, claude_account, claude_code_effort, readiness
-from .base import MODE_PROMPT, SYSTEM_PROMPT, Event, OnEvent, OnText, Provider, preview, tool_name
+from .base import MODE_PROMPT, SYSTEM_PROMPT, Event, OnEvent, OnText, Provider, preview, result_text, tool_name
 
 BRG_INSTRUCTIONS = SYSTEM_PROMPT
 
@@ -160,7 +160,7 @@ class ClaudeSDKProvider(Provider):
             content = message.content if isinstance(message.content, list) else []
             for block in content:
                 if isinstance(block, ToolResultBlock):
-                    on_event(Event("tool_result", "", preview(block.content), ok=not block.is_error))
+                    on_event(Event("tool_result", "", preview(block.content), ok=not block.is_error, data={"text": result_text(block.content)}))
         elif isinstance(message, ResultMessage):
             self.session_id = message.session_id
             if not state["streamed"] and message.result:

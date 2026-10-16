@@ -25,7 +25,8 @@ def test_stdio_protocol(tmp_path):
                 tools = await session.list_tools()
                 assert {tool.name for tool in tools.tools} == {
                     "list_domains", "search_knowledge",
-        "read_knowledge", "list_packages",
+        "read_knowledge",
+        "funicular_cable", "draw_diagram", "list_packages",
                     "list_books", "list_book_sections", "search_books", "read_book_section", "get_book_guide"
                 }
                 result = await session.call_tool("search_knowledge", {"query": "equilibrium"})

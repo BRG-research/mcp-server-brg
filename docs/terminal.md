@@ -132,6 +132,26 @@ back to the engine's own setting (Claude Code's `effortLevel` in
 Claude engine a change starts a new conversation. `--effort` and
 `BRG_EFFORT` set it at start.
 
+## Drawings: computed, not hand-drawn
+
+The model never draws with text itself. Two server tools compute and draw,
+and the terminal prints each drawing the moment the tool returns, between
+the steps of the chain, with a green bar at the left:
+
+- `funicular_cable(span, loads, pole_distance, support_heights)` solves the
+  funicular polygon of a hanging cable (mirrored, an arch) under point loads
+  exactly and returns the construction step by step in the graphic statics
+  way: form diagram with Bow's notation, load line, pole and rays, the
+  funicular polygon, the forces read off the rays.
+- `draw_diagram(lines, arrows, dashed, points, labels, title)` draws any
+  line construction from coordinates the model computes: form and force
+  diagrams, trusses, reciprocal figures.
+
+Lines are drawn with Braille dots (two by four per character cell, so
+proportions are true), labels in plain characters. A construction that took
+two minutes of hand-drawn text art now takes one tool call; the model
+explains the drawings instead of producing them.
+
 ## Reading a reply
 
 A reply is laid out like a pipeline view. Between the text messages a

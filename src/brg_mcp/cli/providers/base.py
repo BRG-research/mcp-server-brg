@@ -55,12 +55,42 @@ def tool_name(raw: str) -> str:
     return raw.removeprefix("mcp__brg__")
 
 
+def result_text(content) -> str:
+    """The full text of a tool result (string, or MCP content blocks)."""
+    if isinstance(content, list):
+        return "\n".join(str(b.get("text", "")) if isinstance(b, dict) else str(getattr(b, "text", b)) for b in content)
+    return str(content or "")
+
+
 def preview(content, limit: int = 160) -> str:
     """A one-line preview of a tool result (string, or MCP content blocks)."""
-    if isinstance(content, list):
-        content = " ".join(str(b.get("text", "")) if isinstance(b, dict) else str(getattr(b, "text", b)) for b in content)
-    text = " ".join(str(content or "").split())
+    text = " ".join(result_text(content).split())
     return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def drawings_in(result: str) -> list[dict]:
+    """The drawings a tool result carries: [{"title", "text"}, ...], from funicular_cable / draw_diagram."""
+    if '"drawing' not in result:
+        return []
+    import json
+    try:
+        data = json.loads(result)
+    except ValueError:
+        return []
+    if isinstance(data, dict) and "result" in data and isinstance(data["result"], (dict, str)):
+        data = data["result"]
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                return []
+    if not isinstance(data, dict):
+        return []
+    if isinstance(data.get("drawings"), list):
+        return [d for d in data["drawings"] if isinstance(d, dict) and d.get("text")]
+    if isinstance(data.get("drawing"), str):
+        return [{"title": data.get("title", ""), "text": data["drawing"]}]
+    return []
 
 
 class Provider:
@@ -132,7 +162,11 @@ How to answer.
 - If the tools returned nothing relevant, say so in one sentence and answer from general knowledge, marked as such.
 - Quote at most one sentence from a source; do not reproduce passages.
 - When a note you read has a figure that carries the answer, repeat its image line verbatim
-  (![caption](path.png)) at the end of the answer: the terminal displays the figure."""
+  (![caption](path.png)) at the end of the answer: the terminal displays the figure.
+- Drawings and constructions: never draw with text yourself. funicular_cable solves and draws a hanging
+  cable or (mirrored) an arch step by step; draw_diagram draws any line construction from coordinates you
+  compute (form and force diagrams, trusses, polygons). The terminal shows these drawings to the user the
+  moment the tool returns, so refer to them by their step or title and explain; do not repeat them."""
 
 MODE_PROMPT = {
     "read": "You have no file or shell tools in this session: answer from the BRG tools and your knowledge.",

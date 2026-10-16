@@ -72,9 +72,7 @@ class PublicBooks:
                 continue
             entry = re.match(r"^\s+- `([^`]+\.md)` \*\*(.*?)\*\*(.*)$", line)
             if current and entry:
-                filename = self._safe_path(entry.group(1))
-                if "/" in filename:
-                    raise ValueError("Library section filenames must be basenames")
+                filename = self._safe_path(entry.group(1))      # a basename or a relative path inside the book
                 books[current]["sections"].append({
                     "book": current, "section": filename, "title": entry.group(2),
                     "summary": entry.group(3).strip(),

@@ -7,7 +7,7 @@ import time
 import os
 
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .base import Event, preview, SYSTEM_PROMPT, OnEvent, OnText, Provider
+from .base import Event, preview, result_text, SYSTEM_PROMPT, OnEvent, OnText, Provider
 
 MAX_TOOL_ROUNDS = 12
 MODEL_ALIASES = {"codex": "gpt-5-codex", "gpt": "gpt-5"}
@@ -81,7 +81,7 @@ class OpenAIProvider(Provider):
                 on_event(Event("tool_call", call.name, json.dumps(arguments)))
                 try:
                     text = await self.bridge.call_tool(call.name, arguments)
-                    on_event(Event("tool_result", call.name, preview(text), ok=True))
+                    on_event(Event("tool_result", call.name, preview(text), ok=True, data={"text": text}))
                 except Exception as exc:                      # noqa: BLE001
                     text = f"tool error: {exc}"
                     on_event(Event("tool_result", call.name, text, ok=False))

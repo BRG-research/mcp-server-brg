@@ -21,6 +21,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.keys import Keys
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.styles import Style
 from rich.console import Console, Group
@@ -37,7 +38,7 @@ from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
 from brg_mcp.cli import images
 from brg_mcp.cli import markdown as md
-from brg_mcp.cli.providers.base import EFFORTS, MODES, Event
+from brg_mcp.cli.providers.base import EFFORTS, MODES, Event, drawings_in
 from brg_mcp.cli.trace import GREY, Trace, legend, metrics_line
 
 TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read, fewer reflow problems
@@ -201,7 +202,7 @@ class Terminal:
         mode = "" if self.mode == "read" else f" · {self.mode}"
         effort = f" · {self.effort}" if self.effort else ""
         return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}{mode}{effort}"),
-                ("class:bottom-toolbar", " · ? for shortcuts · ↑↓ history · / commands · Ctrl+C interrupts")]
+                ("class:bottom-toolbar", " · ? for shortcuts · ↑↓ history · / commands · Esc interrupts a reply")]
 
     # ------------------------------------------------------------------ output
     def print(self, *args, **kwargs) -> None:
@@ -533,7 +534,7 @@ class Terminal:
             if trace.chain and not buffer:
                 text.append("   ")
                 text.append_text(trace.status_chain(max(10, self.console.width - text.cell_len - 6)))
-            text.append("   Ctrl+C interrupts", style="#484f58")
+            text.append("   Esc interrupts", style="#484f58")
             text.truncate(max(10, self.console.width - 4))
             spinner.update(text=text)
             step_s = trace.current_step_seconds()
@@ -578,6 +579,19 @@ class Terminal:
                 full.append(fragment)
                 flush_text()
 
+            def show_drawing(drawing: dict) -> None:
+                """A drawing a tool produced: printed now, between the chain so far and what follows."""
+                flush_text(final=True)
+                flush_chain()
+                block = Text()
+                if drawing.get("title"):
+                    block.append(drawing["title"] + "\n", style="bold #e6edf3")
+                for line in str(drawing["text"]).splitlines():
+                    block.append("▌ ", style="#3fb950")
+                    block.append(line + "\n", style="#e6edf3")
+                live.console.print(self.trimmed(block, width=self.console.width))
+                live.console.print()
+
             def on_event(event: Event) -> None:
                 if event.kind in ("note", "error"):
                     style = "#c9d1d9" if event.kind == "note" else "#f85149"
@@ -586,6 +600,9 @@ class Terminal:
                 if event.kind in ("thinking", "tool_call") and buffer:
                     flush_text(final=True)
                 trace.add(event)
+                if event.kind == "tool_result" and event.data and event.ok is not False:
+                    for drawing in drawings_in(event.data.get("text", "")):
+                        show_drawing(drawing)
 
             try:
                 await self.provider.send(line, on_text, on_event)
@@ -609,14 +626,30 @@ class Terminal:
         self.print()
 
     async def send(self, line: str) -> None:
+        """Run a reply as a task; Esc or Ctrl+C while it runs cancels it (keys are read directly, the
+        prompt is not active during a reply)."""
         self.turn = asyncio.create_task(self.ask(line))
         loop = asyncio.get_running_loop()
+        turn = self.turn
+
+        def on_keys() -> None:
+            try:
+                keys = self.session.input.read_keys()
+                keys += self.session.input.flush_keys()                # a lone Esc waits in the parser otherwise
+            except Exception:                                          # noqa: BLE001
+                return
+            if any(k.key in (Keys.Escape, Keys.ControlC) for k in keys) and not turn.done():
+                turn.cancel()
+
         try:
-            loop.add_signal_handler(signal.SIGINT, self.turn.cancel)
+            loop.add_signal_handler(signal.SIGINT, turn.cancel)
         except (NotImplementedError, RuntimeError):
             pass
         try:
-            await self.turn
+            with self.session.input.raw_mode(), self.session.input.attach(on_keys):
+                await turn
+        except Exception:                                              # noqa: BLE001 - attach can fail on odd inputs
+            await turn
         finally:
             try:
                 loop.remove_signal_handler(signal.SIGINT)

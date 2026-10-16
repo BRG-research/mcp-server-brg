@@ -7,7 +7,7 @@ import time
 import os
 
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .base import Event, preview, SYSTEM_PROMPT, OnEvent, OnText, Provider
+from .base import Event, preview, result_text, SYSTEM_PROMPT, OnEvent, OnText, Provider
 
 MAX_TOOL_ROUNDS = 12
 
@@ -88,7 +88,7 @@ class AnthropicProvider(Provider):
                 try:
                     text = await self.bridge.call_tool(tool.name, arguments)
                     results.append({"type": "tool_result", "tool_use_id": tool.id, "content": text[:40000]})
-                    on_event(Event("tool_result", tool.name, preview(text), ok=True))
+                    on_event(Event("tool_result", tool.name, preview(text), ok=True, data={"text": text}))
                 except Exception as exc:                      # noqa: BLE001 - reported to the model
                     results.append({"type": "tool_result", "tool_use_id": tool.id,
                                     "content": f"tool error: {exc}", "is_error": True})

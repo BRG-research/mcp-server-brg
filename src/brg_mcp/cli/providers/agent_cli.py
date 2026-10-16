@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .base import Event, OnEvent, OnText, Provider, preview, tool_name
+from .base import Event, OnEvent, OnText, Provider, preview, result_text, tool_name
 
 
 def mcp_config_file(bridge: MCPBridge) -> Path:
@@ -160,7 +160,7 @@ class ClaudeCliProvider(Provider):
                 content = (event.get("message") or {}).get("content") or []
                 for block in content if isinstance(content, list) else []:
                     if isinstance(block, dict) and block.get("type") == "tool_result":
-                        on_event(Event("tool_result", "", preview(block.get("content")), ok=not block.get("is_error")))
+                        on_event(Event("tool_result", "", preview(block.get("content")), ok=not block.get("is_error"), data={"text": result_text(block.get("content"))}))
             elif kind == "result":
                 self.session_id = event.get("session_id", self.session_id)
                 if not streamed_any and event.get("result"):
@@ -255,7 +255,7 @@ class CodexCliProvider(Provider):
                 on_event(Event("tool_call", str(label), json.dumps(item.get("arguments", item.get("command", "")))))
             elif kind == "item.completed" and itype in ("mcp_tool_call", "command_execution"):
                 ok = item.get("status", "completed") not in ("failed", "error")
-                on_event(Event("tool_result", "", preview(item.get("result") or item.get("aggregated_output") or item.get("error") or ""), ok=ok))
+                on_event(Event("tool_result", "", preview(item.get("result") or item.get("aggregated_output") or item.get("error") or ""), ok=ok, data={"text": result_text(item.get("result") or "")}))
             elif kind == "turn.completed":
                 usage = event.get("usage") or {}
                 on_event(Event("usage", data={

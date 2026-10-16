@@ -4,6 +4,7 @@ terminal driven through a pipe (prompt_toolkit's test input)."""
 import asyncio
 import io
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -216,3 +217,52 @@ def test_block_boundary_and_status_chain():
         t.add(Event("tool_call", "search_knowledge")); t.add(Event("tool_args", "search_knowledge", '{"query": "funicular"}'))
     short = t.status_chain(40)
     assert short.cell_len <= 40 and short.plain.startswith("… ")
+
+
+def test_funicular_tool_solves_and_draws():
+    from brg_mcp.graphics import funicular
+    from brg_mcp.cli.providers.base import drawings_in
+    sol = funicular.solve(6, [(1, 1), (2, 1), (3, 1), (4, 1), (5, 1)], 1.0)
+    assert [round(z, 2) for _, z in sol["nodes"]] == [0, -2.5, -4.0, -4.5, -4.0, -2.5, 0]
+    assert round(sol["segments"][0]["force"], 2) == 2.69 and sol["reactions"]["A"]["vertical"] == 2.5
+    steps = funicular.drawings(sol, 80, 20)
+    assert len(steps) == 5 and all(s["text"].strip() for s in steps) and "Bow" in steps[0]["title"]
+    assert all(len(line) <= 80 for s in steps[:4] for line in s["text"].splitlines())   # the canvas drawings
+    assert any("\u2800" <= ch <= "\u28ff" for ch in steps[3]["text"])          # Braille lines
+    assert "span 6" in steps[0]["text"] and "pole" in steps[2]["text"]
+    result = json.dumps({"result": json.dumps({**sol, "drawings": steps})})
+    assert [d["title"] for d in drawings_in(result)] == [s["title"] for s in steps]
+    assert drawings_in('{"result": "plain text"}') == [] and drawings_in("not json") == []
+
+
+@pytest.mark.asyncio
+async def test_escape_interrupts_a_reply(tmp_path, monkeypatch):
+    """Esc typed while the model works cancels the reply (the key is read directly during a turn)."""
+    from brg_mcp.cli.term import SlashCompleter, Terminal
+    from brg_mcp.cli.providers.base import Provider
+    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
+
+    class Slow(Provider):
+        name = "slow"
+        async def send(self, text, on_text, on_event):
+            await asyncio.sleep(20)
+            on_text("too late")
+            return "too late"
+
+    out = io.StringIO()
+    console = Console(file=out, force_terminal=False, width=100)
+    with create_pipe_input() as pipe:
+        session = PromptSession(input=pipe, output=DummyOutput())
+        terminal = Terminal(ROOT, console=console, session=session)
+        terminal.provider = Slow(terminal.bridge)
+        terminal.provider_name = "slow"
+
+        async def press_escape():
+            await asyncio.sleep(0.3)
+            pipe.send_text("\x1b")
+        asyncio.create_task(press_escape())
+        started = time.monotonic()
+        await asyncio.wait_for(terminal.send("hello"), timeout=10)
+    elapsed = time.monotonic() - started
+    assert elapsed < 5, (elapsed, out.getvalue()[-300:])
+    assert "interrupted" in out.getvalue() and "too late" not in out.getvalue()
