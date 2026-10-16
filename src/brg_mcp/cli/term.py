@@ -25,6 +25,7 @@ from prompt_toolkit.styles import Style
 from rich.console import Console, Group
 from rich.live import Live
 from rich.markdown import Markdown
+from rich.padding import Padding
 from rich.segment import Segment, Segments
 from rich.spinner import Spinner
 from rich.table import Table
@@ -36,9 +37,10 @@ from brg_mcp.cli.providers import PROVIDERS, Provider
 from brg_mcp.cli import images
 from brg_mcp.cli.mathtext import mathify
 from brg_mcp.cli.providers.base import Event
-from brg_mcp.cli.trace import GREY, Trace, metrics_line
+from brg_mcp.cli.trace import GREY, Trace, legend, metrics_line
 
 TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read, fewer reflow problems
+INDENT = 2                         # replies, chains and metrics sit this far from the left edge
 
 BACKGROUND = os.environ.get("BRG_BACKGROUND", "#0b1220")      # the terminal's background while brg runs (OSC 11)
 
@@ -113,6 +115,9 @@ class Terminal:
         self.turn: asyncio.Task | None = None
         self.trace: Trace | None = None          # the steps of the last reply (/trace)
         self.context_pct: float | None = None
+        self.figures_mode = os.environ.get("BRG_FIGURES", "auto")
+        if self.figures_mode not in images.MODES:
+            self.figures_mode = "auto"
         history_path = Path(os.environ.get("BRG_HISTORY", Path.home() / ".brg_history"))
         self.session = session or PromptSession(
             message=[("class:caret", "> ")],
@@ -136,6 +141,7 @@ class Terminal:
         """A renderable rendered now, without the padding to the full width: lines keep no trailing
         spaces, so a later narrowing of the window does not wrap them into blank lines."""
         width = min(width or TEXT_WIDTH, self.console.width)
+        renderable = Padding(renderable, (0, 0, 0, INDENT))
         lines = self.console.render_lines(renderable, self.console.options.update_width(width), pad=False)
         out: list[Segment] = []
         for line in lines:
@@ -162,7 +168,7 @@ class Terminal:
                 continue
             seen.add(path)
             try:
-                images.show(self.console, path, caption)
+                images.show(self.console, path, caption, mode=self.figures_mode)
             except Exception as exc:                                  # noqa: BLE001
                 self.error(f"could not show {ref}: {exc}")
 
@@ -315,11 +321,22 @@ class Terminal:
             self.print(await self.bridge.call_tool("search_books", {"query": arg}))
         elif name == "/show":
             await self.show_command(arg)
+        elif name == "/figures":
+            if arg in images.MODES:
+                self.figures_mode = arg
+            elif arg:
+                self.error(f"/figures auto | link | open | blocks (now: {self.figures_mode})")
+                return True
+            where = {"kitty": "this terminal shows images inline", "iterm2": "this terminal shows images inline",
+                     "blocks": "this terminal cannot show images; figures are links"}[images.protocol()]
+            self.event(f"figures: {self.figures_mode} · {where}")
+        elif name == "/legend":
+            self.print(self.trimmed(legend(), width=self.console.width))
         elif name == "/trace":
             if self.trace is None or not self.trace.steps:
                 self.event("no steps yet: ask something first")
             else:
-                self.print(self.trace.table())
+                self.print(self.trimmed(self.trace.table(), width=self.console.width))
         elif name == "/clear":
             if self.provider:
                 await self.reset_provider()
@@ -341,7 +358,7 @@ class Terminal:
             return
         path = images.resolve(arg, [self.data_root, Path.cwd()])
         if path is not None and path.suffix.lower() in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
-            images.show(self.console, path)
+            images.show(self.console, path, mode=self.figures_mode)
             return
         try:
             note = await self.bridge.read_resource(f"brg://knowledge/{arg}")
@@ -372,7 +389,7 @@ class Terminal:
         def renderable():
             parts = []
             if trace.chain:
-                parts.append(trace.chain_text())
+                parts.append(self.trimmed(trace.chain_text()))
             if buffer:
                 parts.append(self.trimmed(self.reply_markdown("".join(buffer))))
             else:
@@ -383,7 +400,7 @@ class Terminal:
                   vertical_overflow="visible", transient=True) as live:
             def flush_chain() -> None:
                 if trace.chain:
-                    live.console.print(trace.chain_text())
+                    live.console.print(self.trimmed(trace.chain_text()))
                     trace.text_started()
 
             def flush_text(final: bool = False) -> None:
@@ -437,8 +454,8 @@ class Terminal:
             usage = await self.provider.context_usage()
             if usage and usage.get("percentage") is not None:
                 self.context_pct = float(usage["percentage"])
-        self.print(metrics_line(trace.usage, self.context_pct, time.monotonic() - started,
-                                show_cost=self.provider_name in ("anthropic", "openai")))   # accounts: no $
+        self.print(self.trimmed(metrics_line(trace.usage, self.context_pct, time.monotonic() - started,
+                                             show_cost=self.provider_name in ("anthropic", "openai"))))   # accounts: no $
         self.print()
 
     async def send(self, line: str) -> None:

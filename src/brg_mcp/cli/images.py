@@ -1,6 +1,15 @@
 """Figures in the terminal.  Kitty, Ghostty and WezTerm take real images through the kitty graphics
-protocol, iTerm2 through its inline-image escape; every other terminal gets a half-block pixel rendering
-(two pixels per character cell), plus a file:// link to open the original."""
+protocol, iTerm2 through its inline-image escape.  Every other terminal gets the caption and the path as a
+file:// link (Ctrl+click opens the image viewer), or the figure is opened in the system viewer right away
+(mode "open").  A half-block pixel rendering exists for the curious (mode "blocks") but is not the default.
+
+Modes (BRG_FIGURES, or /figures <mode> in the terminal):
+  auto    inline image where the terminal can, else a link          (default)
+  link    always the link only
+  open    the link, and the image opened in the system viewer
+  blocks  the pixel rendering in any terminal"""
+
+MODES = ("auto", "link", "open", "blocks")
 
 from __future__ import annotations
 
@@ -41,24 +50,30 @@ def resolve(path: str, roots: list[Path]) -> Path | None:
     return None
 
 
-def show(console: Console, path: Path, caption: str = "", max_cols: int = 80) -> None:
-    from PIL import Image
-    cols = max(20, min(max_cols, console.width - 4))
-    with Image.open(path) as im:
-        im = im.convert("RGBA")
-        bg = Image.new("RGBA", im.size, (11, 18, 32, 255))
-        bg.alpha_composite(im)
-        im = bg.convert("RGB")
-        kind = protocol()
-        if kind == "kitty" and console.is_terminal:
-            _kitty(console, im, cols)
-        elif kind == "iterm2" and console.is_terminal:
-            _iterm2(console, im, cols)
-        else:
-            _blocks(console, im, cols)
+def show(console: Console, path: Path, caption: str = "", max_cols: int = 80, mode: str = "auto") -> None:
+    """Show one figure according to `mode` (see the module docstring)."""
+    kind = protocol()
+    inline = mode == "blocks" or (mode == "auto" and kind in ("kitty", "iterm2") and console.is_terminal)
+    if inline:
+        from PIL import Image
+        cols = max(20, min(max_cols, console.width - 4))
+        with Image.open(path) as im:
+            im = im.convert("RGBA")
+            bg = Image.new("RGBA", im.size, (11, 18, 32, 255))
+            bg.alpha_composite(im)
+            im = bg.convert("RGB")
+            if mode == "blocks" or kind == "blocks":
+                _blocks(console, im, cols)
+            elif kind == "kitty":
+                _kitty(console, im, cols)
+            else:
+                _iterm2(console, im, cols)
     link = f"file://{path.resolve()}"
-    console.print(Text.assemble(("  ", ""), (caption or path.name, f"italic #8b949e link {link}"), ("  ", ""),
-                                (str(path), f"#484f58 link {link}")))
+    hint = "" if inline else "   Ctrl+click opens it · /figures open shows figures in your image viewer"
+    console.print(Text.assemble(("  ▣ ", "#58a6ff"), (caption or path.name, f"bold #c9d1d9 link {link}"), ("  ", ""),
+                                (str(path), f"#8b949e link {link}"), (hint, "#484f58")))
+    if mode == "open":
+        open_external(path)
 
 
 def _png(im) -> bytes:
@@ -71,6 +86,7 @@ def _kitty(console: Console, im, cols: int) -> None:
     rows = max(1, round(cols * im.height / im.width / 2.2))
     data = base64.b64encode(_png(im)).decode()
     out = console.file
+    out.write("  ")
     chunks = [data[i:i + 4096] for i in range(0, len(data), 4096)]
     for i, chunk in enumerate(chunks):
         more = 1 if i < len(chunks) - 1 else 0
@@ -82,7 +98,7 @@ def _kitty(console: Console, im, cols: int) -> None:
 
 def _iterm2(console: Console, im, cols: int) -> None:
     data = base64.b64encode(_png(im)).decode()
-    console.file.write(f"\x1b]1337;File=inline=1;width={cols};preserveAspectRatio=1:{data}\x07\n")
+    console.file.write(f"  \x1b]1337;File=inline=1;width={cols};preserveAspectRatio=1:{data}\x07\n")
     console.file.flush()
 
 
@@ -94,7 +110,7 @@ def _blocks(console: Console, im, cols: int) -> None:
     small = im.resize((w, h))
     px = small.load()
     for y in range(0, h, 2):
-        line = Text()
+        line = Text("  ")
         for x in range(w):
             top, bottom = px[x, y], px[x, y + 1]
             line.append("▀", style=f"rgb({top[0]},{top[1]},{top[2]}) on rgb({bottom[0]},{bottom[1]},{bottom[2]})")

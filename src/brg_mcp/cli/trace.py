@@ -201,4 +201,42 @@ def metrics_line(usage: dict | None, context_pct: float | None, seconds: float, 
         filled = max(0, min(8, round(context_pct / 12.5)))
         parts.append(f"ctx {'▰' * filled}{'▱' * (8 - filled)} {context_pct:.0f}%")
     parts.append(f"{seconds:.0f}s")
-    return Text("  " + " · ".join(parts), style=GREY)
+    return Text(" · ".join(parts), style=GREY)
+
+
+def legend() -> Table:
+    """/legend: what every symbol of the terminal means."""
+    t = Table(box=None, padding=(0, 2), show_header=False)
+    t.add_column("symbol", justify="left", no_wrap=True, min_width=16)
+    t.add_column("meaning")
+
+    def tile(glyph: str, colour: str) -> Text:
+        return Text.assemble((f" {glyph} ", f"bold {colour} on {TILE}"))     # the tile covers the glyph only
+
+    def heading(text: str) -> None:
+        t.add_row("", Text(text, style="bold #c9d1d9"))
+
+    heading("The step chain between the messages")
+    t.add_row(tile("◐", BLUE), "the model is thinking (reasoning before it writes or calls a tool)")
+    t.add_row(tile("≣", GREEN), 'a read: a knowledge note, a book section or a search, e.g.  ≣ search_knowledge "force density"')
+    t.add_row(tile("⚙", GREEN), "any other tool call (in Codex also a shell command)")
+    t.add_row(tile("⚙", AMBER), "amber: the step is still running")
+    t.add_row(tile("⚙", GREEN), "green: the tool returned")
+    t.add_row(tile("✗", RED), "red: the tool failed; /trace shows the error")
+    t.add_row(Text("›", style=GREY), "the next step; a chain is as long as the steps taken before the next message")
+    t.add_row(Text("label", style=GREY), "after a badge: the tool and its main argument; /trace prints all arguments and results")
+    t.add_row("", "")
+    heading("The line under a reply")
+    t.add_row(Text("in 41k", style=GREY), "tokens the model read this turn (your question, the notes, the tool results, the history)")
+    t.add_row(Text("out 310", style=GREY), "tokens the model wrote (the reply and the tool calls)")
+    t.add_row(Text("cache 38k", style=GREY), "the part of 'in' that came from the cache (cheaper and faster)")
+    t.add_row(Text("4 tools", style=GREY), "number of tool calls in this reply")
+    t.add_row(Text("ctx ▰▰▱▱▱▱▱▱ 24%", style=GREY), "share of the model's context window already filled by this conversation; /clear empties it")
+    t.add_row(Text("14s", style=GREY), "time from your question to the end of the reply")
+    t.add_row("", "")
+    heading("Elsewhere")
+    t.add_row(Text("●", style=f"bold {GREEN}"), "a message from the terminal itself (model, account, tools)")
+    t.add_row(Text("●", style=f"bold {RED}"), "an error")
+    t.add_row(Text("▌ 𝐀𝐟 + 𝐩 = 𝟎", style="#c9d1d9"), "a display equation (TeX shown as Unicode mathematics)")
+    t.add_row(Text("● Idle", style=GREEN), "bottom bar: the terminal is waiting for you; the model name and the context share follow")
+    return t

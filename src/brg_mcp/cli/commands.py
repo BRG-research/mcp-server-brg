@@ -16,11 +16,13 @@ COMMANDS: dict[str, str] = {
     "/read": "/read <note id>  read a knowledge note (e.g. form-finding-compas-fd)",
     "/books": "/books <words>  search the public book library",
     "/show": "/show <note id> | <image path>  display a note's figures or an image; /show open <path> opens it outside",
+    "/figures": "/figures auto | link | open | blocks  how figures are shown: inline where the terminal can, as links, opened in your viewer",
+    "/legend": "what the symbols mean: the badges of the step chain, the line under a reply, the dots",
     "/trace": "the steps of the last reply in full: each tool call with its arguments, timing and result",
     "/clear": "forget the conversation",
     "/quit": "leave the terminal",
 }
-ALIASES = {"/exit": "/quit", "/q": "/quit", "/h": "/help", "/?": "/help", "/reset": "/clear"}
+ALIASES = {"/exit": "/quit", "/q": "/quit", "/h": "/help", "/?": "/help", "/reset": "/clear", "/symbols": "/legend", "/icons": "/legend"}
 
 
 @dataclass
@@ -44,7 +46,6 @@ def help_text() -> str:
     for name, doc in COMMANDS.items():
         lines.append(f"  {name:<{width}}  {doc}")
     lines += ["", "Anything else is sent to the model, which can call the BRG tools while answering.",
-              "", "Between the text messages a chain of badges shows the steps the model took:",
-              "  ◐ thinking   ≣ read a note or book   ⚙ other tool   green returned   ✗ failed; the label after a badge",
-              "  is the tool and its main argument, /trace prints everything in full"]
+              "", "Between the text messages a chain of badges shows the steps the model took; /legend explains",
+              "every symbol and /trace prints the steps of the last reply in full."]
     return "\n".join(lines)

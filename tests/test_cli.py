@@ -81,7 +81,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
         session = PromptSession(input=pipe, output=DummyOutput())
         terminal = Terminal(ROOT, provider="claude", console=console, session=session)
         session.completer = SlashCompleter(terminal)
-        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/quit"]:
+        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/legend", "/quit"]:
             pipe.send_text(line + "\n")
         await asyncio.wait_for(terminal.run(), timeout=90)
     text = out.getvalue()
@@ -91,6 +91,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
     assert "Claude Fable 5.1" in text                                       # and back, named in /status
     assert terminal.provider_name == "claude" and terminal.provider.model == "claude-fable-5-1"
     assert "no steps yet" in text                                           # /trace before any reply
+    assert "the model is thinking" in text                                  # /legend
     # the completer offers commands after "/" and models after "/model "
     from prompt_toolkit.document import Document
     comp = SlashCompleter(terminal)
@@ -139,9 +140,11 @@ def test_figures_render_as_blocks(tmp_path):
     Image.new("RGB", (8, 4), (255, 0, 0)).save(png)
     out = io.StringIO()
     console = Console(file=out, force_terminal=True, width=60, color_system="truecolor")
-    images.show(console, png, "a red figure", max_cols=8)
+    images.show(console, png, "a red figure", max_cols=8)                  # auto in a plain terminal: a link, no pixels
     text = out.getvalue()
-    assert "▀" in text and "255;0;0" in text and "a red figure" in text and "file://" in text
+    assert "▀" not in text and "a red figure" in text and "file://" in text and "Ctrl+click" in text
+    images.show(console, png, "a red figure", max_cols=8, mode="blocks")   # the pixel rendering only on request
+    assert "▀" in out.getvalue() and "255;0;0" in out.getvalue()
     assert images.resolve("nonexistent.png", [ROOT]) is None
     assert images.IMAGE_LINK.findall("see ![Schek fig 3](images/schek_fig3.png) here") == [("Schek fig 3", "images/schek_fig3.png")]
 
@@ -154,4 +157,7 @@ def test_trimmed_output_has_no_trailing_padding():
                         session=PromptSession(input=create_pipe_input(), output=DummyOutput()))
     terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\nSecond paragraph.")))
     lines = out.getvalue().splitlines()
-    assert lines[0] == "Short line with q = f/l." and all(line == line.rstrip() for line in lines)
+    assert lines[0] == "  Short line with q = f/l." and all(line == line.rstrip() for line in lines)   # 2-column margin
+    terminal.print(terminal.trimmed(__import__("brg_mcp.cli.trace", fromlist=["legend"]).legend(), width=120))
+    text = out.getvalue()
+    assert "the model is thinking" in text and "ctx" in text and "an error" in text

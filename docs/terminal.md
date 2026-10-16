@@ -120,6 +120,8 @@ chain is as long as the number of steps between two messages. Each badge is
 also a hyperlink whose target repeats the tool and its arguments, for
 terminals that show link targets on hover. `/trace` prints every step of
 the last reply with all arguments, duration and a preview of the result.
+`/legend` (or `/symbols`) explains every symbol, in colour, inside the
+terminal.
 
 Under each reply a dim line gives the tokens read and written, the cached
 part, the number of tools, the share of the context window in use and the
@@ -133,11 +135,14 @@ operators, fractions as `(a)/(b)`. Display equations are set on their own
 line as a quoted block. `\mathbf{C}^T \mathbf{Q} \mathbf{C}` becomes
 `𝐂ᵀ 𝐐 𝐂`, `\alpha_{max} \le 30^\circ` becomes `αₘₐₓ ≤ 30°`.
 
-Figures referenced in a reply or a note (`![caption](path.png)`) are shown
-under the text: as real images in kitty, Ghostty, WezTerm and iTerm2, and
-as a half-block pixel rendering elsewhere, each with a `file://` link to the
-original. `/show <note id>` displays a note's figures, `/show <image path>`
-one image, `/show open <path>` opens it in the system viewer.
+Figures referenced in a reply or a note (`![caption](path.png)`) are listed
+under the text with their caption and path as a `file://` link; Ctrl+click
+opens the image viewer. Kitty, Ghostty, WezTerm and iTerm2 show the image
+itself inline. `/figures open` opens every figure in the system viewer as it
+appears, `/figures link` keeps links only, `/figures blocks` draws a coarse
+pixel rendering (not pretty; off by default); `BRG_FIGURES` sets the mode at
+start. `/show <note id>` lists a note's figures, `/show <image path>` one
+image, `/show open <path>` opens it.
 
 ## Look and feel
 
