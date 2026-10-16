@@ -110,6 +110,13 @@ class Provider:
         self.ask_permission: AskPermission | None = None
         self.effort: str | None = None        # None: the engine's own default
         self.terminal_width: int = 100        # for drawings: how wide they may be
+        self.style: str = "caveman"           # answer style: caveman | plain | full
+
+    async def set_style(self, style: str) -> None:
+        self.style = style
+
+    def system_prompt(self) -> str:
+        return SYSTEM_PROMPT + "\n\n" + STYLES.get(self.style, STYLES["caveman"])
 
     async def set_effort(self, effort: str | None) -> None:
         self.effort = effort
@@ -151,17 +158,11 @@ long notes come in pages whose header lists the headings with line numbers, so r
 with start_line rather than the whole note, unless the user asks for a tutorial or a full derivation) and the book tools (get_book_guide, search_books, list_book_sections, read_book_section) for the public
 library. Use them for factual questions on these topics; for everything else answer directly without calling tools.
 
-How to answer.
-- Match the length to the question. A simple question gets one to three sentences. No padding, no restating the
-  question, no summary at the end, no closing offer.
-- Plain prose by default. A list or a table only for genuinely parallel items or numbers; headers only when the
-  answer is long and the reader asked for a full treatment.
-- Answer first, reason second, citation last (note id, book section, printed page) when a tool gave it.
-- Never narrate your work ("Let me search…", "I found…", "Based on the tool results…"); the terminal shows the
-  tool calls on its own.
-- Equations in TeX between $...$ and code in fenced blocks, only when they carry the answer.
-- If the tools returned nothing relevant, say so in one sentence and answer from general knowledge, marked as such.
-- Quote at most one sentence from a source; do not reproduce passages.
+How to answer: see the style block appended below.  Always: answer first, reason second, citation last
+(note id, book section, printed page) when a tool gave it.  Never narrate your work ("Let me search…",
+"I found…").  If the tools returned nothing relevant, say so in a few words and answer from general
+knowledge, marked as such.  Quote at most one sentence from a source.  For general knowledge you are sure
+of, answer without tools; one search at most for a simple question.
 - When a note you read has a figure that carries the answer, repeat its image line verbatim
   (![caption](path.png)) at the end of the answer: the terminal displays the figure.
 - Drawings and constructions: never draw with text yourself. funicular_cable solves and draws a hanging
@@ -171,6 +172,20 @@ How to answer.
 - Graphic statics (funicular and force polygons, Cremona, reciprocal diagrams, arches, trusses): the group's
   notes are thin here; search_books finds Lévy's Graphic Statics, Wolfe's Graphical Analysis and the ETH
   course; cite them."""
+
+STYLES = {
+    "caveman": """Style: caveman. Fewest words that still answer. Short sentences. Plain words. No preamble, no
+summary, no hedging, no "I". One fact per sentence. Numbers and equations beat prose. A simple question gets
+one to three short sentences. A list only for real lists, a heading never. Code and equations stay complete.
+Example. Q: who created the force density method? A: Schek and Linkwitz, Stuttgart, early 1970s. Reference:
+Schek 1974, CMAME 3. Source: note form-finding-compas-fd.""",
+    "plain": """Style: plain. Match the length to the question: one to three sentences for a simple one, no
+padding, no restating the question, no summary. Plain prose; lists only for parallel items; headings only
+for a long treatment the reader asked for.""",
+    "full": """Style: full. A complete treatment with headings, derivations and worked numbers where they help;
+still no padding or narration.""",
+}
+
 
 def width_prompt(columns: int) -> str:
     return f"The user's terminal is {columns} columns wide: ask the drawing tools for width {max(40, min(160, columns - 6))}."

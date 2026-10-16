@@ -11,6 +11,7 @@ COMMANDS: dict[str, str] = {
     "/login": "/login claude | codex  sign in with your own account (opens the CLI's login in this terminal)",
     "/provider": "/provider claude | codex | anthropic | openai  (advanced: pick the engine directly)",
     "/mode": "/mode read | edit | auto  read: BRG tools only (default); edit: the model may change files and run commands in the folder you started brg in, each one confirmed; auto: without confirmation",
+    "/style": "/style caveman | plain | full  how the model answers: caveman (fewest words, default), plain, full",
     "/effort": "/effort low | medium | high | xhigh | max | default  how hard the model thinks (speed vs depth); alone: shows the current setting",
     "/status": "current provider, model and tool count",
     "/tools": "list the MCP tools the model can call",

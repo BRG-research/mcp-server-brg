@@ -39,7 +39,7 @@ from brg_mcp.cli import banner, commands, images, models
 from brg_mcp.cli import markdown as md
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
-from brg_mcp.cli.providers.base import EFFORTS, MODES, Event, drawings_in
+from brg_mcp.cli.providers.base import EFFORTS, MODES, STYLES, Event, drawings_in
 from brg_mcp.cli.screen import ansi_lines
 from brg_mcp.cli.trace import GREY, Trace, legend, metrics_line
 
@@ -114,6 +114,10 @@ class SlashCompleter(Completer):
             for k in EFFORTS + ("default",):
                 if k.startswith(rest):
                     yield Completion(k, start_position=-len(rest), display=k)
+        elif head == "/style":
+            for k in STYLES:
+                if k.startswith(rest):
+                    yield Completion(k, start_position=-len(rest), display=k)
         elif head == "/mode":
             for k, doc in MODES.items():
                 if k.startswith(rest):
@@ -144,6 +148,7 @@ class Terminal:
             self.figures_mode = "link"
         self.mode = os.environ.get("BRG_MODE", "read") if os.environ.get("BRG_MODE") in MODES else "read"
         self.effort = os.environ.get("BRG_EFFORT") if os.environ.get("BRG_EFFORT") in EFFORTS else None
+        self.style = os.environ.get("BRG_STYLE", "caveman") if os.environ.get("BRG_STYLE", "caveman") in STYLES else "caveman"
         self.workdir = Path.cwd()                 # where the file tools act in edit/auto mode
         self.mouse = os.environ.get("BRG_MOUSE", "on") != "off"
         self.lines: list[list[tuple[str, str]]] = []     # the transcript, formatted
@@ -250,7 +255,7 @@ class Terminal:
         account = self.provider.status() if self.provider else "starting the BRG MCP server…"
         right = [
             [("bold #e6edf3", "BRG Terminal"), ("#8b949e", f"  v{VERSION}   "), state],
-            [("#c9d1d9", f"{self.model_label()} · {effort} · mode {self.mode} · {ctx}")],
+            [("#c9d1d9", f"{self.model_label()} · {effort} · style {self.style} · mode {self.mode} · {ctx}")],
             [("#8b949e", f"{account} · {len(self.bridge.tools)} BRG tools")],
             [("#6e7681", str(self.workdir if self.mode != "read" else self.data_root))],
         ]
@@ -407,6 +412,7 @@ class Terminal:
         self.provider = cls(self.bridge, model)
         self.provider.terminal_width = self.text_width() + INDENT
         self.provider.mode = self.mode
+        self.provider.style = self.style
         self.provider.effort = self.effort
         self.provider.workdir = str(self.workdir)
         self.provider.ask_permission = self.ask_permission
@@ -534,6 +540,16 @@ class Terminal:
                 self.app.mouse_support = self.mouse
             self.event("mouse wheel pages the transcript; hold Shift to select text" if self.mouse
                        else "mouse off: the terminal selects text as usual; PageUp/PageDown page the transcript")
+        elif name == "/style":
+            if arg in STYLES:
+                self.style = arg
+                if self.provider is not None:
+                    await self.provider.set_style(arg)
+                fresh = " (new conversation)" if self.provider_name == "claude" else ""
+                self.event(f"style {arg}{fresh}")
+                self.app.invalidate()
+            else:
+                self.event(f"style {self.style} · caveman: fewest words; plain: short prose; full: complete treatment")
         elif name == "/effort":
             if arg:
                 await self.set_effort(arg)

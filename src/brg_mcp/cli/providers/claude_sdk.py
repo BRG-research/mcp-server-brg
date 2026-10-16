@@ -64,6 +64,11 @@ class ClaudeSDKProvider(Provider):
         self.effort = effort
         await self.close()
 
+    async def set_style(self, style: str) -> None:
+        """The system prompt is fixed when the session connects, so a new session (new conversation)."""
+        self.style = style
+        await self.close()
+
     def default_effort(self) -> str:
         return claude_code_effort()
 
@@ -100,7 +105,7 @@ class ClaudeSDKProvider(Provider):
             permission_mode="bypassPermissions" if self.mode == "auto" else "default",
             effort=self.effort,                              # None: Claude Code's own setting
             can_use_tool=None if read_only else self._can_use_tool,
-            system_prompt=BRG_INSTRUCTIONS + "\n\n" + MODE_PROMPT[self.mode] + "\n" + width_prompt(self.terminal_width),
+            system_prompt=self.system_prompt() + "\n\n" + MODE_PROMPT[self.mode] + "\n" + width_prompt(self.terminal_width),
             include_partial_messages=True,
             stderr=logs.write,                               # the CLI's stderr goes to the log, not the screen
             cwd=self.workdir or str(self.bridge.data_root),

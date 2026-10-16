@@ -120,7 +120,8 @@ class ClaudeCliProvider(Provider):
         if not exe:
             raise RuntimeError("the `claude` CLI is not installed or not on PATH")
         cmd = [exe, "-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
-               "--mcp-config", str(mcp_config_file(self.bridge)), "--allowedTools", "mcp__brg__*"]
+               "--mcp-config", str(mcp_config_file(self.bridge)), "--allowedTools", "mcp__brg__*",
+               "--append-system-prompt", self.system_prompt()]
         if self.model:
             cmd += ["--model", self.model]
         if self.effort:
@@ -230,7 +231,9 @@ class CodexCliProvider(Provider):
             cmd += ["-c", f'model_reasoning_effort="{self.effort}"']
         if self.started:
             cmd += ["resume", "--last"]
-        cmd.append(user_text)
+        from .base import STYLES
+        cmd.append(f"[{STYLES.get(self.style, STYLES['caveman']).splitlines()[0]}]\n{user_text}" if not self.started
+                   else f"[{STYLES.get(self.style, STYLES['caveman']).splitlines()[0]}]\n{user_text}")
         reply: list[str] = []
 
         tools = 0

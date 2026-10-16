@@ -49,7 +49,7 @@ class AnthropicProvider(Provider):
             kwargs = dict(
                 model=self.model,
                 max_tokens=16000,
-                system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+                system=[{"type": "text", "text": self.system_prompt(), "cache_control": {"type": "ephemeral"}}],
                 tools=tools,
                 messages=self.messages,
             )

@@ -208,7 +208,7 @@ async def test_terminal_application(tmp_path, monkeypatch):
     with create_pipe_input() as pipe:
         terminal = Terminal(ROOT, provider="claude", input=pipe, output=DummyOutput())
         await drive(terminal, pipe, ["/help", "/tools", "/search force density", "/model astra", "/model fable",
-                                     "/status", "/trace", "/legend", "/mode", "/effort", "/effort low", "/quit"])
+                                     "/status", "/trace", "/legend", "/mode", "/effort", "/effort low", "/style", "/style plain", "/quit"])
     text = terminal.transcript_text()
     assert "/model" in text and "search_knowledge" in text and "form-finding-compas-fd" in text
     assert "Codex Astra" in text and "Claude Fable 5.1" in text          # switched engine and back
@@ -216,6 +216,7 @@ async def test_terminal_application(tmp_path, monkeypatch):
     assert "no steps yet" in text and "the model is thinking" in text   # /trace before a reply, /legend
     assert "mode read" in text and "effort default" in text and "effort low" in text and terminal.provider.effort == "low"
     assert "> /help" in text                                            # questions and commands are echoed
+    assert "style caveman" in text and "style plain" in text and terminal.provider.style == "plain"
     header = "".join(t for _, t in terminal.header_fragments())
     assert "BRG Terminal" in header and "Claude Fable 5.1" in header and "effort low" in header
     comp = SlashCompleter(terminal)

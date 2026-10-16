@@ -47,7 +47,7 @@ class OpenAIProvider(Provider):
         for _ in range(MAX_TOOL_ROUNDS):
             stream = await client.responses.create(
                 model=self.model,
-                instructions=SYSTEM_PROMPT,
+                instructions=self.system_prompt(),
                 input=pending_input,
                 tools=openai_tools(self.bridge),
                 previous_response_id=self.previous_response_id,

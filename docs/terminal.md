@@ -126,6 +126,34 @@ session opens. With the Codex engine `edit` maps to its workspace-write
 sandbox and `auto` to full access; `codex exec` cannot ask questions, so
 Codex does not confirm step by step.
 
+## Answer style
+
+`/style caveman` (default): the fewest words that still answer, short
+sentences, no preamble or summary, numbers and equations over prose; a
+simple question gets one to three sentences. `/style plain` is short prose,
+`/style full` a complete treatment with headings and derivations.
+`BRG_STYLE` sets it at start. With the Claude engine a change starts a new
+conversation.
+
+## Speed: where the time goes
+
+The terminal adds about 0.3 s to a reply; the rest is the model. Measured
+with the same simple question (no tool calls):
+
+| engine | first text after | total |
+|---|---|---|
+| Opus 5.5, caveman | 6.5 s | 9.6 s |
+| Opus 5.5, plain | 3.5 s | 7.7 s |
+| Sonnet 5.5, caveman | 5.7 s | 6.8 s |
+
+The time before the first word is the model thinking and reading the
+context; every tool call adds a round trip of a few seconds; every output
+token costs time at roughly 60 to 80 tokens per second on Opus. So: the
+caveman style cuts the output, `/model sonnet` answers faster for simple
+questions, `/effort low` reduces thinking, and the prompt tells the model to
+answer general knowledge without tools and to search at most once for a
+simple question.
+
 ## Effort
 
 `/effort low | medium | high | xhigh | max` sets how hard the model thinks:
