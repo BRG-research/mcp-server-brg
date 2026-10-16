@@ -112,8 +112,8 @@ def mathify(markdown: str) -> str:
 
 
 def blocks(markdown: str) -> list[tuple[str, str]]:
-    """Split a Markdown text into ("md", text) and ("eq", plain equation) pieces, display math on its own,
-    code fences untouched."""
+    """Split a Markdown text into ("md", text) and ("eq", TeX of a display equation) pieces, display math
+    on its own, code fences untouched."""
     out: list[tuple[str, str]] = []
     parts = _FENCE.split(markdown)
     for i, part in enumerate(parts):
@@ -124,7 +124,7 @@ def blocks(markdown: str) -> list[tuple[str, str]]:
         for m in _DISPLAY.finditer(part):
             if m.start() > pos:
                 out.append(("md", part[pos:m.start()]))
-            out.append(("eq", tex_to_plain(m.group(1) or m.group(2))))
+            out.append(("eq", (m.group(1) or m.group(2)).strip()))
             pos = m.end()
         if pos < len(part):
             out.append(("md", part[pos:]))

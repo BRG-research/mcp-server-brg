@@ -7,6 +7,7 @@ is started once inside that session.  Falls back to the `claude -p` subprocess i
 
 from __future__ import annotations
 
+import asyncio
 import json
 
 from brg_mcp.cli import logs
@@ -102,60 +103,70 @@ class ClaudeSDKProvider(Provider):
 
     async def send(self, user_text: str, on_text: OnText, on_event: OnEvent) -> str:
         try:
-            from claude_agent_sdk import AssistantMessage, ResultMessage, ToolResultBlock, ToolUseBlock, UserMessage
-            from claude_agent_sdk.types import StreamEvent
+            import claude_agent_sdk  # noqa: F401
         except ImportError:
             if self._fallback is None:
                 on_event(Event.note("claude-agent-sdk not installed: using `claude -p` per turn (slower)"))
                 self._fallback = ClaudeCliProvider(self.bridge, self.model)
             return await self._fallback.send(user_text, on_text, on_event)
         client = self._client or await self._connect()
-        reply: list[str] = []
-        streamed = False
-        tools = 0
+        state = {"reply": [], "streamed": False, "tools": 0}
         await client.query(user_text)
-        async for message in client.receive_response():
-            if isinstance(message, StreamEvent):
-                event = message.event or {}
-                kind = event.get("type")
-                if kind == "content_block_delta":
-                    delta = event.get("delta") or {}
-                    if delta.get("type") == "text_delta":
-                        on_text(delta.get("text", "")); reply.append(delta.get("text", "")); streamed = True
-                elif kind == "content_block_start":
-                    block = event.get("content_block") or {}
-                    if block.get("type") == "thinking":
-                        on_event(Event("thinking"))
-                    elif block.get("type") == "tool_use" and block.get("name") != "ToolSearch":
-                        tools += 1
-                        on_event(Event("tool_call", tool_name(block.get("name", ""))))
-            elif isinstance(message, AssistantMessage):
-                if message.model:
-                    self.actual_model = message.model
-                for block in message.content:
-                    if isinstance(block, ToolUseBlock) and block.name != "ToolSearch":
-                        on_event(Event("tool_args", tool_name(block.name), json.dumps(block.input)))
-            elif isinstance(message, UserMessage):
-                content = message.content if isinstance(message.content, list) else []
-                for block in content:
-                    if isinstance(block, ToolResultBlock):
-                        on_event(Event("tool_result", "", preview(block.content), ok=not block.is_error))
-            elif isinstance(message, ResultMessage):
-                self.session_id = message.session_id
-                if not streamed and message.result:
-                    on_text(message.result); reply.append(message.result)
-                if message.is_error:
-                    on_event(Event.error(f"claude reported an error: {str(message.result)[:300]}"))
-                usage = message.usage or {}
-                window = max((m.get("contextWindow", 0) for m in (message.model_usage or {}).values()), default=0)
-                on_event(Event("usage", data={
-                    "input": usage.get("input_tokens", 0), "output": usage.get("output_tokens", 0),
-                    "cache_read": usage.get("cache_read_input_tokens", 0),
-                    "cache_write": usage.get("cache_creation_input_tokens", 0),
-                    "duration_ms": message.duration_ms, "api_ms": message.duration_api_ms,
-                    "turns": message.num_turns, "tools": tools, "cost": message.total_cost_usd or 0.0,
-                    "context_window": window}))
-        return "".join(reply)
+        try:
+            async for message in client.receive_response():
+                self._handle(message, on_text, on_event, state)
+        except asyncio.CancelledError:
+            try:                                                       # stop the model, keep the session
+                await asyncio.wait_for(client.interrupt(), 5)
+            except Exception:                                          # noqa: BLE001
+                await self.close()
+            raise
+        return "".join(state["reply"])
+
+    def _handle(self, message, on_text: OnText, on_event: OnEvent, state: dict) -> None:
+        from claude_agent_sdk import AssistantMessage, ResultMessage, ToolResultBlock, ToolUseBlock, UserMessage
+        from claude_agent_sdk.types import StreamEvent
+        reply = state["reply"]
+        if isinstance(message, StreamEvent):
+            event = message.event or {}
+            kind = event.get("type")
+            if kind == "content_block_delta":
+                delta = event.get("delta") or {}
+                if delta.get("type") == "text_delta":
+                    on_text(delta.get("text", "")); reply.append(delta.get("text", "")); state["streamed"] = True
+            elif kind == "content_block_start":
+                block = event.get("content_block") or {}
+                if block.get("type") == "thinking":
+                    on_event(Event("thinking"))
+                elif block.get("type") == "tool_use" and block.get("name") != "ToolSearch":
+                    state["tools"] += 1
+                    on_event(Event("tool_call", tool_name(block.get("name", ""))))
+        elif isinstance(message, AssistantMessage):
+            if message.model:
+                self.actual_model = message.model
+            for block in message.content:
+                if isinstance(block, ToolUseBlock) and block.name != "ToolSearch":
+                    on_event(Event("tool_args", tool_name(block.name), json.dumps(block.input)))
+        elif isinstance(message, UserMessage):
+            content = message.content if isinstance(message.content, list) else []
+            for block in content:
+                if isinstance(block, ToolResultBlock):
+                    on_event(Event("tool_result", "", preview(block.content), ok=not block.is_error))
+        elif isinstance(message, ResultMessage):
+            self.session_id = message.session_id
+            if not state["streamed"] and message.result:
+                on_text(message.result); reply.append(message.result)
+            if message.is_error:
+                on_event(Event.error(f"claude reported an error: {str(message.result)[:300]}"))
+            usage = message.usage or {}
+            window = max((m.get("contextWindow", 0) for m in (message.model_usage or {}).values()), default=0)
+            on_event(Event("usage", data={
+                "input": usage.get("input_tokens", 0), "output": usage.get("output_tokens", 0),
+                "cache_read": usage.get("cache_read_input_tokens", 0),
+                "cache_write": usage.get("cache_creation_input_tokens", 0),
+                "duration_ms": message.duration_ms, "api_ms": message.duration_api_ms,
+                "turns": message.num_turns, "tools": state["tools"], "cost": message.total_cost_usd or 0.0,
+                "context_window": window}))
 
     async def context_usage(self) -> dict | None:
         if self._client is None:

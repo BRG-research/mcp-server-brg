@@ -162,6 +162,24 @@ class Trace:
                 return "Thinking…"
         return "Working…" if self.steps else "Thinking…"
 
+    def current_step_seconds(self) -> float:
+        """How long the step running right now has been running (0 when none)."""
+        for s in reversed(self.steps):
+            if s.ended is None:
+                return s.seconds
+        return 0.0
+
+    def status_chain(self, width: int) -> Text:
+        """The chain so far, on one line for the status: the newest steps win when it is too long."""
+        out = Text()
+        for i, step in enumerate(self.chain):
+            if i:
+                out.append(" › ", style=GREY)
+            out.append_text(step.badge())
+        if out.cell_len > width:
+            out = _tail(out, width)
+        return out
+
     def table(self) -> Table:
         """/trace: every step with its arguments, timing and result."""
         t = Table(box=None, padding=(0, 1), show_header=True, header_style=GREY)
@@ -180,6 +198,16 @@ class Trace:
                     detail.append("  (failed)", style=RED)
             t.add_row(str(i), label, f"{s.seconds:.1f}", detail)
         return t
+
+
+def _tail(text: Text, width: int) -> Text:
+    """The last `width` cells of a Text, with an ellipsis in front."""
+    plain = text.plain
+    cut = len(plain)
+    while cut > 0 and Text(plain[cut:]).cell_len > width - 2:
+        cut -= 1
+    tail = text[cut:]
+    return Text("… ", style=GREY) + tail
 
 
 def _pretty(args: str) -> str:

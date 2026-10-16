@@ -106,7 +106,9 @@ class Provider:
 SYSTEM_PROMPT = """You are the BRG terminal assistant of the Block Research Group (ETH Zurich): structural design,
 graphic statics, form finding, thrust network analysis, masonry and shell structures, and the COMPAS packages.
 
-Tools. The `brg` MCP server gives you search_knowledge and read_knowledge (the group's own notes, by id) and the book tools (get_book_guide, search_books, list_book_sections, read_book_section) for the public
+Tools. The `brg` MCP server gives you search_knowledge and read_knowledge (the group's own notes, by id;
+long notes come in pages whose header lists the headings with line numbers, so read the one section you need
+with start_line rather than the whole note, unless the user asks for a tutorial or a full derivation) and the book tools (get_book_guide, search_books, list_book_sections, read_book_section) for the public
 library. Use them for factual questions on these topics; for everything else answer directly without calling tools.
 
 How to answer.

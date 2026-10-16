@@ -9,6 +9,7 @@ import argparse
 import asyncio
 import inspect
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -59,6 +60,30 @@ PROMPT_STYLE = Style.from_dict({
     "completion-menu.meta.completion": "bg:#161b22 #8b949e",
     "completion-menu.meta.completion.current": "bg:#1f6feb #ffffff",
 })
+
+
+_LIST_LINE = re.compile(r"^(\s*)([-*+]|\d+[.)])\s+")
+_BLOCK_START = re.compile(r"^(#{1,6}\s|\s*([-*+]|\d+[.)])\s+|```|\||>)")
+
+
+def block_boundary(text: str) -> tuple[int, int]:
+    """Where the complete part of a streaming Markdown text ends: at the last blank line, or at the last
+    line break between two list items or after a heading, never inside a code fence.  Returns (cut, skip)
+    with skip the length of the separator, or (-1, 0) when nothing is complete yet."""
+    best = (-1, 0)
+    for i in range(len(text) - 1, -1, -1):
+        if text[i] != "\n":
+            continue
+        before = text[:i]
+        if before.count("```") % 2 == 1:
+            continue
+        if text.startswith("\n\n", i):
+            return (i, 2)
+        prev_line = before.rsplit("\n", 1)[-1]
+        next_line = text[i + 1:].split("\n", 1)[0]
+        if prev_line.startswith("#") or (_LIST_LINE.match(prev_line) and _LIST_LINE.match(next_line)):
+            return (i, 1)                              # a finished heading, or a finished list item before the next
+    return best
 
 
 def describe_action(tool: str, tool_input: dict) -> str:
@@ -470,12 +495,24 @@ class Terminal:
         full: list[str] = []                         # the whole reply, for the figures
         spinner = Spinner("dots", style="#58a6ff")
 
+        slow_noted = {"at": 0.0}
+
         def status() -> Spinner:
             label = "Writing…" if buffer else trace.running()
-            text = Text.assemble((f" {label} ", "#c9d1d9"), (f"{time.monotonic() - started:.0f}s", GREY),
-                                 ("   Ctrl+C interrupts", "#484f58"))
+            elapsed = time.monotonic() - started
+            text = Text.assemble((f" {label} ", "#c9d1d9"), (f"{elapsed:.0f}s", GREY))
+            if trace.chain and not buffer:
+                text.append("   ")
+                text.append_text(trace.status_chain(max(10, self.console.width - text.cell_len - 6)))
+            text.append("   Ctrl+C interrupts", style="#484f58")
             text.truncate(max(10, self.console.width - 4))
             spinner.update(text=text)
+            step_s = trace.current_step_seconds()
+            if step_s > 45 and elapsed - slow_noted["at"] > 45:          # a step is taking long: say so, once a while
+                slow_noted["at"] = elapsed
+                live.console.print(Text.assemble(("● ", "bold #d29922"),
+                                                 (f"still waiting on {label.rstrip('…')} ({step_s:.0f}s on this step, {elapsed:.0f}s in all); "
+                                                  "Ctrl+C interrupts, /trace shows the steps afterwards", "#8b949e")))
             return spinner
 
         with Live(get_renderable=status, console=self.console, refresh_per_second=10,
@@ -494,14 +531,10 @@ class Terminal:
                 if final:
                     done, rest = text, ""
                 else:
-                    cut = -1
-                    for i in range(len(text) - 2, -1, -1):
-                        if text.startswith("\n\n", i) and text[:i].count("```") % 2 == 0:
-                            cut = i
-                            break
+                    cut, skip = block_boundary(text)
                     if cut < 0:
                         return
-                    done, rest = text[:cut], text[cut + 2:]
+                    done, rest = text[:cut], text[cut + skip:]
                 if done.strip():
                     live.console.print(self.trimmed(self.reply_markdown(done)))
                     live.console.print()                                  # one blank line between blocks

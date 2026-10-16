@@ -150,11 +150,20 @@ time. API-key engines also show the cost; account engines do not.
 
 ## Equations and figures
 
-TeX in a reply (`$...$`, `$$...$$`) is shown as Unicode mathematics, which
-every terminal can display: bold vectors, sub- and superscripts, Greek,
-operators, fractions as `(a)/(b)`. Display equations are set on their own
-line as a quoted block. `\mathbf{C}^T \mathbf{Q} \mathbf{C}` becomes
-`𝐂ᵀ 𝐐 𝐂`, `\alpha_{max} \le 30^\circ` becomes `αₘₐₓ ≤ 30°`.
+Display equations (`$$...$$`) are typeset in two dimensions, as SymPy
+prints in a terminal: fractions over a rule, sums and integrals with their
+limits, parentheses that grow with their content, accents on the line
+above, matrices in brackets, marked with a bar at the left:
+
+```
+▌        sⱼ
+▌   ∑   ──── (xₖ − xᵢ) + pᵢ = 0
+▌   j    lⱼ
+```
+
+Inline math (`$...$`) is written the way an engineer writes it in a text
+file, in the code colour: `C^T Q C x = p`, `α_max ≤ 30°`, `(w L²)/(8 f)`.
+Anything the typesetter cannot parse falls back to that notation.
 
 Figures referenced in a reply or a note (`![caption](path.png)`) are listed
 under the text with their caption and path as a `file://` link; Ctrl+click

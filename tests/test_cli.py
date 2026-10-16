@@ -142,7 +142,7 @@ def test_equations_in_plain_notation():
     text = mathify("Fix $q = f/l$ per edge.\n\n$$\\sum_i q_i = Q$$\n\n`$x$` stays; $5 and $6 are prices.")
     assert "Fix `q = f/l` per edge." in text and "`$x$`" in text and "$5 and $6" in text
     parts = blocks("Text before\n\n$$\\mathbf{D} \\mathbf{x} = \\mathbf{p}$$\n\nafter ```$$ not math $$```")
-    assert [k for k, _ in parts] == ["md", "eq", "md"] and parts[1][1] == "D x = p"
+    assert [k for k, _ in parts] == ["md", "eq", "md"] and parts[1][1] == "\\mathbf{D} \\mathbf{x} = \\mathbf{p}"
 
 
 def test_figures_render_as_blocks(tmp_path):
@@ -183,3 +183,35 @@ def test_describe_action_and_modes():
     assert describe_action("Bash", {"command": "ls -la"}) == "run: ls -la"
     assert describe_action("Write", {"file_path": "a.py", "content": "x\ny"}) == "write a.py (2 lines)"
     assert describe_action("Edit", {"file_path": "a.py", "old_string": "1", "new_string": "2"}).startswith("edit a.py")
+
+
+def test_display_equations_are_typeset_in_two_dimensions():
+    from brg_mcp.cli.mathbox import typeset
+    assert typeset(r"\sum_j \frac{s_j}{l_j} (x_k - x_i) + p_i = 0") == [
+        "   sⱼ",
+        "∑ ──── (xₖ − xᵢ) + pᵢ = 0",
+        "j  lⱼ",
+    ]
+    assert typeset(r"H = \frac{w L^2}{8 f}") == ["     w L²", "H = ──────", "     8 f"]
+    assert typeset(r"E = \frac{1}{2} \sum_{i=1}^{n} q_i l_i^2")[1] == "E = ───   ∑   qᵢ lᵢ²"
+    assert typeset(r"\begin{bmatrix} k & -k \\ -k & k \end{bmatrix}") == ["⎡k   −k⎤", "⎣−k  k ⎦"]
+    assert typeset(r"\alpha_{max} \le 30^\circ") == ["αₘₐₓ ≤ 30°"]
+    assert typeset(r"\int_0^L w(x) dx")[0].strip() == "L"           # upper limit above the integral
+    assert typeset(r"\left( \frac{a}{b} \right)^2") == ["⎛ a ⎞", "⎜───⎟²", "⎝ b ⎠"]
+    assert typeset(r"\frac{a}{b") is None                            # unparsable: the caller falls back
+
+
+def test_block_boundary_and_status_chain():
+    from brg_mcp.cli.term import block_boundary
+    from brg_mcp.cli.trace import Trace
+    from brg_mcp.cli.providers.base import Event
+    assert block_boundary("one paragraph still streaming") == (-1, 0)
+    assert block_boundary("done.\n\nnext") == (5, 2)
+    assert block_boundary("- a\n- b\n- c") == (7, 1)                        # between list items, last line still open
+    assert block_boundary("## Head\nbody\n") == (7, 1)
+    assert block_boundary("```\nx\n\ny\n```\n\nz") == (12, 2)                # not inside the fence
+    t = Trace()
+    for _ in range(6):
+        t.add(Event("tool_call", "search_knowledge")); t.add(Event("tool_args", "search_knowledge", '{"query": "funicular"}'))
+    short = t.status_chain(40)
+    assert short.cell_len <= 40 and short.plain.startswith("… ")

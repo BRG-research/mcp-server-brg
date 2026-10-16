@@ -9,7 +9,8 @@ from rich.syntax import Syntax
 from rich.text import Text
 from rich.theme import Theme
 
-from brg_mcp.cli.mathtext import blocks, mathify
+from brg_mcp.cli.mathbox import typeset
+from brg_mcp.cli.mathtext import blocks, mathify, tex_to_plain
 
 THEME = Theme({
     "markdown.h1": "bold #e6edf3",
@@ -53,8 +54,21 @@ class BRGMarkdown(Markdown):
     elements = {**Markdown.elements, "fence": PlainCodeBlock, "code_block": PlainCodeBlock, "heading_open": PlainHeading}
 
 
-def equation(plain: str) -> Text:
-    return Text.assemble(("▌ ", "#58a6ff"), (plain, "bold #e6edf3"))
+EQUATION_WIDTH = 100
+
+
+def equation(tex: str) -> Text:
+    """A display equation: typeset in two dimensions when it parses and fits, else the one-line notation."""
+    lines = typeset(tex)
+    if not lines or max(len(l) for l in lines) > EQUATION_WIDTH:
+        lines = [tex_to_plain(tex)]
+    out = Text()
+    for i, line in enumerate(lines):
+        if i:
+            out.append("\n")
+        out.append("▌ ", style="#58a6ff")
+        out.append(line, style="bold #e6edf3")
+    return out
 
 
 def reply(text: str) -> Group:
