@@ -94,9 +94,10 @@ class PinnedScreen:
             del self.buffer[: len(self.buffer) - MAX_LINES]
 
     def fill_to_bottom(self) -> None:
-        """Blank lines so the prompt sits at the bottom of the region (the transcript grows upward)."""
+        """Blank lines so the prompt sits at the bottom of the region (the transcript grows upward), leaving
+        the two rows the input line and the bar under it take."""
         printed = len(self.buffer)
-        free = self.rows - self.header_rows - printed - 1
+        free = self.rows - self.header_rows - printed - 2
         if free > 0:
             self._write("\n" * free)
             self.remember([""] * free)

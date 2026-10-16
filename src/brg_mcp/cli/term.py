@@ -202,6 +202,7 @@ class Terminal:
             style=PROMPT_STYLE,
             bottom_toolbar=self.toolbar,
             key_bindings=self.key_bindings(),
+            reserve_space_for_menu=0,            # the input sits right above the bar; a menu scrolls the region
         )
 
     def key_bindings(self) -> KeyBindings:
