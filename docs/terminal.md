@@ -157,9 +157,9 @@ simple question.
 ## Effort
 
 `/effort low | medium | high | xhigh | max` sets how hard the model thinks:
-`low` answers fastest, `high` is the model's own default, `max` thinks
-longest. `/effort` alone shows the current setting; `/effort default` goes
-back to the engine's own setting (Claude Code's `effortLevel` in
+`low` answers fastest and is the terminal's default, `high` is the model's
+own default, `max` thinks longest. `/effort` alone shows the current
+setting; `/effort default` goes back to the engine's own setting (Claude Code's `effortLevel` in
 `~/.claude/settings.json`, Codex's `model_reasoning_effort`). With the
 Claude engine a change starts a new conversation. `--effort` and
 `BRG_EFFORT` set it at start.

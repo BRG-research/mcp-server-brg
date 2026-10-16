@@ -57,11 +57,12 @@ def test_model_registry_from_the_accounts():
         {"value": "default", "resolvedModel": "claude-opus-5-5", "displayName": "Default (recommended)", "description": "x"},
         {"value": "opus", "resolvedModel": "claude-opus-5-5", "displayName": "Opus 5.5", "description": "For complex work"},
         {"value": "fable", "resolvedModel": "claude-fable-5-1", "displayName": "Fable 5.1", "description": "For your toughest challenges"},
+        {"value": "sonnet", "resolvedModel": "claude-sonnet-5-5", "displayName": "Sonnet 5.5", "description": "Fast"},
     ]
     entries = models.claude_entries(server_models) + [models.ModelEntry("Codex Astra", "codex", "gpt-6-astra", "gpt-6-astra", ("gpt-6-astra",))]
-    assert [e.name for e in entries] == ["Claude Opus 5.5", "Claude Fable 5.1", "Codex Astra"]   # no "default"
-    assert models.claude_default_model(server_models) == "claude-opus-5-5"       # Opus by default
-    assert models.claude_default_model([server_models[0], server_models[2]]) == "claude-opus-5-5"   # the account default
+    assert [e.name for e in entries] == ["Claude Opus 5.5", "Claude Fable 5.1", "Claude Sonnet 5.5", "Codex Astra"]   # no "default"
+    assert models.claude_default_model(server_models) == "claude-sonnet-5-5"     # Sonnet by default: fast
+    assert models.claude_default_model([server_models[0], server_models[2]]) == "claude-opus-5-5"   # else the account default
     assert models.resolve("fable", entries).model == "claude-fable-5-1"
     assert models.resolve("Claude Opus 5.5", entries).model == "claude-opus-5-5"
     assert models.resolve("astra", entries).provider == "codex"
@@ -208,13 +209,13 @@ async def test_terminal_application(tmp_path, monkeypatch):
     with create_pipe_input() as pipe:
         terminal = Terminal(ROOT, provider="claude", input=pipe, output=DummyOutput())
         await drive(terminal, pipe, ["/help", "/tools", "/search force density", "/model astra", "/model fable",
-                                     "/status", "/trace", "/legend", "/mode", "/effort", "/effort low", "/style", "/style plain", "/quit"])
+                                     "/status", "/trace", "/legend", "/mode", "/effort", "/style", "/style plain", "/quit"])
     text = terminal.transcript_text()
     assert "/model" in text and "search_knowledge" in text and "form-finding-compas-fd" in text
     assert "Codex Astra" in text and "Claude Fable 5.1" in text          # switched engine and back
     assert terminal.provider_name == "claude" and terminal.provider.model == "claude-fable-5-1"
     assert "no steps yet" in text and "the model is thinking" in text   # /trace before a reply, /legend
-    assert "mode read" in text and "effort default" in text and "effort low" in text and terminal.provider.effort == "low"
+    assert "mode read" in text and "effort low" in text and terminal.provider.effort == "low"
     assert "> /help" in text                                            # questions and commands are echoed
     assert "style caveman" in text and "style plain" in text and terminal.provider.style == "plain"
     header = "".join(t for _, t in terminal.header_fragments())

@@ -147,7 +147,7 @@ class Terminal:
         if self.figures_mode not in images.MODES:
             self.figures_mode = "link"
         self.mode = os.environ.get("BRG_MODE", "read") if os.environ.get("BRG_MODE") in MODES else "read"
-        self.effort = os.environ.get("BRG_EFFORT") if os.environ.get("BRG_EFFORT") in EFFORTS else None
+        self.effort = os.environ.get("BRG_EFFORT", "low") if os.environ.get("BRG_EFFORT", "low") in EFFORTS else None
         self.style = os.environ.get("BRG_STYLE", "caveman") if os.environ.get("BRG_STYLE", "caveman") in STYLES else "caveman"
         self.workdir = Path.cwd()                 # where the file tools act in edit/auto mode
         self.mouse = os.environ.get("BRG_MOUSE", "on") != "off"
