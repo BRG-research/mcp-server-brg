@@ -53,6 +53,8 @@ class AnthropicProvider(Provider):
                 tools=tools,
                 messages=self.messages,
             )
+            if self.effort:
+                kwargs["output_config"] = {"effort": self.effort}
             if self.model.startswith(("claude-opus-5", "claude-sonnet-5", "claude-fable-5")):
                 # server-side refusal fallback, as recommended for these models
                 kwargs["betas"] = ["server-side-fallback-2026-07-01"]

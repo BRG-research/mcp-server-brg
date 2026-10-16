@@ -12,7 +12,7 @@ import json
 
 from brg_mcp.cli import logs
 from brg_mcp.cli.mcp_bridge import MCPBridge
-from .agent_cli import ClaudeCliProvider, claude_account, readiness
+from .agent_cli import ClaudeCliProvider, claude_account, claude_code_effort, readiness
 from .base import MODE_PROMPT, SYSTEM_PROMPT, Event, OnEvent, OnText, Provider, preview, tool_name
 
 BRG_INSTRUCTIONS = SYSTEM_PROMPT
@@ -59,6 +59,14 @@ class ClaudeSDKProvider(Provider):
         self.mode = mode
         await self.close()
 
+    async def set_effort(self, effort: str | None) -> None:
+        """Effort is fixed when the session connects, so a new session (new conversation)."""
+        self.effort = effort
+        await self.close()
+
+    def default_effort(self) -> str:
+        return claude_code_effort()
+
     async def warm(self) -> dict:
         """Connect now (so the first question is fast) and return Claude Code's server info:
         the account's model list, the default model, the subscription."""
@@ -90,6 +98,7 @@ class ClaudeSDKProvider(Provider):
             tools=[] if read_only else {"type": "preset", "preset": "claude_code"},
             allowed_tools=["mcp__brg__*"] if read_only else ["mcp__brg__*", "Read", "Glob", "Grep", "LS", "TodoWrite"],
             permission_mode="bypassPermissions" if self.mode == "auto" else "default",
+            effort=self.effort,                              # None: Claude Code's own setting
             can_use_tool=None if read_only else self._can_use_tool,
             system_prompt=BRG_INSTRUCTIONS + "\n\n" + MODE_PROMPT[self.mode],   # our own prompt, not the coding preset
             include_partial_messages=True,

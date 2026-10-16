@@ -45,6 +45,7 @@ MODES = {
     "auto": "file and shell tools without confirmation (as `claude --dangerously-skip-permissions`)",
 }
 AskPermission = Callable[[str, dict], Awaitable[bool]]     # (tool name, input) -> allowed?
+EFFORTS = ("low", "medium", "high", "xhigh", "max")
 
 READ_TOOLS = {"search_knowledge", "read_knowledge", "list_domains", "get_book_guide", "search_books", "list_book_sections",
               "read_book_section", "ReadMcpResourceTool", "ListMcpResourcesTool"}
@@ -77,6 +78,14 @@ class Provider:
         self.mode = "read"
         self.workdir: str | None = None       # where file tools act (the directory brg was started in)
         self.ask_permission: AskPermission | None = None
+        self.effort: str | None = None        # None: the engine's own default
+
+    async def set_effort(self, effort: str | None) -> None:
+        self.effort = effort
+
+    def default_effort(self) -> str:
+        """What the engine uses when no effort was set here (for the status line)."""
+        return "the engine's default"
 
     async def set_mode(self, mode: str) -> None:
         """Switch between read / edit / auto.  Engines with a live session reconnect."""

@@ -37,7 +37,7 @@ from brg_mcp.cli.mcp_bridge import MCPBridge
 from brg_mcp.cli.providers import PROVIDERS, Provider
 from brg_mcp.cli import images
 from brg_mcp.cli import markdown as md
-from brg_mcp.cli.providers.base import MODES, Event
+from brg_mcp.cli.providers.base import EFFORTS, MODES, Event
 from brg_mcp.cli.trace import GREY, Trace, legend, metrics_line
 
 TEXT_WIDTH = 110                   # replies wrap at this width at most: easier to read, fewer reflow problems
@@ -150,6 +150,10 @@ class SlashCompleter(Completer):
             for k in ("claude", "codex"):
                 if k.startswith(rest):
                     yield Completion(k, start_position=-len(rest), display=k, display_meta="sign in")
+        elif head == "/effort":
+            for k in EFFORTS + ("default",):
+                if k.startswith(rest):
+                    yield Completion(k, start_position=-len(rest), display=k)
         elif head == "/mode":
             for k, doc in MODES.items():
                 if k.startswith(rest):
@@ -179,6 +183,7 @@ class Terminal:
         if self.figures_mode not in images.MODES:
             self.figures_mode = "auto"
         self.mode = os.environ.get("BRG_MODE", "read") if os.environ.get("BRG_MODE") in MODES else "read"
+        self.effort = os.environ.get("BRG_EFFORT") if os.environ.get("BRG_EFFORT") in EFFORTS else None
         self.workdir = Path.cwd()                 # where the file tools act in edit/auto mode
         self.live: Live | None = None             # the status line of a running turn, paused for questions
         history_path = Path(os.environ.get("BRG_HISTORY", Path.home() / ".brg_history"))
@@ -194,7 +199,8 @@ class Terminal:
     def toolbar(self):
         ctx = f" · ctx {self.context_pct:.0f}%" if self.context_pct is not None else ""
         mode = "" if self.mode == "read" else f" · {self.mode}"
-        return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}{mode}"),
+        effort = f" · {self.effort}" if self.effort else ""
+        return [("class:bottom-toolbar.idle", " ● Idle"), ("class:bottom-toolbar.model", f" · {self.model_label()}{ctx}{mode}{effort}"),
                 ("class:bottom-toolbar", " · ? for shortcuts · ↑↓ history · / commands · Ctrl+C interrupts")]
 
     # ------------------------------------------------------------------ output
@@ -271,7 +277,8 @@ class Terminal:
         if self.provider is None:
             return "starting the BRG MCP server…"
         mode = "" if self.mode == "read" else f" · mode {self.mode} in {self.workdir}"
-        return f"{self.model_label()} · {self.provider.status()} · {len(self.bridge.tools)} BRG tools{mode}"
+        effort = f" · effort {self.effort}" if self.effort else ""
+        return f"{self.model_label()} · {self.provider.status()} · {len(self.bridge.tools)} BRG tools{mode}{effort}"
 
     # ------------------------------------------------------------------ engines
     async def set_provider(self, name: str, model: str | None = None, announce: bool = True) -> None:
@@ -283,6 +290,7 @@ class Terminal:
             await self.provider.close()
         self.provider = cls(self.bridge, model)
         self.provider.mode = self.mode
+        self.provider.effort = self.effort
         self.provider.workdir = str(self.workdir)
         self.provider.ask_permission = self.ask_permission
         if name == "codex":
@@ -342,6 +350,22 @@ class Terminal:
         self.event(f"mode {mode} in {self.workdir}{note} (new conversation)")
         self.set_title()
 
+    def effort_line(self) -> str:
+        if self.effort:
+            return f"effort {self.effort}"
+        default = self.provider.default_effort() if self.provider else "the engine's default"
+        return f"effort default ({default})"
+
+    async def set_effort(self, value: str) -> None:
+        if value not in EFFORTS and value != "default":
+            self.error("/effort low | medium | high | xhigh | max | default")
+            return
+        self.effort = None if value == "default" else value
+        if self.provider is not None:
+            await self.provider.set_effort(self.effort)
+        fresh = " (new conversation)" if self.provider_name == "claude" else ""
+        self.event(f"{self.effort_line()}{fresh}")
+
     async def ask_permission(self, tool: str, tool_input: dict) -> bool:
         """Asked by the engine before a file change or a command in edit mode: show what it wants,
         pause the status line, take y/n at the prompt."""
@@ -400,6 +424,11 @@ class Terminal:
             self.print(commands.help_text())
         elif name == "/quit":
             return False
+        elif name == "/effort":
+            if arg:
+                await self.set_effort(arg)
+            else:
+                self.event(f"{self.effort_line()} · low is fastest, high is the model's own default, max thinks longest")
         elif name == "/mode":
             if arg:
                 await self.set_mode(arg)
@@ -674,6 +703,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--provider", default=os.environ.get("BRG_PROVIDER", "claude"), choices=list(PROVIDERS))
     parser.add_argument("--model", default=os.environ.get("BRG_MODEL"), help="model name (default: the account's)")
     parser.add_argument("--mode", default=None, choices=list(MODES), help="read (default), edit or auto; see /mode")
+    parser.add_argument("--effort", default=None, choices=list(EFFORTS), help="how hard the model thinks; see /effort")
     args = parser.parse_args(argv)
     provider, model = args.provider, args.model
     entry = models.resolve(model, []) if model else None
@@ -681,6 +711,8 @@ def main(argv: list[str] | None = None) -> None:
         provider, model = entry.provider, entry.model
     if args.mode:
         os.environ["BRG_MODE"] = args.mode
+    if args.effort:
+        os.environ["BRG_EFFORT"] = args.effort
     asyncio.run(Terminal(find_data_root(args.data_root), provider, model).run())
 
 

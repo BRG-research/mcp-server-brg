@@ -52,6 +52,7 @@ class OpenAIProvider(Provider):
                 tools=openai_tools(self.bridge),
                 previous_response_id=self.previous_response_id,
                 stream=True,
+                **({"reasoning": {"effort": {"max": "high", "xhigh": "high"}.get(self.effort, self.effort)}} if self.effort else {}),
             )
             response = None
             async for event in stream:

@@ -81,7 +81,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
         session = PromptSession(input=pipe, output=DummyOutput())
         terminal = Terminal(ROOT, provider="claude", console=console, session=session)
         session.completer = SlashCompleter(terminal)
-        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/legend", "/mode", "/quit"]:
+        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/legend", "/mode", "/effort", "/effort low", "/quit"]:
             pipe.send_text(line + "\n")
         await asyncio.wait_for(terminal.run(), timeout=90)
     text = out.getvalue()
@@ -93,6 +93,7 @@ async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
     assert "no steps yet" in text                                           # /trace before any reply
     assert "the model is thinking" in text                                  # /legend
     assert "mode read" in text                                              # /mode shows the current mode
+    assert "effort default" in text and "effort low" in text and terminal.provider.effort == "low"
     # the completer offers commands after "/" and models after "/model "
     from prompt_toolkit.document import Document
     comp = SlashCompleter(terminal)

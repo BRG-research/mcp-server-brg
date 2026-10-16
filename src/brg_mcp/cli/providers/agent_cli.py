@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import time
 import os
 import shutil
@@ -58,6 +59,25 @@ def readiness(which: str, account: str) -> tuple[bool, str]:
     return True, ""
 
 
+def claude_code_effort() -> str:
+    """Claude Code's own effort setting (~/.claude/settings.json effortLevel), else the model default."""
+    try:
+        data = json.loads((Path.home() / ".claude" / "settings.json").read_text())
+        return str(data.get("effortLevel") or "high (model default)")
+    except (OSError, ValueError):
+        return "high (model default)"
+
+
+def codex_effort() -> str:
+    """Codex's own effort setting (~/.codex/config.toml model_reasoning_effort), else medium."""
+    try:
+        text = (Path.home() / ".codex" / "config.toml").read_text()
+        m = re.search(r'^\s*model_reasoning_effort\s*=\s*"([^"]+)"', text, re.M)
+        return m.group(1) if m else "medium (Codex default)"
+    except OSError:
+        return "medium (Codex default)"
+
+
 def claude_account() -> str:
     """The signed-in Claude account, read from Claude Code's own config file."""
     path = Path.home() / ".claude.json"
@@ -103,6 +123,8 @@ class ClaudeCliProvider(Provider):
                "--mcp-config", str(mcp_config_file(self.bridge)), "--allowedTools", "mcp__brg__*"]
         if self.model:
             cmd += ["--model", self.model]
+        if self.effort:
+            cmd += ["--effort", self.effort]
         if self.session_id:
             cmd += ["--resume", self.session_id]
         reply: list[str] = []
@@ -178,6 +200,9 @@ class CodexCliProvider(Provider):
     supports_modes = True
     SANDBOX = {"read": "read-only", "edit": "workspace-write", "auto": "danger-full-access"}
 
+    def default_effort(self) -> str:
+        return codex_effort()
+
     def __init__(self, bridge: MCPBridge, model: str | None = None):
         super().__init__(bridge, model)
         self.started = False
@@ -201,6 +226,8 @@ class CodexCliProvider(Provider):
                "--sandbox", self.SANDBOX.get(self.mode, "read-only"), "-C", self.workdir or str(self.bridge.data_root)] + self._config_args()
         if self.model:
             cmd += ["-m", self.model]
+        if self.effort:
+            cmd += ["-c", f'model_reasoning_effort="{self.effort}"']
         if self.started:
             cmd += ["resume", "--last"]
         cmd.append(user_text)
