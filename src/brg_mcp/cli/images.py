@@ -9,8 +9,6 @@ Modes (BRG_FIGURES, or /figures <mode> in the terminal):
   open    the link, and the image opened in the system viewer
   blocks  the pixel rendering in any terminal"""
 
-MODES = ("auto", "link", "open", "blocks")
-
 from __future__ import annotations
 
 import base64
@@ -23,6 +21,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.text import Text
 
+MODES = ("auto", "link", "open", "blocks")
 IMAGE_LINK = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)\)")
 
 
