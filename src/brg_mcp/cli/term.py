@@ -218,6 +218,7 @@ class Terminal:
             from brg_mcp.cli.providers.agent_cli import codex_account
             self.provider.account = await codex_account()
         self.provider_name = name
+        self.set_title()
         if announce:
             self.event(f"{self.model_label()} · {self.provider.status()} (new conversation)")
 
@@ -272,6 +273,7 @@ class Terminal:
             else:
                 self.provider.model = entry.model
             self.event(f"model: {entry.name} ({entry.note})")
+        self.set_title()
 
     async def login(self, which: str) -> None:
         cls = PROVIDERS.get(which)
@@ -454,6 +456,7 @@ class Terminal:
             usage = await self.provider.context_usage()
             if usage and usage.get("percentage") is not None:
                 self.context_pct = float(usage["percentage"])
+        self.set_title()
         self.print(self.trimmed(metrics_line(trace.usage, self.context_pct, time.monotonic() - started,
                                              show_cost=self.provider_name in ("anthropic", "openai"))))   # accounts: no $
         self.print()
@@ -482,18 +485,30 @@ class Terminal:
         self.console.file.write(f"\x1b]11;{BACKGROUND}\x07" if on else "\x1b]111\x07")
         self.console.file.flush()
 
+    def set_title(self) -> None:
+        """The terminal's window/tab title: BRG and the model, always visible above the transcript."""
+        if not self.console.is_terminal:
+            return
+        ctx = f" · ctx {self.context_pct:.0f}%" if self.context_pct is not None else ""
+        self.console.file.write(f"\x1b]2;BRG · {self.model_label()}{ctx}\x07")
+        self.console.file.flush()
+
     async def run(self) -> None:
         self.paint(True)
-        self.header()
-        try:
-            await self.bridge.start()
-        except Exception as exc:                                      # noqa: BLE001
-            self.error(f"could not start the BRG MCP server: {exc}")
-            return
-        await self.set_provider(self.provider_name, self.requested_model, announce=False)
-        if self.provider is not None and self.provider.ready()[0]:
-            await self.load_models()
-        self.event(f"{self.model_line()}. Type a question, or /help.")
+        self.set_title()
+        with Live(Spinner("dots", text=Text(" starting the BRG MCP server and your account…", style=GREY), style="#58a6ff"),
+                  console=self.console, transient=True, refresh_per_second=12):
+            try:
+                await self.bridge.start()
+            except Exception as exc:                                      # noqa: BLE001
+                self.error(f"could not start the BRG MCP server: {exc}")
+                return
+            await self.set_provider(self.provider_name, self.requested_model, announce=False)
+            if self.provider is not None and self.provider.ready()[0]:
+                await self.load_models()
+        self.header()                                                     # with the real model line
+        self.set_title()
+        self.event("Type a question, or /help. /legend explains the symbols.")
         self.first_run_check()
         interrupts = 0
         try:

@@ -144,6 +144,17 @@ pixel rendering (not pretty; off by default); `BRG_FIGURES` sets the mode at
 start. `/show <note id>` lists a note's figures, `/show <image path>` one
 image, `/show open <path>` opens it.
 
+## Where the model name is
+
+The header printed at the start names the model, the account and the tool
+count. Because the transcript is the terminal's own scrollback, that header
+scrolls away like any other line; the model stays visible in two places
+that do not scroll: the terminal's window or tab title (`BRG · Claude Fable
+5.1 · ctx 9%`) and the bar under the prompt. A header pinned to the top of
+the window is not offered: a terminal only saves scrolled-off lines into
+its scrollback when the scrolling region starts at the top row, so a pinned
+header would cost the scrollbar and the mouse-wheel history.
+
 ## Look and feel
 
 The terminal's background is painted dark blue while `brg` runs and
