@@ -5,9 +5,13 @@ from __future__ import annotations
 
 from rich.console import Console, ConsoleOptions, Group, RenderResult
 from rich.markdown import CodeBlock, Heading, Markdown
+from rich.segment import Segment
+from rich.style import Style
 from rich.syntax import Syntax
 from rich.text import Text
 from rich.theme import Theme
+
+CODE_BAR = Style(color="#f778ba")                  # the pink bar beside code, like the blue one beside equations
 
 from brg_mcp.cli.mathbox import typeset
 from brg_mcp.cli.mathtext import blocks, mathify, tex_to_plain
@@ -33,12 +37,17 @@ THEME = Theme({
 
 
 class PlainCodeBlock(CodeBlock):
-    """A fenced block with syntax colours on the terminal background: no box, no grey panel."""
+    """A fenced block with syntax colours on the terminal background, a pink bar at the left: no box, no
+    grey panel."""
 
     def __rich_console__(self, console: Console, options: ConsoleOptions) -> RenderResult:
         code = str(self.text).rstrip()
-        yield Syntax(code, self.lexer_name, theme="github-dark", background_color="default",
-                     word_wrap=True, padding=(0, 0, 0, 2))
+        syntax = Syntax(code, self.lexer_name, theme="github-dark", background_color="default", word_wrap=True)
+        lines = console.render_lines(syntax, options.update_width(max(10, options.max_width - 2)), pad=False)
+        for line in lines:
+            yield Segment("▌ ", CODE_BAR)
+            yield from line
+            yield Segment.line()
 
 
 class PlainHeading(Heading):

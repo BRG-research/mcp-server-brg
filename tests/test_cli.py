@@ -170,7 +170,7 @@ def test_trimmed_output_has_no_trailing_padding():
     terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\n$$a = b$$\n\n```python\nx = 1\n```")))
     lines = out.getvalue().splitlines()
     assert lines[0] == "  Short line with q = f/l." and all(line == line.rstrip() for line in lines)   # 2-column margin
-    assert "  ▌ a = b" in lines and any(line.strip() == "x = 1" for line in lines)
+    assert "  ▌ a = b" in lines and any(line.strip() == "▌ x = 1" for line in lines)     # bars: equations, code
     terminal.print(terminal.trimmed(__import__("brg_mcp.cli.trace", fromlist=["legend"]).legend(), width=120))
     text = out.getvalue()
     assert "the model is thinking" in text and "ctx" in text and "an error" in text
