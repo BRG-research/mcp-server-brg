@@ -38,23 +38,27 @@ alive and answers short follow-ups in under two seconds.
 
 ## The screen
 
-```
-▀▀▀▀▀  ▀▀▀▀▀   ▀▀▀▀    BRG Terminal  v0.1.0
-█   █  █   █  █        Claude Code default · claude account · you@example.com · 8 BRG tools
-▀▀▀▀▀  ▀▀▀▀   ▀▀▀▀▀    /home/you/mcp-server-brg
+The terminal is a full-screen application built on prompt_toolkit, the
+same library that draws its input line. From top to bottom:
 
-> how does compas_fd compute reactions?
-● search_knowledge({"query": "reactions compas_fd"})
-● In compas_fd the residual at a fixed node is p - C^t Q C x ...
+- the banner: the BRG logo, and beside it the model, effort, mode and
+  context share, the account and tool count, the directory, and whether the
+  terminal is idle or working;
+- the transcript, which scrolls: the mouse wheel, PageUp / PageDown,
+  Shift+Up / Shift+Down (three lines) and End (back to the newest line);
+  while you are scrolled back, the status line says how far;
+- the status line: while a reply runs, a spinner with the elapsed time and
+  the chain of steps so far;
+- the input line; Up and Down walk your history, `/` opens the command menu;
+- one line of key hints.
 
-──────────────────────────────────────────────────────────────
->
-──────────────────────────────────────────────────────────────
-? for shortcuts
-```
-
-The header always stays on top. Lines starting with `>` are yours, green bullets are tool calls
-and notes, the model's reply renders as Markdown below them.
+The application paints every cell, so the dark blue background is simply its
+own (set `BRG_BACKGROUND` to another colour, or empty for the terminal's);
+the terminal's scrollbar is unused. With the wheel in use the terminal
+reports the mouse to `brg`, so selecting text needs Shift held while
+dragging (as in vim or tmux); `/mouse off` (or `BRG_MOUSE=off`) gives plain
+selection back and leaves PageUp / PageDown for scrolling. On exit the
+terminal shows your shell again as it was.
 
 ## Commands
 
@@ -203,30 +207,6 @@ appears, `/figures link` keeps links only, `/figures blocks` draws a coarse
 pixel rendering (not pretty; off by default); `BRG_FIGURES` sets the mode at
 start. `/show <note id>` lists a note's figures, `/show <image path>` one
 image, `/show open <path>` opens it.
-
-## The screen
-
-The terminal is a full-screen application built on prompt_toolkit, the
-same library that draws its input line. From top to bottom:
-
-- the banner: the BRG logo, and beside it the model, effort, mode and
-  context share, the account and tool count, the directory, and whether the
-  terminal is idle or working;
-- the transcript, which scrolls: the mouse wheel, PageUp / PageDown,
-  Shift+Up / Shift+Down (three lines) and End (back to the newest line);
-  while you are scrolled back, the status line says how far;
-- the status line: while a reply runs, a spinner with the elapsed time and
-  the chain of steps so far;
-- the input line; Up and Down walk your history, `/` opens the command menu;
-- one line of key hints.
-
-The application paints every cell, so the dark blue background is simply its
-own (set `BRG_BACKGROUND` to another colour, or empty for the terminal's);
-the terminal's scrollbar is unused. With the wheel in use the terminal
-reports the mouse to `brg`, so selecting text needs Shift held while
-dragging (as in vim or tmux); `/mouse off` (or `BRG_MOUSE=off`) gives plain
-selection back and leaves PageUp / PageDown for scrolling. On exit the
-terminal shows your shell again as it was.
 
 ## Look and feel
 
