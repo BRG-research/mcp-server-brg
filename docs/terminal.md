@@ -204,55 +204,35 @@ pixel rendering (not pretty; off by default); `BRG_FIGURES` sets the mode at
 start. `/show <note id>` lists a note's figures, `/show <image path>` one
 image, `/show open <path>` opens it.
 
-## The banner pinned at the top
+## The screen
 
-The BRG banner stays at the top of the terminal: the logo, and beside it
-the model, effort, mode and context share, the account and tool count, the
-directory, and whether the terminal is idle or working. The transcript
-scrolls in the rows below it (a scrolling region), the prompt sits at the
-bottom with one line of hints under it.
+The terminal is a full-screen application built on prompt_toolkit, the
+same library that draws its input line. From top to bottom:
 
-A terminal keeps no history of lines that scroll out of such a region, so
-its own scrollbar does not grow while `brg` runs. The terminal keeps that
-history itself: every printed line and every question is remembered, and
-the mouse wheel, PageUp / PageDown (or Shift+Up / Shift+Down for three
-lines, End to return) page back through it, also while a reply is running.
-A marker at the top right says how far back you are. With the wheel in use
-the terminal reports the mouse to `brg`, so selecting text needs Shift held
-while dragging (as in vim or tmux); `/mouse off` (or `BRG_MOUSE=off`) gives
-plain selection back and leaves PageUp / PageDown for paging. `BRG_HEADER=scroll` turns the pinned
-banner off: the banner is then printed once, the terminal's own scrollback
-works as usual, and the logo with the model and effort lives in the bar
-under the prompt instead. The window title carries `BRG · <model> · ctx N%`
-in both modes.
+- the banner: the BRG logo, and beside it the model, effort, mode and
+  context share, the account and tool count, the directory, and whether the
+  terminal is idle or working;
+- the transcript, which scrolls: the mouse wheel, PageUp / PageDown,
+  Shift+Up / Shift+Down (three lines) and End (back to the newest line);
+  while you are scrolled back, the status line says how far;
+- the status line: while a reply runs, a spinner with the elapsed time and
+  the chain of steps so far;
+- the input line; Up and Down walk your history, `/` opens the command menu;
+- one line of key hints.
 
-## Logs
-
-The MCP server's log lines and the Claude subprocess's stderr never reach
-the screen: they go to `~/.brg/brg.log` (`BRG_LOG` changes the path). If a
-tool misbehaves, that file has the details.
+The application paints every cell, so the dark blue background is simply its
+own (set `BRG_BACKGROUND` to another colour, or empty for the terminal's);
+the terminal's scrollbar is unused. With the wheel in use the terminal
+reports the mouse to `brg`, so selecting text needs Shift held while
+dragging (as in vim or tmux); `/mouse off` (or `BRG_MOUSE=off`) gives plain
+selection back and leaves PageUp / PageDown for scrolling. On exit the
+terminal shows your shell again as it was.
 
 ## Look and feel
 
-The terminal's background is painted dark blue while `brg` runs and
-restored when you leave (set `BRG_BACKGROUND` to another colour, or empty
-to keep your own). The scrollbar is not part of the terminal canvas: it is
-a widget of the terminal application, coloured by the desktop theme, and no
-program running inside the terminal can recolour it. If the mismatch
-bothers you, keep your own background (`BRG_BACKGROUND=`) or set the
-terminal profile's background to the same dark blue.
+Replies sit two columns from the left edge, wrap at 110 columns at most,
+and are printed block by block as they complete: the chain, each paragraph,
+each code block, each drawing. Nothing on screen is ever rewritten by hand,
+the application lays the screen out again itself on every change and on
+resize.
 
-While a reply is produced only a one-line status is redrawn. The step chain,
-each paragraph and each code block are printed once, when complete, so
-nothing in the scrollback is ever rewritten and a resize cannot disturb it.
-
-The terminal is the terminal: nothing is drawn full-screen. The banner, the
-events and the replies are printed into the terminal's own scrollback, so the
-terminal's scrollbar, mouse selection and copy work as usual, exactly as in
-Claude Code. Only the prompt line at the bottom is live (prompt_toolkit): the
-command menu opens under it as soon as you type `/`, `/model ` lists the model
-names, Up/Down walk the history (kept in `~/.brg_history`, or `$BRG_HISTORY`).
-While a reply is being prepared an animated indicator with the elapsed time is
-shown; it is replaced by the reply as it streams in, rendered as Markdown.
-Ctrl+C interrupts a running reply; at an empty prompt Ctrl+C twice, Ctrl+D or
-`/quit` leaves.

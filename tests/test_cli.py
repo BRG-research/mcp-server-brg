@@ -8,7 +8,6 @@ import time
 from pathlib import Path
 
 import pytest
-from prompt_toolkit import PromptSession
 from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import DummyOutput
 from rich.console import Console
@@ -71,38 +70,6 @@ def test_model_registry_from_the_accounts():
     assert models.codex_display_name("gpt-6.1-sol") == "Codex Sol"
 
 
-@pytest.mark.asyncio
-async def test_terminal_through_a_pipe(tmp_path, monkeypatch):
-    """Drive the real loop: commands are typed into a pipe, output goes to a string console."""
-    from brg_mcp.cli.term import SlashCompleter, Terminal
-    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
-    out = io.StringIO()
-    console = Console(file=out, force_terminal=False, width=120)
-    with create_pipe_input() as pipe:
-        session = PromptSession(input=pipe, output=DummyOutput())
-        terminal = Terminal(ROOT, provider="claude", console=console, session=session)
-        session.completer = SlashCompleter(terminal)
-        for line in ["/help", "/tools", "/search force density", "/model astra", "/model fable", "/status", "/trace", "/legend", "/mode", "/effort", "/effort low", "/quit"]:
-            pipe.send_text(line + "\n")
-        await asyncio.wait_for(terminal.run(), timeout=90)
-    text = out.getvalue()
-    assert "BRG Terminal" in text and "/model" in text                     # banner and help
-    assert "search_knowledge" in text and "form-finding-compas-fd" in text  # tools and a direct search
-    assert "Codex Astra" in text                                            # switched engine
-    assert "Claude Fable 5.1" in text                                       # and back, named in /status
-    assert terminal.provider_name == "claude" and terminal.provider.model == "claude-fable-5-1"
-    assert "no steps yet" in text                                           # /trace before any reply
-    assert "the model is thinking" in text                                  # /legend
-    assert "mode read" in text                                              # /mode shows the current mode
-    assert "effort default" in text and "effort low" in text and terminal.provider.effort == "low"
-    # the completer offers commands after "/" and models after "/model "
-    from prompt_toolkit.document import Document
-    comp = SlashCompleter(terminal)
-    assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/mode", "/model", "/models", "/mouse"}
-    assert {c.text for c in comp.get_completions(Document("/mode "), None)} == {"read", "edit", "auto"}
-    assert any("Fable 5.1" in c.text for c in comp.get_completions(Document("/model fab"), None))
-
-
 def test_trace_chain_and_table():
     """The step chain: thinking and tool badges, results colour them, text starts a new chain."""
     from brg_mcp.cli.providers.base import Event
@@ -163,21 +130,6 @@ def test_figures_render_as_blocks(tmp_path):
     assert images.IMAGE_LINK.findall("see ![Schek fig 3](images/schek_fig3.png) here") == [("Schek fig 3", "images/schek_fig3.png")]
 
 
-def test_trimmed_output_has_no_trailing_padding():
-    from prompt_toolkit.output import DummyOutput
-    from brg_mcp.cli.term import Terminal
-    out = io.StringIO()
-    terminal = Terminal(ROOT, console=Console(file=out, force_terminal=False, width=120),
-                        session=PromptSession(input=create_pipe_input(), output=DummyOutput()))
-    terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\n$$a = b$$\n\n```python\nx = 1\n```")))
-    lines = out.getvalue().splitlines()
-    assert lines[0] == "  Short line with q = f/l." and all(line == line.rstrip() for line in lines)   # 2-column margin
-    assert "  ▌ a = b" in lines and any(line.strip() == "▌ x = 1" for line in lines)     # bars: equations, code
-    terminal.print(terminal.trimmed(__import__("brg_mcp.cli.trace", fromlist=["legend"]).legend(), width=120))
-    text = out.getvalue()
-    assert "the model is thinking" in text and "ctx" in text and "an error" in text
-
-
 def test_describe_action_and_modes():
     from brg_mcp.cli.providers.base import MODES
     from brg_mcp.cli.term import describe_action
@@ -235,10 +187,61 @@ def test_funicular_tool_solves_and_draws():
     assert drawings_in('{"result": "plain text"}') == [] and drawings_in("not json") == []
 
 
+
+async def drive(terminal, pipe, lines, timeout=90):
+    """Type the lines into the application (Enter after each) and run it until it exits."""
+    async def typist():
+        await asyncio.sleep(4)                                        # after the start-up (MCP server, account)
+        for line in lines:
+            pipe.send_text(line + "\r")
+            await asyncio.sleep(1.5)
+    asyncio.get_running_loop().create_task(typist())
+    await asyncio.wait_for(terminal.run(), timeout=timeout)
+
+
+@pytest.mark.asyncio
+async def test_terminal_application(tmp_path, monkeypatch):
+    """Drive the full-screen application: commands typed into a pipe, output read from the transcript."""
+    from prompt_toolkit.document import Document
+    from brg_mcp.cli.term import SlashCompleter, Terminal
+    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
+    with create_pipe_input() as pipe:
+        terminal = Terminal(ROOT, provider="claude", input=pipe, output=DummyOutput())
+        await drive(terminal, pipe, ["/help", "/tools", "/search force density", "/model astra", "/model fable",
+                                     "/status", "/trace", "/legend", "/mode", "/effort", "/effort low", "/quit"])
+    text = terminal.transcript_text()
+    assert "/model" in text and "search_knowledge" in text and "form-finding-compas-fd" in text
+    assert "Codex Astra" in text and "Claude Fable 5.1" in text          # switched engine and back
+    assert terminal.provider_name == "claude" and terminal.provider.model == "claude-fable-5-1"
+    assert "no steps yet" in text and "the model is thinking" in text   # /trace before a reply, /legend
+    assert "mode read" in text and "effort default" in text and "effort low" in text and terminal.provider.effort == "low"
+    assert "> /help" in text                                            # questions and commands are echoed
+    header = "".join(t for _, t in terminal.header_fragments())
+    assert "BRG Terminal" in header and "Claude Fable 5.1" in header and "effort low" in header
+    comp = SlashCompleter(terminal)
+    assert {c.text for c in comp.get_completions(Document("/mo"), None)} == {"/mode", "/model", "/models", "/mouse"}
+    assert {c.text for c in comp.get_completions(Document("/mode "), None)} == {"read", "edit", "auto"}
+    assert any("Fable 5.1" in c.text for c in comp.get_completions(Document("/model fab"), None))
+
+
+def test_print_renders_into_the_transcript(tmp_path, monkeypatch):
+    from brg_mcp.cli.term import Terminal
+    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
+    with create_pipe_input() as pipe:
+        terminal = Terminal(ROOT, input=pipe, output=DummyOutput())
+        terminal.print(terminal.trimmed(terminal.reply_markdown("Short line with $q = f/l$.\n\n$$a = b$$\n\n```python\nx = 1\n```")))
+        terminal.print("plain [not markup]")
+    lines = terminal.plain
+    assert lines[0] == "  Short line with q = f/l." and "  ▌ a = b" in lines and any(l.strip() == "▌ x = 1" for l in lines)
+    assert "plain [not markup]" in lines[-1]
+    assert all(isinstance(frag, tuple) for line in terminal.lines for frag in line)   # formatted fragments
+    assert terminal.cursor_line() == len(lines) - 1                                   # following the newest line
+
+
 @pytest.mark.asyncio
 async def test_escape_interrupts_a_reply(tmp_path, monkeypatch):
-    """Esc typed while the model works cancels the reply (the key is read directly during a turn)."""
-    from brg_mcp.cli.term import SlashCompleter, Terminal
+    """Esc while the model works cancels the reply."""
+    from brg_mcp.cli.term import Terminal
     from brg_mcp.cli.providers.base import Provider
     monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
 
@@ -249,82 +252,37 @@ async def test_escape_interrupts_a_reply(tmp_path, monkeypatch):
             on_text("too late")
             return "too late"
 
-    out = io.StringIO()
-    console = Console(file=out, force_terminal=False, width=100)
     with create_pipe_input() as pipe:
-        session = PromptSession(input=pipe, output=DummyOutput())
-        terminal = Terminal(ROOT, console=console, session=session)
+        terminal = Terminal(ROOT, input=pipe, output=DummyOutput())
         terminal.provider = Slow(terminal.bridge)
         terminal.provider_name = "slow"
 
-        async def press_escape():
-            await asyncio.sleep(0.3)
-            pipe.send_text("\x1b")
-        asyncio.create_task(press_escape())
+        async def script():
+            await asyncio.sleep(0.5)
+            pipe.send_text("hello\r")
+            await asyncio.sleep(1.0)
+            pipe.send_text("\x1b")                                    # Esc
+            await asyncio.sleep(1.0)
+            terminal.app.exit()
+        asyncio.get_running_loop().create_task(script())
         started = time.monotonic()
-        await asyncio.wait_for(terminal.send("hello"), timeout=10)
-    elapsed = time.monotonic() - started
-    assert elapsed < 5, (elapsed, out.getvalue()[-300:])
-    assert "interrupted" in out.getvalue() and "too late" not in out.getvalue()
+        await asyncio.wait_for(terminal.app.run_async(), timeout=15)
+    text = terminal.transcript_text()
+    assert time.monotonic() - started < 8 and "interrupted" in text and "too late" not in text
 
 
-def test_toolbar_carries_logo_model_and_effort(tmp_path, monkeypatch):
-    from prompt_toolkit.output import DummyOutput
+def test_scrolling_the_transcript(tmp_path, monkeypatch):
     from brg_mcp.cli.term import Terminal
     monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
-    terminal = Terminal(ROOT, console=Console(file=io.StringIO(), force_terminal=False, width=120),
-                        session=PromptSession(input=create_pipe_input(), output=DummyOutput()))
-    terminal.effort = "high"
-    fragments = terminal.toolbar()
-    text = "".join(t for _, t in fragments)
-    assert text.count("\n") == 3                                             # four lines: the logo height
-    assert "BRG Terminal" in text and "effort high" in text and "mode read" in text and "/quit" in text
-    assert any("▀" in t for _, t in fragments) and any("fg:#1f6feb" in style for style, _ in fragments)
-
-
-def test_pinned_screen_region_header_and_paging():
-    from brg_mcp.cli.screen import PinnedScreen, ansi_lines
-    from rich.text import Text
-    out = io.StringIO()
-    console = Console(file=out, force_terminal=True, width=80, height=24, color_system="truecolor")
-    screen = PinnedScreen(console, 5)
-    screen.start()
-    assert "\x1b[6;24r" in out.getvalue() and "\x1b[2J" in out.getvalue()      # region below five header rows
-    screen.draw_header(["LOGO 1", "LOGO 2", "LOGO 3", "LOGO 4", ""])
-    assert "\x1b7\x1b[1;1H\x1b[2KLOGO 1" in out.getvalue() and out.getvalue().endswith("\x1b8")
-    screen.remember([f"line {i}" for i in range(60)])
-    assert screen.view_rows == 17
-    screen.page(15)
-    assert screen.offset == 15 and "line 28" in out.getvalue() and "line 44" in out.getvalue() and "15 lines back" in out.getvalue()
-    screen.page(1000)
-    assert screen.offset == 60 - 17                                         # clamped at the oldest page
-    screen.reset_view()
-    assert screen.offset == 0
-    screen.stop()
-    assert out.getvalue().endswith("\x1b[r\x1b[24;1H\n")
-    lines = ansi_lines(console, Text.assemble(("bold ", "bold"), ("plain", "")))
-    assert len(lines) == 1 and "\x1b[1mbold \x1b[0m" in lines[0] and lines[0].endswith("plain")
-
-
-@pytest.mark.asyncio
-async def test_wheel_pages_the_pinned_transcript(tmp_path, monkeypatch):
-    """With the banner pinned, a wheel-up report at the prompt pages back through the remembered lines."""
-    from prompt_toolkit.output import DummyOutput
-    from brg_mcp.cli.term import SlashCompleter, Terminal
-    monkeypatch.setenv("BRG_HISTORY", str(tmp_path / "history"))
-    out = io.StringIO()
-    console = Console(file=out, force_terminal=True, width=100, height=20, color_system="truecolor")
     with create_pipe_input() as pipe:
-        session = PromptSession(input=pipe, output=DummyOutput())
-        terminal = Terminal(ROOT, console=console, session=session)
-        assert terminal.pinned and terminal.mouse
-        session.completer = SlashCompleter(terminal)
-        session.key_bindings = terminal.key_bindings()
-        terminal.screen.start()
-        terminal.screen.remember([f"old line {i}" for i in range(80)])
-        pipe.send_text("\x1b[<64;10;5M")                 # wheel up, SGR report
-        pipe.send_text("/quit\n")
-        await asyncio.wait_for(terminal.run(), timeout=90)
-    text = out.getvalue()
-    assert "3 lines back" in text and "old line 70" in text          # paged back three lines, view redrawn
-    assert "\x1b[6;20r" in text                                     # the region below the five header rows
+        terminal = Terminal(ROOT, input=pipe, output=DummyOutput())
+        for i in range(100):
+            terminal.print(f"line {i}")
+        assert terminal.follow and terminal.cursor_line() == 99
+        terminal.scroll(-18)                                           # a page up (no render info: from the cursor line)
+        assert not terminal.follow and terminal.cursor_line() == 81
+        assert "lines back" in "".join(t for _, t in terminal.status_fragments())
+        terminal.scroll(3)
+        assert terminal.cursor_line() > 81
+        terminal.scroll_to_end()
+        assert terminal.follow and terminal.cursor_line() == 99
