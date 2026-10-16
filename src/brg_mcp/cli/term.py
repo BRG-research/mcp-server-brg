@@ -140,7 +140,7 @@ class Terminal:
     def trimmed(self, renderable, width: int | None = None):
         """A renderable rendered now, without the padding to the full width: lines keep no trailing
         spaces, so a later narrowing of the window does not wrap them into blank lines."""
-        width = min(width or TEXT_WIDTH, self.console.width)
+        width = min(width or TEXT_WIDTH, self.console.width - 1)      # never exactly the terminal width
         renderable = Padding(renderable, (0, 0, 0, INDENT))
         lines = self.console.render_lines(renderable, self.console.options.update_width(width), pad=False)
         out: list[Segment] = []
@@ -151,6 +151,8 @@ class Terminal:
                 line[-1] = Segment(line[-1].text.rstrip(), line[-1].style)
             out.extend(line)
             out.append(Segment.line())
+        while len(out) >= 2 and out[-1].text == "\n" and out[-2].text == "\n":      # no trailing blank lines
+            out.pop()
         return Segments(out)
 
     def reply_markdown(self, text: str) -> Markdown:
@@ -373,40 +375,38 @@ class Terminal:
         self.show_figures(note, limit=12)
 
     # ------------------------------------------------------------------ a model turn
+    def text_width(self) -> int:
+        return min(TEXT_WIDTH, self.console.width - 1) - INDENT
+
     async def ask(self, line: str) -> None:
-        """Stream the reply below the prompt.  Steps (thinking, tool calls) are drawn as a chain of badges;
-        the chain is printed for good when text follows it, finished paragraphs are printed as they complete,
-        so only the current chain or paragraph is redrawn and everything else lives in the scrollback."""
+        """Run one reply.  Only a one-line status is redrawn while the model works; the step chain is
+        printed when text follows it, each paragraph (or code block) when it is complete, so everything
+        in the scrollback was printed exactly once and a resize cannot disturb a redraw."""
         trace = Trace()
         self.trace = trace
         started = time.monotonic()
-        buffer: list[str] = []                       # the paragraph being streamed
+        buffer: list[str] = []                       # the paragraph being received
         full: list[str] = []                         # the whole reply, for the figures
+        spinner = Spinner("dots", style="#58a6ff")
 
-        def spinner():
-            return Spinner("dots", text=Text.assemble((f" {trace.running()} ", "#c9d1d9"),
-                                                      (f"{time.monotonic() - started:.0f}s", GREY),
-                                                      ("   (Ctrl+C to interrupt)", "#484f58")), style="#58a6ff")
+        def status() -> Spinner:
+            label = "Writing…" if buffer else trace.running()
+            text = Text.assemble((f" {label} ", "#c9d1d9"), (f"{time.monotonic() - started:.0f}s", GREY),
+                                 ("   Ctrl+C interrupts", "#484f58"))
+            text.truncate(max(10, self.console.width - 4))
+            spinner.update(text=text)
+            return spinner
 
-        def renderable():
-            parts = []
-            if trace.chain:
-                parts.append(self.trimmed(trace.chain_text()))
-            if buffer:
-                parts.append(self.trimmed(self.reply_markdown("".join(buffer))))
-            else:
-                parts.append(spinner())
-            return Group(*parts)
-
-        with Live(get_renderable=renderable, console=self.console, refresh_per_second=12,
-                  vertical_overflow="visible", transient=True) as live:
+        with Live(get_renderable=status, console=self.console, refresh_per_second=10,
+                  vertical_overflow="crop", transient=True) as live:
             def flush_chain() -> None:
                 if trace.chain:
-                    live.console.print(self.trimmed(trace.chain_text()))
+                    live.console.print(self.trimmed(trace.chain_text(self.text_width())))
+                    live.console.print()
                     trace.text_started()
 
             def flush_text(final: bool = False) -> None:
-                """Print the finished paragraphs (never inside an open code fence)."""
+                """Print the complete paragraphs (never cutting an open code fence)."""
                 text = "".join(buffer)
                 if final:
                     done, rest = text, ""
@@ -421,6 +421,7 @@ class Terminal:
                     done, rest = text[:cut], text[cut + 2:]
                 if done.strip():
                     live.console.print(self.trimmed(self.reply_markdown(done)))
+                    live.console.print()                                  # one blank line between blocks
                 buffer[:] = [rest] if rest else []
 
             def on_text(fragment: str) -> None:
@@ -443,7 +444,7 @@ class Terminal:
 
             try:
                 await self.provider.send(line, on_text, on_event)
-                if not buffer and not trace.steps:
+                if not full and not trace.steps:
                     buffer.append("*(no text in the reply)*")
             except asyncio.CancelledError:
                 buffer.append("\n\n*(interrupted)*")
@@ -497,7 +498,7 @@ class Terminal:
         self.paint(True)
         self.set_title()
         with Live(Spinner("dots", text=Text(" starting the BRG MCP server and your account…", style=GREY), style="#58a6ff"),
-                  console=self.console, transient=True, refresh_per_second=12):
+                  console=self.console, transient=True, refresh_per_second=10, vertical_overflow="crop"):
             try:
                 await self.bridge.start()
             except Exception as exc:                                      # noqa: BLE001

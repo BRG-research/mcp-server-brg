@@ -134,12 +134,22 @@ class Trace:
         self._close_thinking()
         self.chain = []
 
-    def chain_text(self) -> Text:
+    def chain_text(self, width: int = 10_000) -> Text:
+        """The chain as lines no wider than `width`, broken only between steps (a badge and its label
+        stay together); a line that continues ends with the chevron."""
         out = Text()
+        col = 0
         for i, step in enumerate(self.chain):
-            if i:
+            badge = step.badge()
+            need = badge.cell_len + (3 if i else 0)
+            if i and col + need > width:
+                out.append(" ›\n", style=GREY)
+                col = 0
+            elif i:
                 out.append(" › ", style=GREY)
-            out.append_text(step.badge())
+                col += 3
+            out.append_text(badge)
+            col += badge.cell_len
         return out
 
     def running(self) -> str:

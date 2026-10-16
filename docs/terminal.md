@@ -155,11 +155,25 @@ the window is not offered: a terminal only saves scrolled-off lines into
 its scrollback when the scrolling region starts at the top row, so a pinned
 header would cost the scrollbar and the mouse-wheel history.
 
+## Logs
+
+The MCP server's log lines and the Claude subprocess's stderr never reach
+the screen: they go to `~/.brg/brg.log` (`BRG_LOG` changes the path). If a
+tool misbehaves, that file has the details.
+
 ## Look and feel
 
 The terminal's background is painted dark blue while `brg` runs and
 restored when you leave (set `BRG_BACKGROUND` to another colour, or empty
-to keep your own).
+to keep your own). The scrollbar is not part of the terminal canvas: it is
+a widget of the terminal application, coloured by the desktop theme, and no
+program running inside the terminal can recolour it. If the mismatch
+bothers you, keep your own background (`BRG_BACKGROUND=`) or set the
+terminal profile's background to the same dark blue.
+
+While a reply is produced only a one-line status is redrawn. The step chain,
+each paragraph and each code block are printed once, when complete, so
+nothing in the scrollback is ever rewritten and a resize cannot disturb it.
 
 The terminal is the terminal: nothing is drawn full-screen. The banner, the
 events and the replies are printed into the terminal's own scrollback, so the

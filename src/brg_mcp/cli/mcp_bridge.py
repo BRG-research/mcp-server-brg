@@ -11,6 +11,8 @@ from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from brg_mcp.cli import logs
+
 
 @dataclass
 class ToolSpec:
@@ -39,7 +41,8 @@ class MCPBridge:
         """Owns the connection: the MCP context managers must be entered and exited by the same task."""
         command, args = self.server_command()
         try:
-            async with stdio_client(StdioServerParameters(command=command, args=args, cwd=str(self.data_root))) as (read, write):
+            async with stdio_client(StdioServerParameters(command=command, args=args, cwd=str(self.data_root)),
+                                    errlog=logs.handle()) as (read, write):   # never the terminal
                 async with ClientSession(read, write) as session:
                     initialized = await session.initialize()
                     self.instructions = initialized.instructions or ""

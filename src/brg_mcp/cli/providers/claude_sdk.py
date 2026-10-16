@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 
+from brg_mcp.cli import logs
 from brg_mcp.cli.mcp_bridge import MCPBridge
 from .agent_cli import ClaudeCliProvider, claude_account, readiness
 from .base import SYSTEM_PROMPT, Event, OnEvent, OnText, Provider, preview, tool_name
@@ -73,6 +74,7 @@ class ClaudeSDKProvider(Provider):
             allowed_tools=["mcp__brg__*"],
             system_prompt=BRG_INSTRUCTIONS,                 # our own prompt, not the coding preset
             include_partial_messages=True,
+            stderr=logs.write,                               # the CLI's stderr goes to the log, not the screen
             cwd=str(self.bridge.data_root),
         )
         client = ClaudeSDKClient(options)

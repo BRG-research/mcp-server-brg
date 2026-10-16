@@ -116,6 +116,10 @@ def test_trace_chain_and_table():
     assert t.chain == [] and len(t.steps) == 2
     t.add(Event("tool_call", "read_book_section")); t.add(Event("tool_result", "", "boom", ok=False))
     assert t.chain_text().plain == " ✗  read_book_section"
+    for _ in range(3):
+        t.add(Event("tool_call", "search_knowledge")); t.add(Event("tool_args", "search_knowledge", '{"query": "funicular"}'))
+    packed = t.chain_text(width=60).plain.splitlines()
+    assert len(packed) > 1 and all(len(l) <= 60 for l in packed) and packed[0].endswith(" ›")   # broken between steps only
     table = Console(file=io.StringIO(), width=100); table.print(t.table())
     out = table.file.getvalue()
     assert 'query="force density"' in out and "→ 3 notes" in out and "(failed)" in out
