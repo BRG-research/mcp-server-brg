@@ -18,14 +18,10 @@ Resolved by the October 2026 rescan: pp. 26, 105, 187, 199, 342.
 
 | Page(s) | Problem | Needed |
 |---|---|---|
-| 56–59 | Bresse's Table I: the K = 0.45 column lies in the binding gutter; its values are recomputed and shown in brackets | Flat rescan of pp. 56–59 |
+| 58–59 | Bresse's Table I: the K = 0.45 column on p. 58 lies in the binding gutter; its values are recomputed and shown in brackets (p. 56 was read from photographs, October 2026) | Photo of the pp. 58–59 spread |
 | Plates XXXIII–XL | The volume is the text only ("Texte"). Figures cited on plates are not in the scan: Pl. XXXIII (Ch. I, fig. A, a, b), XXXIV (Ch. II), XXXV (Ch. IV), XXXVI–XXXVIII (Note I), XXXIX (Note II), XL (Ch. VI) | Scan of the Part III atlas |
 
 The volume ends on p. 418 with the printer's imprint; there are no plates or errata after it.
-
-## Block, Gengnagel, Peters, *Faustformel Tragwerksentwurf* (`faustformel-tragwerksentwurf/`)
-
-Nothing missing. Pages 66, 137, 191 and 268–269 were checked or added from photographs of the printed pages (October 2026): the β_T table on p. 66 has no hidden columns, the p. 137 contents list was confirmed, and the p. 191 contents list and pp. 268–269 (authors and acknowledgements, with the authors' photo) are now in the book. Pages 1–5 (cover, title, imprint, contents) are unnumbered front matter; p. 8 is blank.
 
 ## Wolfe, *Graphical Analysis* (`graphical-analysis-wolfe/`)
 
