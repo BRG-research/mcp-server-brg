@@ -23,19 +23,12 @@ The volume ends on p. 418 with the printer's imprint; there are no plates or err
 
 ## Lévy, *La Statique graphique*, Part IV (`graphic-statics-levy-part-4/`)
 
-All printed pages (v–ix, 1–350) are in the scan. Still missing or unreadable:
-
 | Page(s) | Problem | Needed |
 |---|---|---|
-| 176 | A ribbon covers part of the page: letters of five words, the end of eq. (19′) and the numerator of eq. (19″) (restored from the context, footnoted) | Photo of p. 176 |
-| 299–301 | Note I comparison table: the Bollman columns lie in the binding gutter; some whole numbers and the column formula were completed from the formulas (footnoted) | Flat photo of the pp. 300–301 spread (and the gutter edge of p. 299) |
+| 299, 301 | Note I comparison table: the leading factors 15/8 (p. 299) and 31/16 (p. 301) of two Bollman formulas sit in the fold in the scan and in the photographs; supplied from formula (54), footnoted | Photo of these two cells with the book opened fully flat (optional) |
 | Plates XLI–XLIV | The volume is the text only ("Texte"). Figures cited on plates are not in the scan: Pl. XLI (Ch. I, § 565 vault example), XLII (Ch. III, figs. 1–8, A, a, B, b), XLIII (Ch. II fig. C, c, d; Ch. III figs. A, a, B, b, 1, 2; Ch. IV figs. 3–5), XLIV (Ch. VII–IX figs. 1–3; Note I figs. b, c, d, A, a) | Scan of the Part IV atlas |
 
 Note II's Fig. A is on Plate XXIII of the Part I atlas, which is already in the library.
-
-## Wolfe, *Graphical Analysis* (`graphical-analysis-wolfe/`)
-
-Nothing missing. The doubtful readings on pp. 51, 105, 177, 278 and the Fig. 612 page were checked on the October 2026 rescan; the remaining marks (p. 51 "point", p. 177 smudges, the blotted "250" in Fig. 612) are in the printing itself.
 
 ## Theses and papers without a source PDF
 
