@@ -4,11 +4,13 @@ Still needed for the library (R2 bucket `brg-books`). Scan tips: one page per im
 
 ## Lévy, *La Statique graphique* — atlas plates
 
+The other plates are reproduced from archive.org scans of the atlases.
+
 | Part | Plates needed |
 |---|---|
-| Part II | Pl. XXVII–XXXII |
-| Part III | Pl. XXXIII–XL |
-| Part IV | Pl. XLI–XLIV |
+| Part II | Pl. XXX, XXXII (not in the archive.org scan) |
+| Part III | Pl. XXXVI (not in the scan); Pl. XXXIII, XXXIV, XXXVII (only partly scanned: figs. a, b of XXXIII and the figures of XXXIV, XXXVII not visible) |
+| Part IV | Pl. XLI–XLIV (the archive.org scan shows them folded shut) |
 
 ## Theses and papers
 
