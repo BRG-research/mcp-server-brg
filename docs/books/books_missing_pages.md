@@ -10,12 +10,6 @@ Still needed for the library (R2 bucket `brg-books`). Scan tips: one page per im
 | Part III | Pl. XXXIII–XL |
 | Part IV | Pl. XLI–XLIV |
 
-## Lévy, Part IV — optional
-
-| Page | Needed |
-|---|---|
-| 299, 301 | Photo of the Note I table at the fold, book opened fully flat (two leading factors, 15/8 and 31/16) |
-
 ## Theses and papers
 
 | Item | Needed |
