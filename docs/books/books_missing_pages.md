@@ -8,11 +8,9 @@ Scan tips: one page per image, book pressed flat (no gutter shadow), 300 dpi or 
 
 | Page(s) | Problem | Needed |
 |---|---|---|
-| 132 (and left edge of 133) | Gutter hides note (⁴) after "x₀ =", the radicand in the case-2 maximum-moment condition, and the ends of R₀ and M in case 2 (§ 347 tables) | Flat rescan of pp. 132–133 |
-| 274 | A loose thread covers the last digits of three Table V entries (x₂, δ = 1.0, n = 11, n = 12, ∞) | Rescan of p. 274 |
 | Plates XXVII–XXXII | Figures 115–122, A, a–d, B, C, D are printed on plates of a separate atlas volume, not in the text volume | Scan of the Part II atlas (Pl. XXVII–XXXII) |
 
-Resolved by the October 2026 rescan: pp. 26, 105, 187, 199, 342.
+Resolved by the October 2026 rescans and photographs: pp. 26, 105, 132–133, 187, 199, 274, 342.
 
 ## Lévy, *La Statique graphique*, Part III (`RAW/La_Statique_Graphique_III_Partie_Maurice_Levy.pdf`)
 
