@@ -37,6 +37,7 @@ Input: a local PDF path or HTTPS URL supplied by the user.
 5. Label structural figures (`tools/structlabels.py` as a first pass). Create README, INDEX, GLOSSARY,
    and FIGURES; follow the guide's construction rules. Publish the scanned pages with `tools/scan_index.py`
    (`scans/` images + `SCANS.md`, printed page → scan) and link SCANS.md from README, so every page can be checked.
+   Add `cover.jpg` (the scanned cover, or the title page; ≈600 px wide, scanner edges trimmed) for the library shelf.
 6. Regenerate `LIBRARY.md` (`tools/r2_library_map.sh` for the published library, or `tools/library_map.py`);
    verify build reports. Keep incomplete chapters explicitly marked unfinished.
 7. Record what is still missing or unreadable (pages, plates, sources) in the repo's
