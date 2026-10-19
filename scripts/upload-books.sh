@@ -4,7 +4,7 @@ set -euo pipefail
 
 if [[ $# -lt 3 || $# -gt 4 ]]; then
   echo 'Usage: bash scripts/upload-books.sh BUCKET ENDPOINT SOURCE_DIR [--upload]' >&2
-  echo 'Default: preview only. Set R2_PROFILE to choose a profile (default: r2).' >&2
+  echo 'Default: preview only. Set R2_PROFILE to choose a profile (default: r2-books).' >&2
   exit 2
 fi
 
@@ -12,7 +12,7 @@ bucket=$1
 endpoint=$2
 source_dir=$3
 mode=${4:-}
-profile=${R2_PROFILE:-r2}
+profile=${R2_PROFILE:-r2-books}
 
 if [[ ! "$bucket" =~ ^[a-z0-9][a-z0-9.-]*[a-z0-9]$ ]]; then
   echo 'Supply a bucket name, without s3:// or a path.' >&2
