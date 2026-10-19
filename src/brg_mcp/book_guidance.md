@@ -48,6 +48,12 @@ Run these steps in a separate, trusted local Books workspace when authoring is r
 - Preserve letters, primes, signs, indices, and fractions. Footnote corrected misprints; retain author errors with explanation.
 - Crop original figures without redrawing. Keep labels/captions; exclude neighbours.
 - Names: `figNNN.png` for plates, `txt-figNNN.png` for in-text, `noteN-figNN.png` for notes.
+  Lettered figures add the printed page (`note1-p297-figc.png`); no two names may differ only by letter case.
+- Every figure of a structural system carries `[labels: …]` in its alt text (cables, arches, vaults and shells,
+  truss, beam, frames, plates or slabs, columns, bracing, material-specific forms, plastic and stress field models,
+  connections, graphic statics).
+- Contents links use GitHub heading anchors: `## § 634 — Title` → `#-634--title`.
+- Figures printed on plates of a separate atlas get a note where they are cited; list the plates as missing.
 - ETH figure crops contain drawings only; titles, tasks, and prose stay in Markdown.
 - Add one labelled animation after each original figure; track it in `constructions/PLAN.md`.
 - Validate geometry and numerical results before rendering with `tools/construction.py`; inspect output and rebuild.
