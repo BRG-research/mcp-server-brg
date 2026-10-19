@@ -16,8 +16,9 @@ Resolved by the October 2026 rescans and photographs: pp. 26, 105, 132–133, 18
 
 | Page(s) | Problem | Needed |
 |---|---|---|
-| 58–59 | Bresse's Table I: the K = 0.45 column on p. 58 lies in the binding gutter; its values are recomputed and shown in brackets (p. 56 was read from photographs, October 2026) | Photo of the pp. 58–59 spread |
 | Plates XXXIII–XL | The volume is the text only ("Texte"). Figures cited on plates are not in the scan: Pl. XXXIII (Ch. I, fig. A, a, b), XXXIV (Ch. II), XXXV (Ch. IV), XXXVI–XXXVIII (Note I), XXXIX (Note II), XL (Ch. VI) | Scan of the Part III atlas |
+
+Resolved by October 2026 photographs: Bresse's Table I, pp. 56–59.
 
 The volume ends on p. 418 with the printer's imprint; there are no plates or errata after it.
 
