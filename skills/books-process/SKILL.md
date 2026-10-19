@@ -35,7 +35,8 @@ Input: a local PDF path or HTTPS URL supplied by the user.
    and log it in `REVIEW-*.md`. Then one book-wide consistency pass (terms, notation, title line)
    and `tools/fix_anchors.py`. Claim independent review only if a separate reviewer actually performed it.
 5. Label structural figures (`tools/structlabels.py` as a first pass). Create README, INDEX, GLOSSARY,
-   and FIGURES; follow the guide's construction rules.
+   and FIGURES; follow the guide's construction rules. Publish the scanned pages with `tools/scan_index.py`
+   (`scans/` images + `SCANS.md`, printed page → scan) and link SCANS.md from README, so every page can be checked.
 6. Regenerate `LIBRARY.md` (`tools/r2_library_map.sh` for the published library, or `tools/library_map.py`);
    verify build reports. Keep incomplete chapters explicitly marked unfinished.
 7. Record what is still missing or unreadable (pages, plates, sources) in the repo's
