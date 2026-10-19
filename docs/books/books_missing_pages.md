@@ -25,16 +25,7 @@ The volume ends on p. 418 with the printer's imprint; there are no plates or err
 
 ## Block, Gengnagel, Peters, *Faustformel Tragwerksentwurf* (`faustformel-tragwerksentwurf/`)
 
-| Page(s) | Problem | Needed |
-|---|---|---|
-| 191 | Title page of the chapter "Aussteifung" (Bracing) is missing; only edge strips are in the scan | Rescan of p. 191 |
-| 268–269 | "Autoren und Dank" (authors and acknowledgements) is missing; the scan jumps from p. 267 to p. 270 | Rescan of pp. 268–269 |
-| 66 | The β_T table runs into the gutter; further columns may be hidden | Flat rescan of p. 66 |
-| 137 | Title page of chapter 5 "Tragwerkselemente" (Structural elements): the right half is cut off; its contents list was rebuilt from the page headers | Rescan of p. 137 |
-
-## Lévy, *La Statique graphique*, Part I (`RAW/La_Statique_Graphique_I_Partie_Maurice_Levy.pdf`)
-
-Complete, including the Part I atlas (Pl. I–XXVI).
+Nothing missing. Pages 66, 137, 191 and 268–269 were checked or added from photographs of the printed pages (October 2026): the β_T table on p. 66 has no hidden columns, the p. 137 contents list was confirmed, and the p. 191 contents list and pp. 268–269 (authors and acknowledgements, with the authors' photo) are now in the book. Pages 1–5 (cover, title, imprint, contents) are unnumbered front matter; p. 8 is blank.
 
 ## Wolfe, *Graphical Analysis* (`graphical-analysis-wolfe/`)
 
