@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="480" viewBox="0 0 1120 480" role="img" aria-labelledby="title desc">
+<title id="title">Matrix times vector: multiply matching entries, then add</title>
+<desc id="desc">For branch 1 connecting nodes 1 and 6, the first connectivity row has plus one at node 1 and minus one at node 6. Multiply each entry by its matching x coordinate. The nonzero products are minus one and plus two; adding all nine products gives one metre.</desc>
+<rect width="1120" height="480" fill="#ffffff"/>
+<g font-family="DejaVu Sans, sans-serif" fill="#162a43">
+<text x="30" y="38" font-size="25" text-anchor="start">One branch result = multiply matching entries, then add</text>
+<text x="30" y="68" font-size="17" text-anchor="start">Branch 1: (1, 6). Example x-coordinates in metres; these are inputs, not a solved shape.</text>
+<text x="281.5" y="113" font-size="15" text-anchor="middle">node 1</text>
+<text x="360.5" y="113" font-size="15" text-anchor="middle">node 2</text>
+<text x="439.5" y="113" font-size="15" text-anchor="middle">node 3</text>
+<text x="518.5" y="113" font-size="15" text-anchor="middle">node 4</text>
+<text x="597.5" y="113" font-size="15" text-anchor="middle">node 5</text>
+<text x="676.5" y="113" font-size="15" text-anchor="middle">node 6</text>
+<text x="755.5" y="113" font-size="15" text-anchor="middle">node 7</text>
+<text x="834.5" y="113" font-size="15" text-anchor="middle">node 8</text>
+<text x="913.5" y="113" font-size="15" text-anchor="middle">node 9</text>
+<text x="30" y="177" font-size="19" text-anchor="start">1  Matrix row</text>
+<rect x="245" y="145" width="73" height="50" rx="6" fill="#dcebf8" stroke="#2870a5"/>
+<text x="281.5" y="178" font-size="24" text-anchor="middle">+1</text>
+<rect x="324" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="360.5" y="178" font-size="24" text-anchor="middle">0</text>
+<rect x="403" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="439.5" y="178" font-size="24" text-anchor="middle">0</text>
+<rect x="482" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="518.5" y="178" font-size="24" text-anchor="middle">0</text>
+<rect x="561" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="597.5" y="178" font-size="24" text-anchor="middle">0</text>
+<rect x="640" y="145" width="73" height="50" rx="6" fill="#ffead1" stroke="#b96b16"/>
+<text x="676.5" y="178" font-size="24" text-anchor="middle">−1</text>
+<rect x="719" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="755.5" y="178" font-size="24" text-anchor="middle">0</text>
+<rect x="798" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="834.5" y="178" font-size="24" text-anchor="middle">0</text>
+<rect x="877" y="145" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="913.5" y="178" font-size="24" text-anchor="middle">0</text>
+<text x="30" y="267" font-size="19" text-anchor="start">2  x-coordinates</text>
+<rect x="245" y="235" width="73" height="50" rx="6" fill="#dcebf8" stroke="#2870a5"/>
+<text x="281.5" y="268" font-size="24" text-anchor="middle">−1</text>
+<rect x="324" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="360.5" y="268" font-size="24" text-anchor="middle">0</text>
+<rect x="403" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="439.5" y="268" font-size="24" text-anchor="middle">1</text>
+<rect x="482" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="518.5" y="268" font-size="24" text-anchor="middle">0</text>
+<rect x="561" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="597.5" y="268" font-size="24" text-anchor="middle">0</text>
+<rect x="640" y="235" width="73" height="50" rx="6" fill="#ffead1" stroke="#b96b16"/>
+<text x="676.5" y="268" font-size="24" text-anchor="middle">−2</text>
+<rect x="719" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="755.5" y="268" font-size="24" text-anchor="middle">0</text>
+<rect x="798" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="834.5" y="268" font-size="24" text-anchor="middle">2</text>
+<rect x="877" y="235" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="913.5" y="268" font-size="24" text-anchor="middle">0</text>
+<text x="30" y="357" font-size="19" text-anchor="start">3  Products</text>
+<rect x="245" y="325" width="73" height="50" rx="6" fill="#dcebf8" stroke="#2870a5"/>
+<text x="281.5" y="358" font-size="24" text-anchor="middle">−1</text>
+<rect x="324" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="360.5" y="358" font-size="24" text-anchor="middle">0</text>
+<rect x="403" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="439.5" y="358" font-size="24" text-anchor="middle">0</text>
+<rect x="482" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="518.5" y="358" font-size="24" text-anchor="middle">0</text>
+<rect x="561" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="597.5" y="358" font-size="24" text-anchor="middle">0</text>
+<rect x="640" y="325" width="73" height="50" rx="6" fill="#ffead1" stroke="#b96b16"/>
+<text x="676.5" y="358" font-size="24" text-anchor="middle">+2</text>
+<rect x="719" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="755.5" y="358" font-size="24" text-anchor="middle">0</text>
+<rect x="798" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="834.5" y="358" font-size="24" text-anchor="middle">0</text>
+<rect x="877" y="325" width="73" height="50" rx="6" fill="#f1f3f5" stroke="#d5dce2"/>
+<text x="913.5" y="358" font-size="24" text-anchor="middle">0</text>
+<text x="281.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="281.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="360.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="360.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="439.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="439.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="518.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="518.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="597.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="597.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="676.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="676.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="755.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="755.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="834.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="834.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="913.5" y="218" font-size="22" text-anchor="middle">×</text>
+<text x="913.5" y="308" font-size="22" text-anchor="middle">=</text>
+<text x="30" y="414" font-size="19" text-anchor="start">4  Add products</text>
+<text x="245" y="414" font-size="23" text-anchor="start">−1 + 0 + 0 + 0 + 0 + 2 + 0 + 0 + 0  =  1 m</text>
+<text x="245" y="451" font-size="20" text-anchor="start">The same result as x₁ − x₆ = (−1) − (−2) = 1 m</text>
+</g>
+</svg>

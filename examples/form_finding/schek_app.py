@@ -178,10 +178,39 @@ writes it. Both give the same numbers.
 1. **A matrix is a table.** $C_s$ has one row per branch and one column per node;
    the entry in row $j$, column $i$ says how node $i$ enters branch $j$ ($+1$ start,
    $-1$ end, $0$ not at all).
-2. **Matrix times vector = one number per row.** $C_s x$ takes every row of $C_s$,
-   multiplies it entry by entry with the vector $x$ of node coordinates and adds up.
-   Because a row holds one $+1$ and one $-1$, the result for branch $j$ is
-   "coordinate of the start node minus coordinate of the end node".
+2. **Matrix times vector = multiply matching entries, then add.**
+   Begin with just the first row of $C_s$, for branch `(1, 6)`.
+   The row has nine entries, one for each node. Place each node's $x$-coordinate
+   underneath its matching matrix entry. Multiply vertically, then add the nine
+   products horizontally:
+
+   ![Matrix-vector multiplication in four steps: align node columns, multiply matching entries, then add the products.](images/schek_matvec_walkthrough.png)
+
+   **Read the two highlighted columns first.** At node 1, multiply
+   $(+1)\times(-1)=-1$. At node 6, multiply $(-1)\times(-2)=+2$.
+   The other seven matrix entries are zero, so their products are zero even if
+   the corresponding coordinate is nonzero. Add the products: $-1+2=1$ metre.
+   This is $x_1-x_6=(-1)-(-2)=1$ metre. The two negative signs at node 6
+   explain why its contribution is positive.
+
+   **Repeat for every matrix row.** For example, branch 6 is `(1, 2)`, so its
+   result is $(+1)\times(-1)+(-1)\times0=-1$ metre. Each row selects its own
+   pair of nodes, giving one signed coordinate difference for that branch.
+
+   $$
+   \underbrace{C_s}_{12\text{ rows},\ 9\text{ columns}}
+   \underbrace{x_s}_{9\text{ node coordinates}}
+   = \underbrace{u}_{12\text{ branch differences}}.
+   $$
+
+   Here $x_s$ means the coordinates of **all nine nodes** (free and fixed),
+   stored below as `x_demo`. Later, $x$ alone denotes only the free-node
+   coordinates. Thus `C_s @ x_demo` uses nine coordinates; `C @ x` uses five.
+   The `@` operator performs both steps: multiplication **and summation**.
+   By contrast, `C_s[0] * x_demo` gives the nine separate products for one row;
+   adding `.sum()` reduces them to its single result. A coordinate difference
+   along $x$ is not the full three-dimensional branch length; B.2 combines
+   the differences along all three axes to compute that length.
 
    ![icon: matrix times vector](images/schek_icon_matvec.png)
 3. **Transpose times vector = add up at the nodes.** $C^{t}$ swaps rows and
@@ -204,6 +233,14 @@ operations 3 and 4; one of its entries is computed by hand below and again in
 the icon of part C."""
 # 2. matrix times vector, by loop and by product
 x_demo = np.array([-1.0, 0.0, 1.0, 0.0, 0.0, -2.0, 0.0, 2.0, 0.0])      # one x coordinate per node 1..9
+first_row = C_s[0]
+first_products = first_row * x_demo
+first_result = first_products.sum()
+print("   first row:         ", first_row)
+print("   node coordinates:  ", x_demo)
+print("   matching products: ", first_products)
+print("   add those products:", first_result)
+
 by_loop = np.zeros(m)
 for j, (i, k) in enumerate(branches):
     by_loop[j] = x_demo[i - 1] - x_demo[k - 1]                           # start minus end
@@ -239,6 +276,9 @@ print("5. solve D x = b gives x =", x_sol, "; check D @ x =", D_demo @ x_sol)
 r"""**Reading the printout.** Line 2 shows the same 12 numbers from the loop and from `C_s @ x_demo`: the matrix product is nothing but that loop. Line 3 shows that `C_s.T @ f_demo` is the loop that adds branch values at nodes (node 5 collects $-9-10-11-12 = -42$ because branches 9 to 12 all *end* there). Line 4 confirms the diagonal rule, the two `D` lines check figure 4 by hand, and line 5 shows that the solution of a linear system is the vector that, multiplied back, returns the right-hand side."""
 
 # %% check
+np.testing.assert_allclose(first_products, [-1, 0, 0, 0, 0, 2, 0, 0, 0])
+assert first_result == 1.0
+np.testing.assert_allclose(first_result, by_product[0])
 np.testing.assert_allclose(by_loop, by_product)
 np.testing.assert_allclose(at_nodes, C_s.T @ f_demo)
 np.testing.assert_allclose(np.diag(q_demo) @ by_product, q_demo * by_product)
