@@ -460,37 +460,50 @@ def icon_scenes(gl, out, layout):
     layout["icon_solve"] = {"panels": [["icon_solve.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
     sc = scene("icon_coordinate_differences", "")
-    fixed_x = x_all[n:]
-    solved_x = np.linalg.solve(D, -(C.T @ np.diag(q) @ C_f) @ fixed_x)
-    differences = C @ solved_x + C_f @ fixed_x
-    np.testing.assert_allclose(differences[0], 1.2, atol=1e-12)
-    coordinate_cell, coordinate_text = 0.8, 0.24
-    matrix_icon(sc, gl, C, 0, 0, coordinate_cell, "C  (12 x 5)", rows, cols[:n], text_h=coordinate_text)
-    op_symbol(sc, gl, "x", 4.5, -2.0, 0.4)
-    matrix_icon(sc, gl, solved_x[:, None], 5.0, 0, coordinate_cell, "x  (5)",
-                fmt="{:.2f}", text_h=coordinate_text)
-    op_symbol(sc, gl, "+", 6.55, -2.0, 0.4)
-    matrix_icon(sc, gl, C_f, 7.3, 0, coordinate_cell, "C_f  (12 x 4)",
-                col_labels=cols[n:], text_h=coordinate_text)
-    op_symbol(sc, gl, "x", 11.0, -2.0, 0.4)
-    matrix_icon(sc, gl, fixed_x[:, None], 11.5, 0, coordinate_cell, "x_f  (4)",
-                fmt="{:.2f}", text_h=coordinate_text)
-    op_symbol(sc, gl, "=", 13.05, -2.0, 0.4)
-    matrix_icon(sc, gl, differences[:, None], 13.8, 0, coordinate_cell, "u  (12)",
-                fmt="{:.2f}", text_h=coordinate_text)
     red = (0.9, 0.04, 0.04, 1)
-    for x0 in [0, 5.0, 7.3, 11.5, 13.8]:
-        sc.rect(x0, -coordinate_cell, coordinate_cell, coordinate_cell, width=0.025, color=red)
-    sc.stroke = 0.025
-    for start, end in [(0.8, 5.4), (8.1, 11.9)]:
-        sc.polyline([[start, 0.03, 0], [start + 0.1, 0.15, 0], [start + 0.1, 1.0, 0],
-                     [end, 1.0, 0], [end, 0.25, 0]], red)
-        sc.arrow([end, 0.25, 0], [end, 0.03, 0], head=0.12, color=red)
-    sc.text(gl, "u_1 = 1 x (-0.8) + (-1) x (-2) = -0.8 + 2 = 1.2", [0, -11.2, 0], 0.29, color=red)
-    sc.polyline([[10.9, -11.1, 0], [12.65, -11.1, 0], [12.65, 0.55, 0],
-                 [14.2, 0.55, 0], [14.2, 0.25, 0]], red)
-    sc.arrow([14.2, 0.25, 0], [14.2, 0.03, 0], head=0.12, color=red)
-    sc.text(gl, "12 rows -> 12 numbers", [0, -11.9, 0], 0.27)
+    size, th = 0.8, 0.22
+
+    def symbolic_vector(entries, x0, y0, name):
+        matrix_drawing(sc, gl, [[v] for v in entries], size, size, th, origin=(x0, y0))
+        sc.text(gl, name, [x0 + size / 2, y0 + 0.8, 0], 0.27, "center")
+
+    sc.text(gl, "Your inputs: fixed coordinates given; free coordinates still unknown", [0, 2.8, 0], 0.26)
+    sc.text(gl, "p_x = p_y = [0, 0, 0, 0, 0]; p_z = [-0.5, -0.5, -0.5, -0.5, -0.5]", [0, 2.1, 0], 0.23)
+    sc.text(gl, "Loads enter the later solve; not this multiplication.", [0, 1.45, 0], 0.23)
+    for axis, result, fixed, y0 in [
+        ("x", "u", [-2, 0, 2, 0], 0),
+        ("y", "v", [0, 2, 0, -2], -13.5),
+        ("z", "w", [0, 1, 0, 1], -27),
+    ]:
+        matrix_icon(sc, gl, C, 0, y0, size, "C (12 x 5)", rows, cols[:n], text_h=th)
+        op_symbol(sc, gl, "x", 4.5, y0 - 2, 0.4)
+        symbolic_vector([f"{axis}{i}" for i in range(1, 6)], 5, y0, f"{axis} (5)")
+        op_symbol(sc, gl, "+", 6.4, y0 - 2, 0.4)
+        matrix_icon(sc, gl, C_f, 7.1, y0, size, "C_f (12 x 4)", col_labels=cols[n:], text_h=th)
+        op_symbol(sc, gl, "x", 10.8, y0 - 2, 0.4)
+        matrix_icon(sc, gl, np.array(fixed)[:, None], 11.3, y0, size,
+                    f"{axis}_f (4)", text_h=th)
+        op_symbol(sc, gl, "=", 12.8, y0 - 2, 0.4)
+        entries = []
+        for i, k in FIG2_BRANCHES:
+            if k <= n:
+                entries.append(f"{axis}{i}-{axis}{k}")
+            else:
+                offset = -fixed[k - n - 1]
+                entries.append(f"{axis}{i}" + (f"{offset:+g}" if offset else ""))
+        # Wider result column accommodates symbolic differences.
+        matrix_drawing(sc, gl, [[v] for v in entries], 1.6, size, th, origin=(13.5, y0))
+        sc.text(gl, f"{result} (12)", [14.3, y0 + 0.8, 0], 0.27, "center")
+        for x0, width in [(0, size), (5, size), (7.1, size), (11.3, size), (13.5, 1.6)]:
+            sc.rect(x0, y0 - size, width, size, width=0.025, color=red)
+        for start, end in [(0.8, 5.4), (7.9, 11.7)]:
+            sc.polyline([[start, y0 + 0.03, 0], [start, y0 + 1.1, 0],
+                         [end, y0 + 1.1, 0], [end, y0 + 0.25, 0]], red)
+            sc.arrow([end, y0 + 0.25, 0], [end, y0 + 0.03, 0], head=0.12, color=red)
+        fixed_first = fixed[0]
+        sc.text(gl, f"Branch 1 -> 6:  {result}1 = 1 x {axis}1 + (-1) x ({fixed_first:g}) = {entries[0]}",
+                [0, y0 - 11, 0], 0.27, color=red)
+        sc.text(gl, "12 rows -> 12 answers; zeros contribute 0", [0, y0 - 11.7, 0], 0.23)
     sc.dump(out / "icon_coordinate_differences.json")
     layout["icon_coordinate_differences"] = {
         "panels": [["icon_coordinate_differences.json", [0, 0, 0]]], "views": ["top"], "caption": ""

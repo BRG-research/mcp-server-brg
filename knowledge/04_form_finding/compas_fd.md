@@ -151,16 +151,17 @@ transpose is `C.T`, and `@` is the matrix product.
 
 Use `np.array(...)` to create the vector and `np.diag(...)` to construct its
 diagonal matrix directly. Console formatting is optional and does not
-affect the calculation. `FloatArray` is only a type hint for a NumPy array of
+affect the calculation. `FloatMatrix` and `FloatVector` describe two-dimensional and one-dimensional NumPy arrays of
 64-bit floats; it does not create another array class.
 
 **Add to your program:**
 
 ```python
 import numpy as np
-from numpy.typing import NDArray
+from typing import TypeAlias
 
-FloatArray = NDArray[np.float64]
+FloatMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+FloatVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 
 u_example = np.array([2.0, -1.0, 3.0])
 U_example = np.diag(u_example)
@@ -275,12 +276,12 @@ icon below shows the split. The arrays store zeros as numeric zeros.
 **Add to your program:**
 
 ```python
-C_s: FloatArray = np.zeros((m, n + n_f))
+C_s: FloatMatrix = np.zeros((m, n + n_f))
 for j, (i, k) in enumerate(branches):
     C_s[j, i - 1] = +1.0                          # node i(j): +1   (Python indices start at 0)
     C_s[j, k - 1] = -1.0                          # node k(j): -1
-C: FloatArray = C_s[:, :n]                                    # (m, n)   free columns
-C_f: FloatArray = C_s[:, n:]                                  # (m, n_f) fixed columns
+C: FloatMatrix = C_s[:, :n]                                    # (m, n)   free columns
+C_f: FloatMatrix = C_s[:, n:]                                  # (m, n_f) fixed columns
 
 print("C_s shape:", C_s.shape)
 print(C_s)
@@ -369,17 +370,17 @@ connectivity. We choose the support coordinates below to make a runnable example
 | Fixed node | x (m) | y (m) | z (m) |
 |---|---|---|---|
 | 6 | -2 | 0 | 0 |
-| 7 | 0 | -2 | 1 |
+| 7 | 0 | 2 | 1 |
 | 8 | 2 | 0 | 0 |
-| 9 | 0 | 2 | 1 |
+| 9 | 0 | -2 | 1 |
 
 **Types and shapes:** these are arrays, not single numbers.
 
 | Variables | Python type | Shape | One entry means |
 |---|---|---|---|
-| `x_f`, `y_f`, `z_f` | `FloatArray` (`np.ndarray` of float64) | `(4,)` | One coordinate of a fixed node, ordered 6, 7, 8, 9 |
-| `p_x`, `p_y`, `p_z` | `FloatArray` | `(5,)` | One load component at a free node, ordered 1, 2, 3, 4, 5 |
-| `x`, `y`, `z` | `FloatArray` | `(5,)` | One coordinate of a free node; computed by the solve in C.3 |
+| `x_f`, `y_f`, `z_f` | `FloatVector` (`np.ndarray` of float64) | `(4,)` | One coordinate of a fixed node, ordered 6, 7, 8, 9 |
+| `p_x`, `p_y`, `p_z` | `FloatVector` | `(5,)` | One load component at a free node, ordered 1, 2, 3, 4, 5 |
+| `x`, `y`, `z` | `FloatVector` | `(5,)` | One coordinate of a free node; computed by the solve in C.3 |
 
 For example, `x_f` is `[-2, 0, 2, 0]`; `x_f[0]` is the single number `-2`,
 the x-coordinate of node 6. `x` is not defined yet: B.2 declares function arguments
@@ -392,12 +393,12 @@ Change them to define a different problem; the solver then finds its equilibrium
 **Add to your program:**
 
 ```python
-x_f: FloatArray = np.array([-2.0, 0.0, 2.0, 0.0])             # anchors 6, 7, 8, 9
-y_f: FloatArray = np.array([0.0, -2.0, 0.0, 2.0])
-z_f: FloatArray = np.array([0.0, 1.0, 0.0, 1.0])             # two anchors lifted by 1 m
-p_x: FloatArray = np.zeros(n)
-p_y: FloatArray = np.zeros(n)
-p_z: FloatArray = np.full(n, -0.5)                            # 0.5 kN downward at every free node
+x_f: FloatVector = np.array([-2.0, 0.0, 2.0, 0.0], dtype=np.float64)             # anchors 6, 7, 8, 9
+y_f: FloatVector = np.array([0.0, 2.0, 0.0, -2.0], dtype=np.float64)
+z_f: FloatVector = np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float64)             # two anchors lifted by 1 m
+p_x: FloatVector = np.zeros(n, dtype=np.float64)
+p_y: FloatVector = np.zeros(n, dtype=np.float64)
+p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)                            # 0.5 kN downward at every free node
 ```
 
 ### B.2 Coordinate differences and lengths, equation (1)
@@ -444,9 +445,16 @@ and `l` are arrays of length 12. One entry, such as `u[0]`, is a scalar.
 
 ```python
 def coordinate_differences(
-    x: FloatArray, y: FloatArray, z: FloatArray,
-) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
-    """Eq. (1): free coordinate arrays (n,) -> branch arrays u, v, w, l (m,)."""
+    C: FloatMatrix,
+    x: FloatVector,
+    y: FloatVector,
+    z: FloatVector,
+    C_f: FloatMatrix,
+    x_f: FloatVector,
+    y_f: FloatVector,
+    z_f: FloatVector,
+) -> tuple[FloatVector, FloatVector, FloatVector, FloatVector]:
+    """Given positions: matrices (m,n)/(m,n_f) times vectors (n,)/(n_f,) -> (m,)."""
     u = C @ x + C_f @ x_f
     v = C @ y + C_f @ y_f
     w = C @ z + C_f @ z_f
@@ -454,11 +462,11 @@ def coordinate_differences(
     return u, v, w, l
 ```
 
-![Worked example: C times the five free x-coordinates plus C_f times the four fixed x-coordinates gives twelve branch differences. Red boxes trace the first branch: 1 times -0.8 plus -1 times -2 equals 1.2.](images/schek_icon_coordinate_differences.png)
+![Our setup: C and C_f multiply the unknown free coordinate vectors and the prescribed fixed vectors, giving twelve symbolic branch differences for each coordinate axis.](images/schek_icon_coordinate_differences.png)
 
-**One row → one number. Twelve rows → twelve numbers.**
-For branch `(1, 6)`: $u_1=x_1-x_6=-0.8-(-2)=1.2$ m.
-These coordinates are the example's solved x-coordinates from C.3.
+**One row → one answer. Twelve rows → twelve answers.**
+For branch `(1, 6)`: $u_1=x_1+2$, $v_1=y_1$, $w_1=z_1$.
+`x`, `y`, `z` are still unknown here. The loads enter the later solve.
 
 ![scheme: equation (1)](images/schek_scheme_eq1.png)
 
@@ -490,7 +498,7 @@ flat guess with 1 kN in every branch it is far from satisfied.
 ```python
 def equilibrium_error(x, y, z, s):
     """Eq. (2): C^t U L^-1 s - p for the three axes.  All zeros means the net is in equilibrium."""
-    u, v, w, l = coordinate_differences(x, y, z)
+    u, v, w, l = coordinate_differences(C, x, y, z, C_f, x_f, y_f, z_f)
     L_inv = np.diag(1.0 / l)
     return (C.T @ np.diag(u) @ L_inv @ s - p_x,
             C.T @ np.diag(v) @ L_inv @ s - p_y,
@@ -517,7 +525,7 @@ print("out of balance at the free nodes for the flat guess, z direction:", ez)
 Example output:
 
 ```text
-out of balance at the free nodes for the flat guess, z direction: [ 0.5   -0.207  0.5   -0.207  0.5  ]
+out of balance at the free nodes for the flat guess, z direction: [0.5   0.184 0.5   0.184 0.5  ]
 ```
 
 ## Part C. The force density trick: a linear system
@@ -627,9 +635,9 @@ D_f:
  [ 0.  0.  0.  0.]]
 right-hand sides (columns x, y, z):
 [[-4.   0.  -0.5]
- [ 0.  -4.   1.5]
- [ 4.   0.  -0.5]
  [ 0.   4.   1.5]
+ [ 4.   0.  -0.5]
+ [ 0.  -4.   1.5]
  [ 0.   0.  -0.5]]
 ```
 
@@ -651,9 +659,9 @@ exists and is unique for each prescribed $q$, so $q$ serves as the design parame
 **Add to your program:**
 
 ```python
-x: FloatArray = np.linalg.solve(D, p_x - D_f @ x_f)            # eq. (9)
-y: FloatArray = np.linalg.solve(D, p_y - D_f @ y_f)
-z: FloatArray = np.linalg.solve(D, p_z - D_f @ z_f)
+x: FloatVector = np.linalg.solve(D, p_x - D_f @ x_f)            # eq. (9)
+y: FloatVector = np.linalg.solve(D, p_y - D_f @ y_f)
+z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)
 ```
 
 ![scheme: equation (9)](images/schek_scheme_eq9.png)
@@ -671,7 +679,7 @@ result confirms that the linear solve did produce an equilibrium.
 **Add to your program:**
 
 ```python
-u, v, w, l = coordinate_differences(x, y, z)      # eq. (1) on the solution
+u, v, w, l = coordinate_differences(C, x, y, z, C_f, x_f, y_f, z_f)      # eq. (1) on the solution
 s = l * q                                         # eq. (10)
 
 xyz_free = np.c_[x, y, z]
@@ -685,7 +693,7 @@ print("equilibrium error (2) on the solution:", max(np.abs(e).max() for e in equ
 
 **Reading the code.**
 
-- `coordinate_differences(x, y, z)`: equation (1) once more, now on the solved coordinates, so `l` are the real lengths of the equilibrium shape.
+- `coordinate_differences(C, x, y, z, C_f, x_f, y_f, z_f)`: equation (1) once more, now on the solved coordinates, so `l` are the real lengths of the equilibrium shape.
 - `s = l * q`: entry-wise product, the force in each branch.
 - `equilibrium_error(x, y, z, s)`: the nonlinear equation (2) evaluated on the result. The largest entry is $4 \times 10^{-16}$: zero to machine precision, so the linear solve did produce an equilibrium.
 - `np.c_[x, y, z]` stacks the three vectors as columns of a $(5 \times 3)$ array, one column per axis.
@@ -695,10 +703,10 @@ Example output:
 ```text
 free node coordinates (columns x, y, z):
 [[-0.8    0.     0.045]
- [-0.    -0.8    0.33 ]
- [ 0.8    0.     0.045]
  [-0.     0.8    0.33 ]
- [ 0.     0.     0.062]]
+ [ 0.8   -0.     0.045]
+ [-0.    -0.8    0.33 ]
+ [ 0.    -0.     0.062]]
 lengths l: [1.201 1.374 1.201 1.374 1.167 1.167 1.167 1.167 0.844 0.8   0.844 0.8  ]
 forces  s: [2.402 2.748 2.402 2.748 1.167 1.167 1.167 1.167 0.844 0.8   0.844 0.8  ]
 equilibrium error (2) on the solution: 4.440892098500626e-16
