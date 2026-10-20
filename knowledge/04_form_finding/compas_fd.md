@@ -76,11 +76,10 @@ Start with an empty Python file or notebook. Follow the subsections in order:
 each adds data or a calculation that the following steps need. The complete
 program is also available in `examples/form_finding/schek_app.py`.
 
-1. Read **Build this step** to understand the task and its purpose.
-2. Append the **Add to your program** code to the same file or notebook.
-3. Read the explanation, then run **Check before continuing** in the same
-   Python session. Passing assertions produce no output. If one fails, fix
-   that step before proceeding. Keep the check code separate from the solver.
+Read each explanation, then append its code to the same Python file or notebook.
+A.4 is a visual reference: its operations are implemented in the solver steps
+that follow. The runnable tutorial contains the implementation, not repeated
+demo calculations or assertion blocks. Numerical verification is separate.
 
 The implementation uses NumPy. A Python list of node pairs stores topology;
 NumPy arrays store vectors and matrices. Every step identifies what it creates.
@@ -92,7 +91,7 @@ retain full floating-point precision. No package solver is needed for this deriv
 | A.1–A.4 | Represent a network and understand its matrix operations. |
 | B.1–B.3 | Compute branch geometry and test nodal equilibrium. |
 | C.1–C.4 | Derive and execute the linear force density solve. |
-| D.1–D.2 | Reuse a complete linear solver and pass an independent benchmark. |
+| D.1–D.2 | Reuse a complete linear solver with different supports and force densities. |
 | E.1 | Interpret the geometric effect of force densities. |
 | F.1–F.5 | Extend the solver to prescribed lengths and forces. |
 | G.1–G.5 | Apply the same solvers to larger reconstructed examples. |
@@ -102,7 +101,7 @@ extension, not a prerequisite for using the linear method. Package API details
 follow the tutorial for comparison after implementing the method yourself.
 
 This tutorial is generated from the program by `build_note.py`; it executes
-each implementation block and checkpoint before updating this Markdown.
+each implementation block before updating this Markdown.
 
 Contents
 
@@ -163,14 +162,6 @@ u_example = np.array([2.0, -1.0, 3.0])
 U_example = np.diag(u_example)
 ```
 
-**Check before continuing:**
-
-```python
-assert u_example.shape == (3,)
-assert U_example.shape == (3, 3)
-np.testing.assert_array_equal(np.diag(U_example), u_example)
-```
-
 ### A.2 Numbering the nodes and branches (section 2.1)
 
 **Build this step.** Append the branch list and the free/fixed node counts. Keep this node order throughout the example: free nodes first, supports last. We have topology now, but no coordinates or forces yet.
@@ -207,15 +198,6 @@ branches = [(1, 6), (2, 7), (3, 8), (4, 9),      # 1-4: one branch from each fre
             (4, 5), (1, 5), (2, 5), (3, 5)]      # 9-12: four spokes to the centre node 5
 n, n_f = 5, 4                                    # free nodes 1..5, fixed nodes 6..9
 m = len(branches)
-```
-
-**Check before continuing:**
-
-```python
-assert isinstance(branches, list)
-assert all(isinstance(branch, tuple) and len(branch) == 2 for branch in branches)
-assert (n, n_f, m) == (5, 4, 12)
-assert all(1 <= i <= n + n_f and 1 <= k <= n + n_f and i != k for i, k in branches)
 ```
 
 ### A.3 The branch-node matrix C_s and its two column blocks (section 2.1)
@@ -325,25 +307,11 @@ C_s shape: (12, 9)
  [ 0.  0.  1.  0. -1.  0.  0.  0.  0.]]
 ```
 
-**Check before continuing:**
-
-```python
-assert isinstance(C_s, np.ndarray) and C_s.ndim == 2
-assert C_s.shape == (12, 9)
-np.testing.assert_array_equal(C_s[0], [1, 0, 0, 0, 0, -1, 0, 0, 0])
-assert C.shape == (12, 5) and C_f.shape == (12, 4)
-np.testing.assert_array_equal(C_s.sum(axis=1), np.zeros(m))
-assert np.all(np.count_nonzero(C_s, axis=1) == 2)
-```
-
 ### A.4 Reading matrices: the five operations the paper uses
 
-**Build this step.** Before using the connectivity matrix in equilibrium, reproduce its products using explicit loops. Run each numbered calculation and compare the two results; this connects the matrix notation to branch-by-branch arithmetic.
+**Read the diagrams.** These operations are used in the solver below. Continue to B.1 to add the support coordinates and loads.
 
-Five recurring matrix operations prepare us for the equilibrium solve. Each is shown here
-twice on the figure 2 network: as a loop over branches and nodes, which says what is
-being computed, and as the NumPy product, which is how the rest of the program
-writes it. Both give the same numbers.
+Five matrix operations prepare us for the equilibrium solve.
 
 1. **A matrix is a table.** $C_s$ has one row per branch and one column per node;
    the entry in row $j$, column $i$ says how node $i$ enters branch $j$ ($+1$ start,
@@ -357,7 +325,7 @@ writes it. Both give the same numbers.
 
    **One row → one sum. Twelve rows → twelve sums in one column.**
 
-   $x_s$ contains all nine node coordinates (`x_demo`). The result contains
+   $x_s$ contains all nine node coordinates. The result contains
    twelve branch differences. In NumPy their shapes are `(9,)` and `(12,)`;
    the diagram draws them as columns.
 
@@ -377,83 +345,7 @@ writes it. Both give the same numbers.
    ![icon: solving a linear system](images/schek_icon_solve.png)
 
 The product $D = C^{t} Q C$ that the paper builds in section 2.2 combines
-operations 3 and 4; one of its entries is computed by hand below and again in
-the icon of part C.
-
-**Add to your program:**
-
-```python
-# 2. matrix times vector, by loop and by product
-x_demo = np.array([-1.0, 0.0, 1.0, 0.0, 0.0, -2.0, 0.0, 2.0, 0.0])      # one x coordinate per node 1..9
-first_row = C_s[0]
-first_products = first_row * x_demo
-first_result = first_products.sum()
-print("   first row:         ", first_row)
-print("   node coordinates:  ", x_demo)
-print("   matching products: ", first_products)
-print("   add those products:", first_result)
-
-by_loop = np.zeros(m)
-for j, (i, k) in enumerate(branches):
-    by_loop[j] = x_demo[i - 1] - x_demo[k - 1]                           # start minus end
-by_product = C_s @ x_demo                                                # the same, written as a matrix product
-print("2. C_s @ x by loop   :", by_loop)
-print("   C_s @ x by product:", by_product)
-
-# 3. transpose times vector: add the branch values up at every node, with the branch sign
-f_demo = np.arange(1, m + 1, dtype=float)                                # pretend branch j carries the value j
-at_nodes = np.zeros(n + n_f)
-for j, (i, k) in enumerate(branches):
-    at_nodes[i - 1] += f_demo[j]                                         # branch starts here: +
-    at_nodes[k - 1] -= f_demo[j]                                         # branch ends here:   -
-print("3. C_s^t f by loop   :", at_nodes)
-print("   C_s^t f by product:", C_s.T @ f_demo)
-
-# 4. a diagonal matrix scales entry by entry
-q_demo = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
-print("4. np.diag(q) @ u == q * u:", np.allclose(np.diag(q_demo) @ by_product, q_demo * by_product))
-
-# 1 + 3 + 4 together: one entry of D = C^t Q C computed by hand (figure 4: node 1 touches branches 1, 5, 6, 10)
-D_demo = C.T @ np.diag(q_demo) @ C
-print("   D[1,1] by hand: q1 + q5 + q6 + q10 =", q_demo[0] + q_demo[4] + q_demo[5] + q_demo[9], "  by product:", D_demo[0, 0])
-print("   D[1,2] by hand: -q6 =", -q_demo[5], "  by product:", D_demo[0, 1])
-
-# 5. solving a linear system
-b_demo = np.array([1.0, 0.0, 0.0, 0.0, 0.0])
-x_sol = np.linalg.solve(D_demo, b_demo)
-print("5. solve D x = b gives x =", x_sol, "; check D @ x =", D_demo @ x_sol)
-```
-
-**Reading the printout.** Line 2 shows the same 12 numbers from the loop and from `C_s @ x_demo`: the matrix product is nothing but that loop. Line 3 shows that `C_s.T @ f_demo` is the loop that adds branch values at nodes (node 5 collects $-9-10-11-12 = -42$ because branches 9 to 12 all *end* there). Line 4 confirms the diagonal rule, the two `D` lines check figure 4 by hand, and line 5 shows that the solution of a linear system is the vector that, multiplied back, returns the right-hand side.
-
-Example output:
-
-```text
-   first row:          [ 1.  0.  0.  0.  0. -1.  0.  0.  0.]
-   node coordinates:   [-1.  0.  1.  0.  0. -2.  0.  2.  0.]
-   matching products:  [-1.  0.  0.  0.  0.  2.  0.  0.  0.]
-   add those products: 1.0
-2. C_s @ x by loop   : [ 1.  0. -1.  0. -1. -1. -1.  1.  0. -1.  0.  1.]
-   C_s @ x by product: [ 1.  0. -1.  0. -1. -1. -1.  1.  0. -1.  0.  1.]
-3. C_s^t f by loop   : [ 22.  14.  16.   0. -42.  -1.  -2.  -3.  -4.]
-   C_s^t f by product: [ 22.  14.  16.   0. -42.  -1.  -2.  -3.  -4.]
-4. np.diag(q) @ u == q * u: True
-   D[1,1] by hand: q1 + q5 + q6 + q10 = 5.0   by product: 5.0
-   D[1,2] by hand: -q6 = -1.0   by product: -1.0
-5. solve D x = b gives x = [0.261 0.089 0.061 0.089 0.125] ; check D @ x = [ 1.  0. -0.  0.  0.]
-```
-
-**Check before continuing:**
-
-```python
-np.testing.assert_allclose(first_products, [-1, 0, 0, 0, 0, 2, 0, 0, 0])
-assert first_result == 1.0
-np.testing.assert_allclose(first_result, by_product[0])
-np.testing.assert_allclose(by_loop, by_product)
-np.testing.assert_allclose(at_nodes, C_s.T @ f_demo)
-np.testing.assert_allclose(np.diag(q_demo) @ by_product, q_demo * by_product)
-np.testing.assert_allclose(D_demo @ x_sol, b_demo, atol=1e-12)
-```
+operations 3 and 4. Part C assembles it from connectivity and force densities.
 
 ## Part B. Equilibrium, the nonlinear form
 
@@ -466,8 +358,19 @@ $n$-vectors $x, y, z$ (the unknowns); the fixed coordinates form the $n_f$-vecto
 $x_f, y_f, z_f$ (given). Every free node carries a load with components
 $p_x, p_y, p_z$ (given). Every branch has a length $l_j$ and a force $s_j$ (unknown).
 
-These numbers are not in the paper: the anchors are placed on a square, two of them
-lifted, and a small downward load acts on every free node.
+**Chosen example inputs—not values reported by Schek.** Figure 2 supplies the
+connectivity. We choose the support coordinates below to make a runnable example:
+
+| Fixed node | x (m) | y (m) | z (m) |
+|---|---|---|---|
+| 6 | -2 | 0 | 0 |
+| 7 | 0 | -2 | 1 |
+| 8 | 2 | 0 | 0 |
+| 9 | 0 | 2 | 1 |
+
+We also choose a downward load of 0.5 kN on every free node. The 2 m offsets,
+1 m heights, and 0.5 kN loads are example parameters, not inferred measurements.
+Change them to define a different problem; the solver then finds its equilibrium.
 
 **Add to your program:**
 
@@ -478,14 +381,6 @@ z_f = np.array([0.0, 1.0, 0.0, 1.0])             # two anchors lifted by 1 m
 p_x = np.zeros(n)
 p_y = np.zeros(n)
 p_z = np.full(n, -0.5)                            # 0.5 kN downward at every free node
-```
-
-**Check before continuing:**
-
-```python
-assert x_f.shape == y_f.shape == z_f.shape == (n_f,)
-assert p_x.shape == p_y.shape == p_z.shape == (n,)
-assert np.isclose(p_z.sum(), -2.5)
 ```
 
 ### B.2 Coordinate differences and lengths, equation (1)
@@ -499,8 +394,16 @@ $$
 u = C x + C_f x_f, \qquad v = C y + C_f y_f, \qquad w = C z + C_f z_f
 $$
 
-The free part $C x$ and the fixed part $C_f x_f$ are added because every branch
-has one end in each block or both ends in one of them. The branch length is
+Split the same endpoint subtraction into free-node and fixed-node contributions:
+
+| Branch | `C @ x` | `C_f @ x_f` | Add |
+|---|---|---|---|
+| `(1, 6)` | $x_1$ | $-x_6$ | $x_1-x_6$ |
+| `(1, 2)` | $x_1-x_2$ | $0$ | $x_1-x_2$ |
+
+`x` stores the five free-node coordinates. `x_f` stores the four fixed-node
+coordinates; its first entry is $x_6$. Both products return one value per branch.
+The `+` adds corresponding entries. The branch length is
 $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$.
 
 **Add to your program:**
@@ -522,17 +425,6 @@ def coordinate_differences(x, y, z):
 - `u = C @ x + C_f @ x_f`: a $(12 \times 5)$ matrix times 5 free coordinates gives 12 numbers; a $(12 \times 4)$ matrix times 4 fixed coordinates gives 12 numbers; added entry by entry they are the 12 differences $u_j$. For branch 1 (from node 1 to node 6) that is $x_1 - x_6$: the $+1$ sits in `C`, the $-1$ in `C_f`.
 - The lines for `v` and `w` are the same product with the $y$ and $z$ coordinates.
 - `l = np.sqrt(u**2 + v**2 + w**2)`: entry-wise, no matrix: `u**2` squares every entry, the three arrays are added entry by entry, `np.sqrt` takes the root of every entry. 12 lengths.
-
-**Check before continuing:**
-
-```python
-_u, _v, _w, _l = coordinate_differences(
-    np.array([-1., 0., 1., 0., 0.]),
-    np.array([0., -1., 0., 1., 0.]), np.zeros(n))
-assert _l.shape == (m,)
-np.testing.assert_allclose(_l, np.sqrt(_u**2 + _v**2 + _w**2))
-assert np.all(_l > 0)
-```
 
 ### B.3 Equilibrium with the unknown forces, equation (2)
 
@@ -586,14 +478,6 @@ Example output:
 out of balance at the free nodes for the flat guess, z direction: [ 0.5   -0.207  0.5   -0.207  0.5  ]
 ```
 
-**Check before continuing:**
-
-```python
-_errors = equilibrium_error(x_guess, y_guess, z_guess, np.ones(m))
-assert all(e.shape == (n,) for e in _errors)
-assert max(np.abs(e).max() for e in _errors) > 0.1
-```
-
 ## Part C. The force density trick: a linear system
 
 ### C.1 The force density, equations (4) to (6)
@@ -623,13 +507,6 @@ q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)   # one force de
 ![scheme: equation (4)](images/schek_scheme_eq4.png)
 
 **Reading the code.** `q` is an array of 12 numbers, one per branch: 2 for the four anchor branches, 1 for the rest. In the paper (4) defines $q_j = s_j / l_j$ from known forces and lengths; in the program the arrow is reversed: $q$ is chosen, and the forces come out at the end from (10).
-
-**Check before continuing:**
-
-```python
-assert q.shape == (m,) and np.all(q > 0)
-np.testing.assert_allclose(np.diag(q) @ by_product, q * by_product)
-```
 
 ### C.2 The matrices D and D_f, equations (7) and (8)
 
@@ -714,15 +591,6 @@ right-hand sides (columns x, y, z):
  [ 0.   0.  -0.5]]
 ```
 
-**Check before continuing:**
-
-```python
-assert Q.shape == (m, m) and D.shape == (n, n)
-assert D_f.shape == (n, n_f) and rhs.shape == (n, 3)
-np.testing.assert_allclose(D, D.T)
-assert np.all(np.linalg.eigvalsh(D) > 0)
-```
-
 ### C.3 Solving for the free coordinates, equation (9)
 
 **Build this step.** Solve the three linear systems for x, y, and z. The supports remain prescribed; only the free coordinates are unknown. At this point we have the equilibrium geometry, but must still recover forces and verify equilibrium.
@@ -749,14 +617,6 @@ z = np.linalg.solve(D, p_z - D_f @ z_f)
 ![scheme: equation (9)](images/schek_scheme_eq9.png)
 
 **Reading the code.** `np.linalg.solve(D, b)` returns the five numbers $x$ with $D x = b$ (operation 5 of A.4). It is called three times with the same `D` and the three right-hand sides. The results `x`, `y`, `z` hold the free nodes only; the fixed nodes keep `x_f`, `y_f`, `z_f`.
-
-**Check before continuing:**
-
-```python
-np.testing.assert_allclose(D @ x, rhs[:, 0], atol=1e-12)
-np.testing.assert_allclose(D @ y, rhs[:, 1], atol=1e-12)
-np.testing.assert_allclose(D @ z, rhs[:, 2], atol=1e-12)
-```
 
 ### C.4 Lengths, forces and the equilibrium check, equation (10)
 
@@ -800,14 +660,6 @@ free node coordinates (columns x, y, z):
 lengths l: [1.201 1.374 1.201 1.374 1.167 1.167 1.167 1.167 0.844 0.8   0.844 0.8  ]
 forces  s: [2.402 2.748 2.402 2.748 1.167 1.167 1.167 1.167 0.844 0.8   0.844 0.8  ]
 equilibrium error (2) on the solution: 4.440892098500626e-16
-```
-
-**Check before continuing:**
-
-```python
-np.testing.assert_allclose(s / l, q)
-for _error in equilibrium_error(x, y, z, s):
-    np.testing.assert_allclose(_error, 0, atol=1e-12)
 ```
 
 ## Part D. The form-finding loop
@@ -857,19 +709,9 @@ def form_finding(branches, n_free, xyz_fixed, q, p):
 - `s = l * q`: equation (10).
 - `reactions = C_f.T @ np.diag(q) @ uvw`: the support forces acting on the net, with zero applied loads at the fixed nodes in this function. The cables exert the opposite forces on the supports. Thus `reactions.sum(axis=0) + p.sum(axis=0)` is zero at equilibrium.
 
-**Check before continuing:**
-
-```python
-_xyz, _lengths, _forces, _reactions = form_finding(
-    branches, n, np.c_[x_f, y_f, z_f], q, np.c_[p_x, p_y, p_z])
-np.testing.assert_allclose(_xyz, np.c_[x, y, z], atol=1e-12)
-np.testing.assert_allclose(_forces, s, atol=1e-12)
-np.testing.assert_allclose(_reactions.sum(axis=0) + np.c_[p_x, p_y, p_z].sum(axis=0), 0, atol=1e-12)
-```
-
 ### D.2 Using the loop: move the anchors, change the force densities
 
-**Build this step.** Call the function with the original data, then change one input at a time. First lift all supports; then increase only the anchor-branch force densities. You now have a reusable linear force density method. Complete the four-cable checkpoint below before adding nonlinear conditions.
+**Build this step.** Call the function with the original data, then change one input at a time. First lift all supports; then increase only the anchor-branch force densities. You now have a reusable linear force density method. The nonlinear conditions in part F extend this linear solver.
 
 Two of the three loops of figure 3. Moving the fixed points changes only the
 right-hand side $p - D_f x_f$, so the same $D$ serves again; changing the force
@@ -902,28 +744,9 @@ reactions at the anchors (sum of z components balances the total load): [-0.089 
 centre node height: base 0.062 | anchors lifted by 1 m 1.063 | anchor branches q = 10: 0.313
 ```
 
-**Check before continuing:**
-
-```python
-np.testing.assert_allclose(xyz2, xyz1 + [0, 0, 1], atol=1e-12)
-assert not np.allclose(xyz3, xyz1)
-np.testing.assert_allclose(R1.sum(axis=0) + p.sum(axis=0), 0, atol=1e-12)
-
-# Independent four-cable benchmark: one free node, four fixed nodes.
-_benchmark_branches = [(1, 2), (1, 3), (1, 4), (1, 5)]
-_benchmark_fixed = np.array([[-1., -1., 0.], [1., -1., 0.],
-                             [1., 1., 0.], [-1., 1., 0.]])
-_benchmark_load = np.array([[0., 0., -1.]])
-_benchmark_xyz, _, _, _benchmark_R = form_finding(
-    _benchmark_branches, 1, _benchmark_fixed, np.ones(4), _benchmark_load)
-np.testing.assert_allclose(_benchmark_xyz, [[0, 0, -0.25]], atol=1e-12)
-np.testing.assert_allclose(_benchmark_R.sum(axis=0), [0, 0, 1], atol=1e-12)
-```
-
 **Milestone reached:** you have implemented the linear force density method.
-The independent four-cable network gives a free-node height of `-0.25 m`
-and total upward support reaction of `1 N`. Parts E–G explain and extend
-this solver; the basic method needs no additional iteration.
+Parts E–G explain and extend this solver; the basic method needs no
+additional iteration.
 
 ## Part E. What the force densities mean
 
@@ -968,13 +791,6 @@ Theorem 1: gradient of the weighted squared lengths at the unloaded equilibrium:
 Theorem 2: forces with q = 1 / l: [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 ```
 
-**Check before continuing:**
-
-```python
-np.testing.assert_allclose(gradient, 0, atol=1e-12)
-np.testing.assert_allclose(l0 * q_const, np.ones(m))
-```
-
 ## Part F. Additional conditions
 
 ### F.1 Additional conditions and their linearisation (section 3.1)
@@ -1000,13 +816,6 @@ conditions than branches there are many solutions $\Delta q$.
 length_rows = np.array([0, 1, 2, 3])
 target_lengths = np.full(4, 1.2)
 g_lengths = l[length_rows] - target_lengths
-```
-
-**Check before continuing:**
-
-```python
-assert g_lengths.shape == (4,)
-assert np.max(np.abs(g_lengths)) > 0
 ```
 
 ### F.2 Three ways to pick the step, equations (17) to (25)
@@ -1048,15 +857,6 @@ def damped_step(G_t, g, a=0.8, P_inv_scale=1e-6):
 - `k = np.linalg.solve(T, A @ (-g))`: equations (15) and (24); `-g` is $r$ and `A @ (-g)` the damped right-hand side of (20).
 - `return G @ k`: equation (25), the change of all 12 force densities from 4 multipliers.
 
-**Check before continuing:**
-
-```python
-_J = np.zeros((1, m)); _J[0, 0] = 1.0
-_dq = damped_step(_J, np.array([0.5]))
-assert _dq.shape == (m,)
-assert abs(0.5 + (_J @ _dq)[0]) < 0.5
-```
-
 ### F.3 How the coordinates react to the force densities (section 3.2)
 
 **Build this step.** Differentiate the equilibrium coordinates with respect to q. Add the three coordinate Jacobians, then perturb one force density and compare the actual coordinate change with the derivative prediction.
@@ -1088,17 +888,6 @@ def coordinate_jacobians(D, u, v, w):
 ![scheme: equation (28)](images/schek_scheme_f3.png)
 
 **Reading the code.** `np.linalg.inv(D)` forms the explicit inverse of the small $(5 \times 5)$ matrix (for large nets one would factorise instead). `-D_inv @ C.T @ np.diag(u)` is $(5 \times 5)(5 \times 12)(12 \times 12)$, a $(5 \times 12)$ table: column $j$ tells how all five free $x$ coordinates move when $q_j$ changes by one unit. The other two return values use $V$ and $W$.
-
-**Check before continuing:**
-
-```python
-_Jx, _Jy, _Jz = coordinate_jacobians(D, u, v, w)
-_eps = 1e-6
-_q_perturbed = q.copy(); _q_perturbed[0] += _eps
-_xyz_perturbed = form_finding(branches, n, xyz_fixed, _q_perturbed, p)[0]
-_prediction = np.c_[_Jx[:, 0], _Jy[:, 0], _Jz[:, 0]]
-np.testing.assert_allclose((_xyz_perturbed - xyz1) / _eps, _prediction, atol=1e-6)
-```
 
 ### F.4 Distance, force and unstrained-length conditions (sections 3.3 to 3.6)
 
@@ -1166,17 +955,6 @@ def unstrained_length_jacobian(D, u, v, w, l, q, h, rows):
 - `return -np.diag(1.0 / l[rows]) @ K`: equation (31).
 - `force_jacobian`: `np.diag(q[rows]) @ distance_jacobian(...)` is $-\bar Q \bar L^{-1} K$; the loop `G_f_t[row, j] += l[j]` adds $\bar L$, which as a $(4 \times 12)$ matrix has $l_j$ in row `row` at the own column `j` and zeros elsewhere: equation (34).
 - `unstrained_length_jacobian`: `l_u = h * l / (h + s)` is Hooke's law entry-wise; `K` is recovered from the distance Jacobian by multiplying with $-\bar L$; the two terms of (35) are the loop (own column) and the product with $\bar L_u^{2} \bar L^{-3}$.
-
-**Check before continuing:**
-
-```python
-_rows = [0, 1, 2, 3]
-_Jlength = distance_jacobian(D, u, v, w, l, _rows)
-_Jforce = force_jacobian(D, u, v, w, l, q, _rows)
-assert _Jlength.shape == _Jforce.shape == (4, m)
-_l_perturbed = form_finding(branches, n, xyz_fixed, _q_perturbed, p)[1]
-np.testing.assert_allclose((_l_perturbed[_rows] - l[_rows]) / _eps, _Jlength[:, 0], atol=1e-6)
-```
 
 ### F.5 The constrained loop assembled
 
@@ -1287,16 +1065,6 @@ anchor branches prescribed to 1.2 m: lengths [1.2 1.2 1.2 1.2] after 14 iteratio
 mixed: spokes 0.9 m and anchor forces 2 kN: lengths [0.9 0.9 0.9 0.9], forces [2. 2. 2. 2.] after 15 iterations
 ```
 
-**Check before continuing:**
-
-```python
-np.testing.assert_allclose(l_c[:4], 1.2, atol=1e-8)
-np.testing.assert_allclose(l_m[8:], 0.9, atol=1e-8)
-np.testing.assert_allclose(s_m[:4], 2.0, atol=1e-8)
-assert np.all(q_c > 0) and np.all(q_m > 0)
-assert err < 1e-8
-```
-
 ## Part G. The paper's examples, computed and drawn
 
 ### G.1 The network of figure 5 (section 5)
@@ -1375,15 +1143,6 @@ def keep(name, brs, xyz_free, xyz_fixed, fixed_nodes):
 - `is_spoke`, `is_border`, `touches_border` are boolean masks over the branches, used below to select force densities and conditions.
 - `keep(name, ...)` stores a shape for the renderer: `np.vstack([xyz_free, xyz_fixed])` stacks the 61 free and 6 fixed rows into one $(67 \times 3)$ table in the paper's numbering.
 
-**Check before continuing:**
-
-```python
-assert len(branches5) == 110 and free5 == 61
-assert len(fixed5) == 6 and q5.shape == (110,)
-assert p5.shape == (61, 3)
-assert np.all(q5[is_border] == 100) and np.all(q5[is_spoke] == 0.5)
-```
-
 ### G.2 Figure 6: different fixed points
 
 **Build this step.** Reuse the linear solver with three support layouts. Store each result under its figure name and compare the radial lengths and apex reaction. This tests changes to the known support term without changing topology or q.
@@ -1419,15 +1178,6 @@ Example output:
 fig6_1: apex moved by (0, 0) m; radial lengths 8.1-9.0 m; apex reaction 38.9 kN
 fig6_2: apex moved by (6, 2) m; radial lengths 8.0-9.3 m; apex reaction 38.9 kN
 fig6_3: apex moved by (12, 4) m; radial lengths 8.4-10.9 m; apex reaction 38.9 kN
-```
-
-**Check before continuing:**
-
-```python
-assert all(name in shapes for name in ("fig6_1", "fig6_2", "fig6_3"))
-for _dx, _dy in [(0, 0), (6, 2), (12, 4)]:
-    _R = form_finding(branches5, free5, anchors5(_dx, _dy), q5, p5)[3]
-    np.testing.assert_allclose(_R.sum(axis=0) + p5.sum(axis=0), 0, atol=1e-9)
 ```
 
 ### G.3 Figures 7 and 8: changing the force densities
@@ -1477,14 +1227,6 @@ fig8_2: border q = 5: border lengths 3.5-4.9 m
 fig8_3: border q = 1: border lengths 2.9-6.5 m
 ```
 
-**Check before continuing:**
-
-```python
-assert all(f"fig7_{i}" in shapes and f"fig8_{i}" in shapes for i in (1, 2, 3))
-assert not np.allclose(shapes["fig7_1"]["xyz"], shapes["fig7_3"]["xyz"])
-assert not np.allclose(shapes["fig8_1"]["xyz"], shapes["fig8_3"]["xyz"])
-```
-
 ### G.4 Figure 9: additional distance conditions
 
 **Build this step.** Apply length conditions to the larger network using the constrained solver. Read the final error for each case; a returned shape is not evidence of convergence. Independently measure the lengths of the converged second case.
@@ -1521,16 +1263,6 @@ Example output:
 fig9_1: radial l = 6.0 m, rings x1.25: largest length error 1.2e+00 after 55 iterations  (not converged, stopped)
 fig9_2: radial l = 6.0 m, rings x0.85: largest length error 2.5e-11 after 16 iterations
 fig9_3: radial l = 4.5 m, rings x0.7: largest length error 1.2e+00 after 51 iterations  (not converged, stopped)
-```
-
-**Check before continuing:**
-
-```python
-_points = np.asarray(shapes["fig9_2"]["xyz"])
-_edges = np.asarray(branches5) - 1
-_lengths = np.linalg.norm(_points[_edges[:, 0]] - _points[_edges[:, 1]], axis=1)
-_targets = np.array([6.0 if is_spoke[j] else base_l[j] * 0.85 for j in inner])
-np.testing.assert_allclose(_lengths[inner], _targets, atol=1e-8)
 ```
 
 ### G.5 Figure 10: the grid-shell model of 112 identical bars
@@ -1600,17 +1332,6 @@ Example output:
 fig10_1: 112 bars of 1.0 m hanging under their weight: length error 4.0e-11 after 18 iterations; bar forces 0.12-2.77 kN
 fig10_2: corners raised, inner q = 1, border q = 10: inner lengths 0.65-0.81 m
 fig10_3: equidistant inner net and constant force in the branches connected with the border: error 2.2e-11 after 14 iterations
-```
-
-**Check before continuing:**
-
-```python
-assert len(grid) == 112 and len(order) == 64
-_points = np.asarray(shapes["fig10_1"]["xyz"])
-_edges = np.asarray(grid) - 1
-_lengths = np.linalg.norm(_points[_edges[:, 0]] - _points[_edges[:, 1]], axis=1)
-np.testing.assert_allclose(_lengths, 1.0, atol=1e-8)
-assert err < 1e-8
 ```
 
 <!-- schek-app:end -->

@@ -25,8 +25,8 @@ Follow [the force density tutorial](compas_fd.md) in order:
 7. **Part G:** apply the method to the paper's reconstructed examples.
 
 Each subsection explains the task, the data types being created, and the meaning
-of the array rows and columns. Append its implementation code, then run its
-checkpoint before continuing. **D.2 completes the linear force density method**;
+of the array rows and columns. Append its implementation code in order; A.4
+provides diagrams for reference without a separate demo program. **D.2 completes the linear force density method**;
 the nonlinear conditions in part F extend it.
 
 The derivation uses NumPy directly. Printed output provides optional numerical
