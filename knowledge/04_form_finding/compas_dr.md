@@ -34,8 +34,9 @@ Model assumptions are those of the force density method (Schek 1974, see
 [compas_fd](compas_fd.md)): straight axial members, pinned nodes, nodal loads,
 free and fixed nodes. Sign conventions are the same: positive force density and
 force are tension, the residual $r = p - C^{t} Q u$ is zero at free nodes at
-convergence and equals the branch resultant on a support at fixed nodes
-(reaction $= -r$).
+convergence. At fixed nodes the support reaction acting on the network is
+$-r$; when no external loads are applied at the supports, $r$ is the branch
+resultant acting on each support.
 
 **Where force densities enter.** For every edge the solver composes a force
 density from four optional contributions:

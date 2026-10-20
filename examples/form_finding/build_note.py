@@ -16,6 +16,8 @@ import re
 import sys
 from pathlib import Path
 
+import numpy as np
+
 HERE = Path(__file__).resolve().parent
 APP = HERE / "schek_app.py"
 NOTE = HERE.parents[1] / "knowledge/04_form_finding/compas_fd.md"
@@ -26,6 +28,8 @@ def cells(source: str):
     parts = re.split(r"^# %% \[([a-z0-9]+)\] (.*)$", source, flags=re.M)
     for i in range(1, len(parts), 3):
         cid, title, body = parts[i], parts[i + 1].strip(), parts[i + 2]
+        if cid == "export":
+            break
         m = re.match(r'\s*r?"""(.*?)"""\s*\n', body, flags=re.S)
         prose = m.group(1).strip() if m else ""
         code = body[m.end():] if m else body
@@ -57,6 +61,10 @@ def main():
            "run. The program is derived from the paper only (NumPy, nothing else); the",
            "comparison with `compas_fd` comes after it. This section is generated from the",
            "program by `build_note.py`, so code, output and text cannot drift apart.", "",
+           "Follow parts A to G in order. Each step uses definitions from the earlier steps.",
+           "NumPy performs the calculations; the figures illustrate the arrays and results.",
+           "The `print` calls are optional checks and can be omitted from an implementation.",
+           "The displayed output is rounded for readability; calculations use full precision.", "",
            "Contents", ""]
     last_part = None
     for cid, title, prose, code, explain in all_cells:
@@ -69,7 +77,7 @@ def main():
         if cid[0] != last_part:
             out += [f"## {PARTS[cid[0]]}", ""]; last_part = cid[0]
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        with contextlib.redirect_stdout(buf), np.printoptions(precision=3, suppress=True, linewidth=120):
             exec(compile(code, f"{APP.name}[{cid}]", "exec"), namespace)
         printed = buf.getvalue().rstrip()
         out += [f"### {title}", ""]

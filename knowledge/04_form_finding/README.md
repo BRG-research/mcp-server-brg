@@ -14,12 +14,28 @@ form finding and computation of general networks*, CMAME 3, 115–134, and the
 
 ## Walkthrough
 
-Start with one small `compas_fd` example in plain Python.
-Add `compas_dr` and other form-finding workflows after that.
+Follow [the force density tutorial](compas_fd.md) in order:
 
-## Files to add
+1. **Part A:** vectors, matrices, node and branch numbering, and connectivity.
+2. **Part B:** coordinates, branch lengths, and nodal equilibrium.
+3. **Part C:** prescribed force densities and the linear equilibrium solve.
+4. **Part D:** combine the steps into a reusable form-finding function.
+5. **Part E:** understand the geometric meaning of force densities.
+6. **Part F:** iterate on force densities to satisfy additional conditions.
+7. **Part G:** apply the method to the paper's reconstructed examples.
 
-These are proposed files; the computational integration is not implemented yet.
+The derivation uses NumPy directly. Printed output provides optional numerical
+checks; image generation is independent of the method. See the
+[example README](../../examples/form_finding/README.md) for commands and how to
+regenerate the tutorial. Compare with `compas_fd` after understanding the linear
+solve; continue to `compas_dr` and other methods afterwards.
+
+## Package integration to add
+
+The NumPy derivation (`schek_app.py`), equation checks (`schek_equations.py`), and
+tutorial generator (`build_note.py`) already exist in `examples/form_finding/`.
+The package benchmark, reusable adapter, and MCP computation tool below remain
+to be implemented.
 Paths are relative to the repository root.
 
 | File | Purpose |
@@ -30,7 +46,7 @@ Paths are relative to the repository root.
 | `src/brg_mcp/adapters/force_density.py` | Reusable computation and input validation |
 | `src/brg_mcp/tools/form_finding.py` | Expose the adapter through MCP |
 
-## Follow this order
+## Package integration workflow
 
 1. **Inspect the package.**
    Read [the source](https://github.com/BlockResearchGroup/compas_fd/tree/main/src/compas_fd/solvers)
@@ -84,12 +100,14 @@ Paths are relative to the repository root.
   `1e-9 N`. Support residuals need not vanish; check the package's reaction convention.
 
 The benchmark was reproduced with `compas_fd` 0.5.4 and `compas_dr` 0.3.1 in a
-throw-away environment (see the Verification sections of the sub-chapters); the
-repository example, adapter, and test are still to be added.
+throw-away environment (see the Verification sections of the sub-chapters).
+The standalone package benchmark, adapter, and repository test remain to be added;
+the NumPy tutorial programs already run independently.
 
 ## Register the note
 
-Append to `config/knowledge.yaml` after creating the note:
+The notes are already registered in `config/knowledge.yaml`. Maintain the
+existing entries rather than appending duplicates; the structure is:
 
 ```yaml
 - id: form-finding-compas-fd

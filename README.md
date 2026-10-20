@@ -21,8 +21,9 @@ Work one method at a time: **inspect package → explain → run example → ver
 add adapter → expose through MCP**. A chapter connects these files; they do not
 all live inside its knowledge folder.
 
-Follow the [Form Finding walkthrough](knowledge/04_form_finding/README.md) for a
-copyable first example using `compas_fd`.
+Follow the [Form Finding walkthrough](knowledge/04_form_finding/README.md) for
+the NumPy force density derivation, runnable examples, and planned `compas_fd`
+integration.
 
 ## Start here
 
