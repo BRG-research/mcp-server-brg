@@ -233,6 +233,38 @@ c(j, i) =
 \end{cases}
 $$
 
+**What do +1, −1 and 0 mean?** Each entry describes how a node belongs to
+one branch:
+
+- **+1:** the node is the branch's starting endpoint, $i(j)$.
+- **−1:** the node is the branch's ending endpoint, $k(j)$.
+- **0:** the node is not an endpoint of this branch.
+
+For branch 1, `(1, 6)`, node 1 is the chosen start and node 6 is the chosen end.
+Its row in $C_s$ is:
+
+| Node label | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|
+| Branch 1 | +1 | 0 | 0 | 0 | 0 | −1 | 0 | 0 | 0 |
+
+**Why use these numbers?** Multiplying this row by the vector of all nine
+$x$-coordinates selects the two endpoints and subtracts their coordinates:
+
+$$
+(+1)x_1 + 0x_2 + 0x_3 + 0x_4 + 0x_5 + (-1)x_6 + 0x_7 + 0x_8 + 0x_9
+= x_1 - x_6.
+$$
+
+The same row gives $y_1 - y_6$ and $z_1 - z_6$ for the other coordinate vectors.
+Thus the matrix turns node coordinates into branch coordinate differences.
+With Schek's signs, these differences point from the chosen end toward the
+chosen start: start coordinates minus end coordinates.
+
+The orientation is arbitrary: writing `(6, 1)` instead would reverse both signs
+and the resulting coordinate differences. The physical connection stays the
+same. These signs do **not** indicate tension or compression, or whether a node
+is free or fixed. Force density determines tension or compression later.
+
 Because the fixed nodes were numbered last, the matrix splits into two column
 blocks, $C_s = [C \quad C_f]$: $C$ ($m \times n$) holds the free nodes and $C_f$
 ($m \times n_f$) the fixed ones.
