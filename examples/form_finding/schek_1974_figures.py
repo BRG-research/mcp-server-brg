@@ -377,11 +377,31 @@ def icon_scenes(gl, out, layout):
     sc = scene("icon_matvec", "")
     x1, yb = matrix_icon(sc, gl, C_s, 0, 0, cell, "C_s  (12 x 9)", rows, cols, hi_rows=[0])
     op_symbol(sc, gl, "x", x1 + 0.5, -m * cell / 2, 0.4)
-    x2, _ = matrix_icon(sc, gl, x_all[:, None], x1 + 1.0, 0, cell, "x  (9)", cols, None, hi_rows=[0, 5])
+    x2, _ = matrix_icon(sc, gl, x_all[:, None], x1 + 1.0, 0, cell, "x_s  (9)", cols, None, hi_rows=[0, 5])
     op_symbol(sc, gl, "=", x2 + 0.5, -m * cell / 2, 0.4)
-    matrix_icon(sc, gl, u[:, None], x2 + 1.0, 0, cell, "u = C_s x  (12)", rows, None, hi_rows=[0])
-    sc.text(gl, "row 1 of C_s has +1 at node 1 and -1 at node 6:   u_1 = (+1)(x_1) + (-1)(x_6) = -1 - (-2) = 1", [0, yb - 1.9, 0], 0.26)
-    sc.text(gl, "every other entry of the row is 0, so the other seven coordinates do not matter for branch 1", [0, yb - 2.4, 0], 0.26)
+    matrix_icon(sc, gl, u[:, None], x2 + 1.0, 0, cell, "u  (12 x 1)", rows, None, hi_rows=[0])
+    # Expand the highlighted row using the same cells, brackets, labels and colours.
+    detail_x, row_x = 9.0, 11.5
+    sc.text(gl, "Branch 1: multiply matching node entries", [detail_x, 0.65, 0], 0.25)
+    products = C_s[0] * x_all
+    for label, values, y0 in [("C_s row 1", C_s[0], -0.3),
+                              ("x_s", x_all, -1.9),
+                              ("products", products, -3.5)]:
+        sc.text(gl, label, [detail_x, y0 - 0.35, 0], 0.23)
+        matrix_icon(sc, gl, values[None, :], row_x, y0, cell,
+                    col_labels=cols if y0 == -0.3 else None, hi_cols=[0, 5])
+    for c in range(n + n_f):
+        cx = row_x + (c + 0.5) * cell
+        op_symbol(sc, gl, "x", cx, -1.25, 0.22)
+        op_symbol(sc, gl, "=", cx, -2.85, 0.22)
+    sc.text(gl, "Add the nine products:", [detail_x, -4.9, 0], 0.25)
+    sc.text(gl, "-1 + 0 + 0 + 0 + 0 + 2 + 0 + 0 + 0 = 1", [detail_x, -5.45, 0], 0.25)
+    sc.text(gl, "u_1 = (+1)(-1) + (-1)(-2) = -1 + 2 = 1", [detail_x, -6.1, 0], 0.25)
+    sc.text(gl, "9 products -> 1 sum -> 1 entry in u", [detail_x, -6.7, 0], 0.25)
+    sc.text(gl, "12 rows -> 12 sums -> ONE column", [detail_x, -7.25, 0], 0.25)
+    sc.arrow([8.6, -0.25, 0], [7.6, -0.25, 0], head=0.15)
+    sc.text(gl, "Each column is one node: multiply its matrix entry by its coordinate, then add across the products.", [0, yb - 1.9, 0], 0.26)
+    sc.text(gl, "A dot means 0. Repeat for all 12 rows: each branch gets one signed coordinate difference.", [0, yb - 2.4, 0], 0.26)
     sc.dump(out / "icon_matvec.json")
     layout["icon_matvec"] = {"panels": [["icon_matvec.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
