@@ -436,17 +436,26 @@ def icon_scenes(gl, out, layout):
     sc.dump(out / "icon_D.json")
     layout["icon_D"] = {"panels": [["icon_D.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
-    # icon 6: the linear system D x = b, solved
+    # icon 6: enough cell width for signed decimal coordinates; short labels.
     sc = scene("icon_solve", "")
     x_f = x_all[n:]; D_f = C.T @ np.diag(q) @ C_f; b = np.zeros(n) - D_f @ x_f
     xs = np.linalg.solve(D, b)
-    x1, yb = matrix_icon(sc, gl, D, 0, 0, cell, "D  (5 x 5)  known", cols[:n], cols[:n])
-    op_symbol(sc, gl, "x", x1 + 0.5, -n * cell / 2, 0.4)
-    x2, _ = matrix_icon(sc, gl, xs[:, None], x1 + 1.0, 0, cell, "x  (5)  unknown", cols[:n], None, fmt="{:.2f}", hi_rows=range(n))
-    op_symbol(sc, gl, "=", x2 + 0.5, -n * cell / 2, 0.4)
-    x3, _ = matrix_icon(sc, gl, b[:, None], x2 + 1.0, 0, cell, "b = p_x - D_f x_f  (5)  known", cols[:n], None, fmt="{:.2f}")
-    sc.text(gl, "np.linalg.solve(D, b) finds the five numbers x that make every row of D times x equal to the row's b", [0, yb - 1.9, 0], 0.26)
-    sc.text(gl, "row 1: 5 x_1 - x_2 - x_4 - x_5 = -4  ...  five equations, five unknowns, one solution because D is positive definite", [0, yb - 2.4, 0], 0.26)
+    np.testing.assert_allclose(D @ xs, b, atol=1e-12)
+    solve_cell, text_h = 0.8, 0.24
+    vector_x, rhs_x = 5.2, 7.2
+    _, yb = matrix_icon(sc, gl, D, 0, 0, solve_cell, row_labels=cols[:n],
+                        col_labels=cols[:n], text_h=text_h)
+    op_symbol(sc, gl, "x", 4.6, -2.0, 0.4)
+    matrix_icon(sc, gl, xs[:, None], vector_x, 0, solve_cell,
+                fmt="{:.2f}", text_h=text_h)
+    op_symbol(sc, gl, "=", 6.6, -2.0, 0.4)
+    matrix_icon(sc, gl, b[:, None], rhs_x, 0, solve_cell,
+                fmt="{:.2f}", text_h=text_h)
+    for label, cx in [("D (known)", 2.0), ("x (solve)", vector_x + 0.4),
+                       ("b (known)", rhs_x + 0.4)]:
+        sc.text(gl, label, [cx, 0.85, 0], 0.28, "center")
+    sc.text(gl, "x = np.linalg.solve(D, b)", [0, yb - 0.85, 0], 0.28)
+    sc.text(gl, "Check row 1:  5(-0.80) - 0 - 0 - 0 = -4.00", [0, yb - 1.45, 0], 0.26)
     sc.dump(out / "icon_solve.json")
     layout["icon_solve"] = {"panels": [["icon_solve.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
