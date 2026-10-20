@@ -348,54 +348,18 @@ writes it. Both give the same numbers.
 1. **A matrix is a table.** $C_s$ has one row per branch and one column per node;
    the entry in row $j$, column $i$ says how node $i$ enters branch $j$ ($+1$ start,
    $-1$ end, $0$ not at all).
-2. **Matrix times vector = multiply matching entries, then add.**
-   Begin with just the first row of $C_s$, for branch `(1, 6)`.
-   The row has nine entries, one for each node. Place each node's $x$-coordinate
-   underneath its matching matrix entry. Multiply vertically, then add the nine
-   products horizontally:
+2. **Matrix times vector: multiply. Add.**
 
-   ![The connectivity matrix times the coordinate vector, with the highlighted first row expanded into individual products and their sum.](images/schek_icon_matvec.png)
+   ![Red boxes select the two nonzero entries of row 1. Arrows match them to coordinates -1 and -2. Multiply by +1 and -1, then add -1 and +2 to get the first output entry, 1.](images/schek_icon_matvec.png)
 
-   **Read the expanded calculation on the right.** The two highlighted columns
-   belong to nodes 1 and 6. At node 1, multiply
-   $(+1)\times(-1)=-1$. At node 6, multiply $(-1)\times(-2)=+2$.
-   The other seven matrix entries are zero, so their products are zero even if
-   the corresponding coordinate is nonzero. Add the products: $-1+2=1$ metre.
-   This is $x_1-x_6=(-1)-(-2)=1$ metre. The two negative signs at node 6
-   explain why its contribution is positive.
+   Follow red arrows. Multiply the matching numbers. Add: $-1+2=1$.
+   Dots mean zero: they add nothing.
 
-   **Repeat for every matrix row.** For example, branch 6 is `(1, 2)`, so its
-   result is $(+1)\times(-1)+(-1)\times0=-1$ metre. Each row selects its own
-   pair of nodes, giving one signed coordinate difference for that branch.
+   **One row → one sum. Twelve rows → twelve sums in one column.**
 
-   $$
-   \underbrace{C_s}_{12\text{ rows},\ 9\text{ columns}}
-   \underbrace{x_s}_{9\text{ node coordinates}}
-   = \underbrace{u}_{12\text{ branch differences}}.
-   $$
-
-   **Why is the answer just one column?** Each row gives **one sum**, not nine
-   separate answers. Row 1 gives $u_1=1$, row 2 gives $u_2=0$, and so on.
-   Stack the twelve row sums vertically to form the single output vector $u$.
-   In column-vector notation the dimensions are $(12\times9)(9\times1)=(12\times1)$:
-   the nine columns match the nine input coordinates, while the twelve matrix
-   rows determine the twelve output entries. Here the input contains only the
-   $x$-coordinate of each node, so there is only one input column. A later
-   three-column input holding $x$, $y$, and $z$ would give three output columns,
-   one set of branch differences for each coordinate axis.
-
-   In this NumPy code, `x_demo.shape` is `(9,)` and the result's shape is `(12,)`:
-   they are one-dimensional arrays. The diagram draws them as columns to make
-   the row-by-row multiplication clear.
-
-   Here $x_s$ means the coordinates of **all nine nodes** (free and fixed),
-   stored below as `x_demo`. Later, $x$ alone denotes only the free-node
-   coordinates. Thus `C_s @ x_demo` uses nine coordinates; `C @ x` uses five.
-   The `@` operator performs both steps: multiplication **and summation**.
-   By contrast, `C_s[0] * x_demo` gives the nine separate products for one row;
-   adding `.sum()` reduces them to its single result. A coordinate difference
-   along $x$ is not the full three-dimensional branch length; B.2 combines
-   the differences along all three axes to compute that length.
+   $x_s$ contains all nine node coordinates (`x_demo`). The result contains
+   twelve branch differences. In NumPy their shapes are `(9,)` and `(12,)`;
+   the diagram draws them as columns.
 
 3. **Transpose times vector = add up at the nodes.** $C^{t}$ swaps rows and
    columns, so $C^{t} f$ has one number per *node*: the sum of the branch values $f_j$

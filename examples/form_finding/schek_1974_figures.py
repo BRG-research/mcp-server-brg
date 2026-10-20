@@ -373,35 +373,29 @@ def icon_scenes(gl, out, layout):
     sc.dump(out / "icon_split.json")
     layout["icon_split"] = {"panels": [["icon_split.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
-    # icon 2: matrix times vector, row 1 highlighted
+    # icon 2: follow the two nonzero entries from row 1 to their coordinates.
     sc = scene("icon_matvec", "")
-    x1, yb = matrix_icon(sc, gl, C_s, 0, 0, cell, "C_s  (12 x 9)", rows, cols, hi_rows=[0])
-    op_symbol(sc, gl, "x", x1 + 0.5, -m * cell / 2, 0.4)
-    x2, _ = matrix_icon(sc, gl, x_all[:, None], x1 + 1.0, 0, cell, "x_s  (9)", cols, None, hi_rows=[0, 5])
-    op_symbol(sc, gl, "=", x2 + 0.5, -m * cell / 2, 0.4)
-    matrix_icon(sc, gl, u[:, None], x2 + 1.0, 0, cell, "u  (12 x 1)", rows, None, hi_rows=[0])
-    # Expand the highlighted row using the same cells, brackets, labels and colours.
-    detail_x, row_x = 9.0, 11.5
-    sc.text(gl, "Branch 1: multiply matching node entries", [detail_x, 0.65, 0], 0.25)
-    products = C_s[0] * x_all
-    for label, values, y0 in [("C_s row 1", C_s[0], -0.3),
-                              ("x_s", x_all, -1.9),
-                              ("products", products, -3.5)]:
-        sc.text(gl, label, [detail_x, y0 - 0.35, 0], 0.23)
-        matrix_icon(sc, gl, values[None, :], row_x, y0, cell,
-                    col_labels=cols if y0 == -0.3 else None, hi_cols=[0, 5])
-    for c in range(n + n_f):
-        cx = row_x + (c + 0.5) * cell
-        op_symbol(sc, gl, "x", cx, -1.25, 0.22)
-        op_symbol(sc, gl, "=", cx, -2.85, 0.22)
-    sc.text(gl, "Add the nine products:", [detail_x, -4.9, 0], 0.25)
-    sc.text(gl, "-1 + 0 + 0 + 0 + 0 + 2 + 0 + 0 + 0 = 1", [detail_x, -5.45, 0], 0.25)
-    sc.text(gl, "u_1 = (+1)(-1) + (-1)(-2) = -1 + 2 = 1", [detail_x, -6.1, 0], 0.25)
-    sc.text(gl, "9 products -> 1 sum -> 1 entry in u", [detail_x, -6.7, 0], 0.25)
-    sc.text(gl, "12 rows -> 12 sums -> ONE column", [detail_x, -7.25, 0], 0.25)
-    sc.arrow([8.6, -0.25, 0], [7.6, -0.25, 0], head=0.15)
-    sc.text(gl, "Each column is one node: multiply its matrix entry by its coordinate, then add across the products.", [0, yb - 1.9, 0], 0.26)
-    sc.text(gl, "A dot means 0. Repeat for all 12 rows: each branch gets one signed coordinate difference.", [0, yb - 2.4, 0], 0.26)
+    matrix_icon(sc, gl, C_s, 0, 0, cell, "C_s  (12 x 9)", rows, cols, hi_rows=[0])
+    op_symbol(sc, gl, "x", 5.1, -m * cell / 2, 0.4)
+    vector_x, result_x = 6.0, 10.5
+    matrix_icon(sc, gl, x_all[:, None], vector_x, 0, cell, "x_s  (9)", cols, None, hi_rows=[0, 5])
+    op_symbol(sc, gl, "=", 10.0, -m * cell / 2, 0.4)
+    matrix_icon(sc, gl, u[:, None], result_x, 0, cell, "u  (12 x 1)", rows, None, hi_rows=[0])
+    red = (0.9, 0.04, 0.04, 1)
+    for x, y in [(0, -cell), (5 * cell, -cell),
+                 (vector_x, -cell), (vector_x, -6 * cell), (result_x, -cell)]:
+        sc.rect(x, y, cell, cell, width=0.025, color=red)
+    sc.stroke = 0.025
+    sc.polyline([[0.5, 0.03, 0], [0.6, 0.15, 0], [0.6, 1.0, 0], [6.25, 1.0, 0], [6.25, 0.25, 0]], red)
+    sc.arrow([6.25, 0.25, 0], [6.25, 0.03, 0], head=0.12, color=red)
+    sc.polyline([[3.0, 0.03, 0], [3.1, 0.15, 0], [3.1, 0.55, 0], [5.35, 0.55, 0], [5.35, -2.9, 0]], red)
+    sc.arrow([5.35, -2.9, 0], [5.97, -2.9, 0], head=0.12, color=red)
+    sc.text(gl, "x (+1) = -1", [6.8, -0.34, 0], 0.29, color=red)
+    sc.text(gl, "+", [8.1, -1.65, 0], 0.46, "center", color=red)
+    sc.text(gl, "x (-1) = +2", [6.8, -2.84, 0], 0.29, color=red)
+    sc.text(gl, "-1 + 2 = 1", [6.8, -3.8, 0], 0.31, color=red)
+    sc.polyline([[9.25, -3.7, 0], [9.65, -3.7, 0], [9.65, 0.5, 0], [10.75, 0.5, 0], [10.75, 0.25, 0]], red)
+    sc.arrow([10.75, 0.25, 0], [10.75, 0.03, 0], head=0.12, color=red)
     sc.dump(out / "icon_matvec.json")
     layout["icon_matvec"] = {"panels": [["icon_matvec.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
