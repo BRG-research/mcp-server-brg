@@ -9,7 +9,7 @@ additional length and force conditions. Each step builds on the preceding steps.
 | Script | Dependencies | Purpose |
 |---|---|---|
 | `schek_app.py` | NumPy | Runnable derivation of Schek (1974), with one code cell per tutorial subsection. Computes the small example and the reconstructed networks in part G. |
-| `build_note.py` | NumPy | Executes the tutorial cells and updates the note with their explanations, code, and numerical output. |
+| `build_note.py` | NumPy | Executes the tutorial cells and updates the note with their instructions, code, checkpoints, and numerical output. |
 | `schek_equations.py` | NumPy, SciPy | Checks the equations, analytic Jacobians against finite differences, and constrained iterations. |
 
 Run from the repository root with Python 3.11 or later:
@@ -19,6 +19,16 @@ python -m pip install numpy scipy
 python examples/form_finding/schek_app.py
 python examples/form_finding/schek_equations.py
 ```
+
+In each subsection, read **Build this step**, append the **Add to your program**
+block, and run **Check before continuing** in the same Python session. Each
+checkpoint uses assertions with expected dimensions, values, or equilibrium errors.
+Passing assertions are silent. D.2 completes the linear solver and checks it on
+an independent four-cable network; F adds the nonlinear extension.
+
+The data types are introduced explicitly: `branches` starts as a Python list of
+node-pair tuples; the next step constructs `C_s`, a two-dimensional NumPy array.
+Node labels start at one, while Python array indices start at zero.
 
 The derivation uses NumPy arrays directly: `np.diag(u)` constructs a diagonal
 matrix, `C.T` transposes a matrix, `@` multiplies matrices, and

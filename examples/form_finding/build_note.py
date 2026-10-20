@@ -2,7 +2,8 @@
 
 Each `# %% [id] title` cell of schek_app.py becomes one subsection: its raw docstring is
 the prose, the rest of the cell is shown as code and executed, and what it prints is
-shown under the code.  The result replaces everything between the markers
+shown under the code. Each `# %% check` block is executed and shown as a
+checkpoint after its cell. The result replaces everything between the markers
 `<!-- schek-app:start -->` and `<!-- schek-app:end -->` in the note.
 
     python examples/form_finding/build_note.py
@@ -33,12 +34,13 @@ def cells(source: str):
         m = re.match(r'\s*r?"""(.*?)"""\s*\n', body, flags=re.S)
         prose = m.group(1).strip() if m else ""
         code = body[m.end():] if m else body
+        code, _, check = code.partition("# %% check")
         explain = ""
         if "# %% explain" in code:
             code, tail = code.split("# %% explain", 1)
             e = re.search(r'r?"""(.*?)"""', tail, flags=re.S)
             explain = e.group(1).strip() if e else ""
-        yield cid, title, prose, code.strip("\n"), explain
+        yield cid, title, prose, code.strip("\n"), explain, check.strip()
 
 
 def main():
@@ -53,27 +55,42 @@ def main():
         t = "".join(ch for ch in title.lower() if ch.isalnum() or ch in " -_")
         return t.replace(" ", "-")
     all_cells = list(cells(source))
-    out = [START, "", "## The application, section by section",
-           "",
-           "This is one program, `examples/form_finding/schek_app.py`, read from top to",
-           "bottom. Every subsection is one section of the paper: what the paper says, the",
-           "lines that add it to the program, and what those lines print when the file is",
-           "run. The program is derived from the paper only (NumPy, nothing else); the",
-           "comparison with `compas_fd` comes after it. This section is generated from the",
-           "program by `build_note.py`, so code, output and text cannot drift apart.", "",
-           "Follow parts A to G in order. Each step uses definitions from the earlier steps.",
-           "NumPy performs the calculations; the figures illustrate the arrays and results.",
-           "The `print` calls are optional checks and can be omitted from an implementation.",
-           "The displayed output is rounded for readability; calculations use full precision.", "",
+    out = [START, "", "## Build the force density method step by step", "",
+           "Start with an empty Python file or notebook. Follow the subsections in order:",
+           "each adds data or a calculation that the following steps need. The complete",
+           "program is also available in `examples/form_finding/schek_app.py`.", "",
+           "1. Read **Build this step** to understand the task and its purpose.",
+           "2. Append the **Add to your program** code to the same file or notebook.",
+           "3. Read the explanation, then run **Check before continuing** in the same",
+           "   Python session. Passing assertions produce no output. If one fails, fix",
+           "   that step before proceeding. Keep the check code separate from the solver.", "",
+           "The implementation uses NumPy. A Python list of node pairs stores topology;",
+           "NumPy arrays store vectors and matrices. Every step identifies what it creates.",
+           "`print` calls only inspect values. Displayed output is rounded; calculations",
+           "retain full floating-point precision. No package solver is needed for this derivation.", "",
+           "| Milestone | What you can do |",
+           "|---|---|",
+           "| A.1–A.4 | Represent a network and understand its matrix operations. |",
+           "| B.1–B.3 | Compute branch geometry and test nodal equilibrium. |",
+           "| C.1–C.4 | Derive and execute the linear force density solve. |",
+           "| D.1–D.2 | Reuse a complete linear solver and pass an independent benchmark. |",
+           "| E.1 | Interpret the geometric effect of force densities. |",
+           "| F.1–F.5 | Extend the solver to prescribed lengths and forces. |",
+           "| G.1–G.5 | Apply the same solvers to larger reconstructed examples. |", "",
+           "**The linear force density method is complete at D.2.** Part F is a nonlinear",
+           "extension, not a prerequisite for using the linear method. Package API details",
+           "follow the tutorial for comparison after implementing the method yourself.", "",
+           "This tutorial is generated from the program by `build_note.py`; it executes",
+           "each implementation block and checkpoint before updating this Markdown.", "",
            "Contents", ""]
     last_part = None
-    for cid, title, prose, code, explain in all_cells:
+    for cid, title, prose, code, explain, check in all_cells:
         if cid[0] != last_part:
             out.append(f"- **{PARTS[cid[0]]}**"); last_part = cid[0]
         out.append(f"  - [{title}](#{anchor(title)})")
     out.append("")
     last_part = None
-    for cid, title, prose, code, explain in all_cells:
+    for cid, title, prose, code, explain, check in all_cells:
         if cid[0] != last_part:
             out += [f"## {PARTS[cid[0]]}", ""]; last_part = cid[0]
         buf = io.StringIO()
@@ -83,11 +100,19 @@ def main():
         out += [f"### {title}", ""]
         if prose:
             out += [prose, ""]
-        out += ["```python", code, "```", ""]
+        out += ["**Add to your program:**", "", "```python", code, "```", ""]
         if explain:
             out += [explain, ""]
         if printed:
-            out += ["Printed:", "", "```text", printed, "```", ""]
+            out += ["Example output:", "", "```text", printed, "```", ""]
+        if check:
+            exec(compile(check, f"{APP.name}[{cid}:check]", "exec"), namespace)
+            out += ["**Check before continuing:**", "", "```python", check, "```", ""]
+        if cid == "d2":
+            out += ["**Milestone reached:** you have implemented the linear force density method.",
+                    "The independent four-cable network gives a free-node height of `-0.25 m`",
+                    "and total upward support reaction of `1 N`. Parts E–G explain and extend",
+                    "this solver; the basic method needs no additional iteration.", ""]
     out += [END]
     note = NOTE.read_text()
     i, j = note.index(START), note.index(END) + len(END)

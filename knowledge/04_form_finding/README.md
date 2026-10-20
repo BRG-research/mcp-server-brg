@@ -24,6 +24,11 @@ Follow [the force density tutorial](compas_fd.md) in order:
 6. **Part F:** iterate on force densities to satisfy additional conditions.
 7. **Part G:** apply the method to the paper's reconstructed examples.
 
+Each subsection explains the task, the data types being created, and the meaning
+of the array rows and columns. Append its implementation code, then run its
+checkpoint before continuing. **D.2 completes the linear force density method**;
+the nonlinear conditions in part F extend it.
+
 The derivation uses NumPy directly. Printed output provides optional numerical
 checks; image generation is independent of the method. See the
 [example README](../../examples/form_finding/README.md) for commands and how to
