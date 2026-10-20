@@ -276,8 +276,7 @@ The `+` adds corresponding entries.
 
 The same shapes apply to `y`/`y_f` and `z`/`z_f`. All four outputs `u`, `v`, `w`,
 and `l` are arrays of length 12. One entry, such as `u[0]`, is a scalar.
-The branch length is
-$l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$."""
+"""
 def coordinate_differences(
     x: FloatArray, y: FloatArray, z: FloatArray,
 ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
@@ -290,12 +289,7 @@ def coordinate_differences(
 
 
 # %% explain
-r"""![One illustrative branch between coordinates (0, 0, 0) and (3, 4, 0): differences are -3, -4, and 0, so its length is 5.](images/schek_icon_branch_length.png)
-
-A separate, simple geometry example: `(0, 0, 0)` to `(3, 4, 0)` has length 5.
-The arrays do this for every branch. The matrices only automate the subtractions.
-
-![Worked example: C times the five free x-coordinates plus C_f times the four fixed x-coordinates gives twelve branch differences. Red boxes trace the first branch: 1 times -0.8 plus -1 times -2 equals 1.2.](images/schek_icon_coordinate_differences.png)
+r"""![Worked example: C times the five free x-coordinates plus C_f times the four fixed x-coordinates gives twelve branch differences. Red boxes trace the first branch: 1 times -0.8 plus -1 times -2 equals 1.2.](images/schek_icon_coordinate_differences.png)
 
 **One row → one number. Twelve rows → twelve numbers.**
 For branch `(1, 6)`: $u_1=x_1-x_6=-0.8-(-2)=1.2$ m.
@@ -307,7 +301,7 @@ These coordinates are the example's solved x-coordinates from C.3.
 
 - `u = C @ x + C_f @ x_f`: a $(12 \times 5)$ matrix times 5 free coordinates gives 12 numbers; a $(12 \times 4)$ matrix times 4 fixed coordinates gives 12 numbers; added entry by entry they are the 12 differences $u_j$. For branch 1 (from node 1 to node 6) that is $x_1 - x_6$: the $+1$ sits in `C`, the $-1$ in `C_f`.
 - The lines for `v` and `w` are the same product with the $y$ and $z$ coordinates.
-- `l = np.sqrt(u**2 + v**2 + w**2)`: entry-wise, no matrix: `u**2` squares every entry, the three arrays are added entry by entry, `np.sqrt` takes the root of every entry. 12 lengths."""
+- `l`: the 12 branch lengths."""
 
 
 

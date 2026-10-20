@@ -28,7 +28,7 @@ render fig2 fig2 3000 1600 VIEWER_VIEW=top
 render fig3 fig3 2400 2800 VIEWER_VIEW=top
 render fig4 fig4 3000 1100 VIEWER_VIEW=top
 render fig5 fig5 2600 2600 VIEWER_VIEW=top
-for ic in icon_split icon_matvec icon_transpose icon_diag icon_D icon_solve icon_rhs icon_coordinate_differences icon_branch_length; do render $ic $ic 3600 2000 VIEWER_VIEW=top; done
+for ic in icon_split icon_matvec icon_transpose icon_diag icon_D icon_solve icon_rhs icon_coordinate_differences; do render $ic $ic 3600 2000 VIEWER_VIEW=top; done
 for sch in eq1 eq2 eq4 eq8 eq9 eq10 loop e1 f2 f3 f4 f5 g1; do render scheme_$sch scheme_$sch 3600 2400 VIEWER_VIEW=top; done
 # figure 1: two perspective views of the same net
 render fig1_a fig1_net 2000 1600 VIEWER_ORBIT="$ORBIT"
@@ -54,7 +54,7 @@ def row(ims, gap=60):
     for i in ims:
         sheet.paste(i, (x, h - i.height)); x += i.width + gap      # bottom-aligned, like the paper
     return sheet
-for name in ["fig2", "fig3", "fig4", "fig5"] + [f"fig{k}_plan" for k in range(6, 11)] + ["icon_split", "icon_matvec", "icon_transpose", "icon_diag", "icon_D", "icon_solve", "icon_rhs", "icon_coordinate_differences", "icon_branch_length"] + [f"scheme_{k}" for k in ["eq1", "eq2", "eq4", "eq8", "eq9", "eq10", "loop", "e1", "f2", "f3", "f4", "f5", "g1"]]:
+for name in ["fig2", "fig3", "fig4", "fig5"] + [f"fig{k}_plan" for k in range(6, 11)] + ["icon_split", "icon_matvec", "icon_transpose", "icon_diag", "icon_D", "icon_solve", "icon_rhs", "icon_coordinate_differences"] + [f"scheme_{k}" for k in ["eq1", "eq2", "eq4", "eq8", "eq9", "eq10", "loop", "e1", "f2", "f3", "f4", "f5", "g1"]]:
     im = load(name); im.save(out / f"schek_{name}.png", optimize=True); print(name, im.size)
 row([load("fig1_a"), load("fig1_b")]).save(out / "schek_fig1.png", optimize=True)
 for k in range(6, 11):
