@@ -151,12 +151,16 @@ transpose is `C.T`, and `@` is the matrix product.
 
 Use `np.array(...)` to create the vector and `np.diag(...)` to construct its
 diagonal matrix directly. Console formatting is optional and does not
-affect the calculation.
+affect the calculation. `FloatArray` is only a type hint for a NumPy array of
+64-bit floats; it does not create another array class.
 
 **Add to your program:**
 
 ```python
 import numpy as np
+from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
 
 u_example = np.array([2.0, -1.0, 3.0])
 U_example = np.diag(u_example)
@@ -178,8 +182,9 @@ branch 1 connects node 1 to node 6. Its position in the list defines its branch
 number; the tuple entries are node numbers, not coordinates. Python indexes the
 list from zero, while the node labels in this example start at one.
 
-`n, n_f = 5, 4` assigns two Python integers: five free nodes and four fixed nodes.
-`m = len(branches)` counts the tuples, giving twelve branches. None of these
+`n: int = 5
+n_f: int = 4` assigns two Python integers: five free nodes and four fixed nodes.
+`m: int = len(branches)` counts the tuples, giving twelve branches. None of these
 lines creates geometry or computes forces. A.3 turns this edge list into the
 NumPy connectivity array.
 
@@ -193,7 +198,7 @@ of the paper's figure 2: nodes 1 to 5 free, 6 to 9 fixed, 12 branches.
 **Add to your program:**
 
 ```python
-branches = [(1, 6), (2, 7), (3, 8), (4, 9),      # 1-4: one branch from each free corner to its anchor
+branches: list[tuple[int, int]] = [(1, 6), (2, 7), (3, 8), (4, 9),      # 1-4: one branch from each free corner to its anchor
             (1, 4), (1, 2), (2, 3), (3, 4),      # 5-8: the ring
             (4, 5), (1, 5), (2, 5), (3, 5)]      # 9-12: four spokes to the centre node 5
 n, n_f = 5, 4                                    # free nodes 1..5, fixed nodes 6..9
@@ -270,12 +275,12 @@ icon below shows the split. The arrays store zeros as numeric zeros.
 **Add to your program:**
 
 ```python
-C_s = np.zeros((m, n + n_f))
+C_s: FloatArray = np.zeros((m, n + n_f))
 for j, (i, k) in enumerate(branches):
     C_s[j, i - 1] = +1.0                          # node i(j): +1   (Python indices start at 0)
     C_s[j, k - 1] = -1.0                          # node k(j): -1
-C = C_s[:, :n]                                    # (m, n)   free columns
-C_f = C_s[:, n:]                                  # (m, n_f) fixed columns
+C: FloatArray = C_s[:, :n]                                    # (m, n)   free columns
+C_f: FloatArray = C_s[:, n:]                                  # (m, n_f) fixed columns
 
 print("C_s shape:", C_s.shape)
 print(C_s)
@@ -368,6 +373,18 @@ connectivity. We choose the support coordinates below to make a runnable example
 | 8 | 2 | 0 | 0 |
 | 9 | 0 | 2 | 1 |
 
+**Types and shapes:** these are arrays, not single numbers.
+
+| Variables | Python type | Shape | One entry means |
+|---|---|---|---|
+| `x_f`, `y_f`, `z_f` | `FloatArray` (`np.ndarray` of float64) | `(4,)` | One coordinate of a fixed node, ordered 6, 7, 8, 9 |
+| `p_x`, `p_y`, `p_z` | `FloatArray` | `(5,)` | One load component at a free node, ordered 1, 2, 3, 4, 5 |
+| `x`, `y`, `z` | `FloatArray` | `(5,)` | One coordinate of a free node; computed by the solve in C.3 |
+
+For example, `x_f` is `[-2, 0, 2, 0]`; `x_f[0]` is the single number `-2`,
+the x-coordinate of node 6. `x` is not defined yet: B.2 declares function arguments
+for these arrays, and C.3 later solves for their values.
+
 We also choose a downward load of 0.5 kN on every free node. The 2 m offsets,
 1 m heights, and 0.5 kN loads are example parameters, not inferred measurements.
 Change them to define a different problem; the solver then finds its equilibrium.
@@ -375,17 +392,26 @@ Change them to define a different problem; the solver then finds its equilibrium
 **Add to your program:**
 
 ```python
-x_f = np.array([-2.0, 0.0, 2.0, 0.0])             # anchors 6, 7, 8, 9
-y_f = np.array([0.0, -2.0, 0.0, 2.0])
-z_f = np.array([0.0, 1.0, 0.0, 1.0])             # two anchors lifted by 1 m
-p_x = np.zeros(n)
-p_y = np.zeros(n)
-p_z = np.full(n, -0.5)                            # 0.5 kN downward at every free node
+x_f: FloatArray = np.array([-2.0, 0.0, 2.0, 0.0])             # anchors 6, 7, 8, 9
+y_f: FloatArray = np.array([0.0, -2.0, 0.0, 2.0])
+z_f: FloatArray = np.array([0.0, 1.0, 0.0, 1.0])             # two anchors lifted by 1 m
+p_x: FloatArray = np.zeros(n)
+p_y: FloatArray = np.zeros(n)
+p_z: FloatArray = np.full(n, -0.5)                            # 0.5 kN downward at every free node
 ```
 
 ### B.2 Coordinate differences and lengths, equation (1)
 
-**Build this step.** Write a function that converts any proposed free-node coordinates into branch vectors and lengths. It uses the connectivity and fixed coordinates already defined; it does not solve equilibrium.
+**Build this step.** Given node positions, measure each branch. This function does
+not find or move the nodes. The linear solve in C.3 finds equilibrium positions;
+this function then measures the branches between them.
+
+| Output array | Meaning of one entry |
+|---|---|
+| `u` | Start x minus end x |
+| `v` | Start y minus end y |
+| `w` | Start z minus end z |
+| `l` | Distance between the endpoints |
 
 Multiplying the coordinates by the branch-node matrix gives, for every branch, the
 difference of the coordinates of its two end nodes (1), operation 2 of A.4:
@@ -403,20 +429,43 @@ Split the same endpoint subtraction into free-node and fixed-node contributions:
 
 `x` stores the five free-node coordinates. `x_f` stores the four fixed-node
 coordinates; its first entry is $x_6$. Both products return one value per branch.
-The `+` adds corresponding entries. The branch length is
+The `+` adds corresponding entries.
+
+| Multiplication | Shapes | Result |
+|---|---|---|
+| `C @ x` | `(12, 5) @ (5,)` | 12 free-node contributions |
+| `C_f @ x_f` | `(12, 4) @ (4,)` | 12 fixed-node contributions |
+| Add | `(12,) + (12,)` | `u`: 12 branch differences |
+
+The same shapes apply to `y`/`y_f` and `z`/`z_f`. All four outputs `u`, `v`, `w`,
+and `l` are arrays of length 12. One entry, such as `u[0]`, is a scalar.
+The branch length is
 $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$.
 
 **Add to your program:**
 
 ```python
-def coordinate_differences(x, y, z):
-    """Eq. (1).  Returns u, v, w and the lengths l (each of shape (m,))."""
+def coordinate_differences(
+    x: FloatArray, y: FloatArray, z: FloatArray,
+) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
+    """Eq. (1): free coordinate arrays (n,) -> branch arrays u, v, w, l (m,)."""
     u = C @ x + C_f @ x_f
     v = C @ y + C_f @ y_f
     w = C @ z + C_f @ z_f
     l = np.sqrt(u**2 + v**2 + w**2)
     return u, v, w, l
 ```
+
+![One illustrative branch between coordinates (0, 0, 0) and (3, 4, 0): differences are -3, -4, and 0, so its length is 5.](images/schek_icon_branch_length.png)
+
+A separate, simple geometry example: `(0, 0, 0)` to `(3, 4, 0)` has length 5.
+The arrays do this for every branch. The matrices only automate the subtractions.
+
+![Worked example: C times the five free x-coordinates plus C_f times the four fixed x-coordinates gives twelve branch differences. Red boxes trace the first branch: 1 times -0.8 plus -1 times -2 equals 1.2.](images/schek_icon_coordinate_differences.png)
+
+**One row → one number. Twelve rows → twelve numbers.**
+For branch `(1, 6)`: $u_1=x_1-x_6=-0.8-(-2)=1.2$ m.
+These coordinates are the example's solved x-coordinates from C.3.
 
 ![scheme: equation (1)](images/schek_scheme_eq1.png)
 
@@ -609,9 +658,9 @@ exists and is unique for each prescribed $q$, so $q$ serves as the design parame
 **Add to your program:**
 
 ```python
-x = np.linalg.solve(D, p_x - D_f @ x_f)            # eq. (9)
-y = np.linalg.solve(D, p_y - D_f @ y_f)
-z = np.linalg.solve(D, p_z - D_f @ z_f)
+x: FloatArray = np.linalg.solve(D, p_x - D_f @ x_f)            # eq. (9)
+y: FloatArray = np.linalg.solve(D, p_y - D_f @ y_f)
+z: FloatArray = np.linalg.solve(D, p_z - D_f @ z_f)
 ```
 
 ![scheme: equation (9)](images/schek_scheme_eq9.png)

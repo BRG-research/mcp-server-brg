@@ -459,6 +459,67 @@ def icon_scenes(gl, out, layout):
     sc.dump(out / "icon_solve.json")
     layout["icon_solve"] = {"panels": [["icon_solve.json", [0, 0, 0]]], "views": ["top"], "caption": ""}
 
+    sc = scene("icon_coordinate_differences", "")
+    fixed_x = x_all[n:]
+    solved_x = np.linalg.solve(D, -(C.T @ np.diag(q) @ C_f) @ fixed_x)
+    differences = C @ solved_x + C_f @ fixed_x
+    np.testing.assert_allclose(differences[0], 1.2, atol=1e-12)
+    coordinate_cell, coordinate_text = 0.8, 0.24
+    matrix_icon(sc, gl, C, 0, 0, coordinate_cell, "C  (12 x 5)", rows, cols[:n], text_h=coordinate_text)
+    op_symbol(sc, gl, "x", 4.5, -2.0, 0.4)
+    matrix_icon(sc, gl, solved_x[:, None], 5.0, 0, coordinate_cell, "x  (5)",
+                fmt="{:.2f}", text_h=coordinate_text)
+    op_symbol(sc, gl, "+", 6.55, -2.0, 0.4)
+    matrix_icon(sc, gl, C_f, 7.3, 0, coordinate_cell, "C_f  (12 x 4)",
+                col_labels=cols[n:], text_h=coordinate_text)
+    op_symbol(sc, gl, "x", 11.0, -2.0, 0.4)
+    matrix_icon(sc, gl, fixed_x[:, None], 11.5, 0, coordinate_cell, "x_f  (4)",
+                fmt="{:.2f}", text_h=coordinate_text)
+    op_symbol(sc, gl, "=", 13.05, -2.0, 0.4)
+    matrix_icon(sc, gl, differences[:, None], 13.8, 0, coordinate_cell, "u  (12)",
+                fmt="{:.2f}", text_h=coordinate_text)
+    red = (0.9, 0.04, 0.04, 1)
+    for x0 in [0, 5.0, 7.3, 11.5, 13.8]:
+        sc.rect(x0, -coordinate_cell, coordinate_cell, coordinate_cell, width=0.025, color=red)
+    sc.stroke = 0.025
+    for start, end in [(0.8, 5.4), (8.1, 11.9)]:
+        sc.polyline([[start, 0.03, 0], [start + 0.1, 0.15, 0], [start + 0.1, 1.0, 0],
+                     [end, 1.0, 0], [end, 0.25, 0]], red)
+        sc.arrow([end, 0.25, 0], [end, 0.03, 0], head=0.12, color=red)
+    sc.text(gl, "u_1 = 1 x (-0.8) + (-1) x (-2) = -0.8 + 2 = 1.2", [0, -11.2, 0], 0.29, color=red)
+    sc.polyline([[10.9, -11.1, 0], [12.65, -11.1, 0], [12.65, 0.55, 0],
+                 [14.2, 0.55, 0], [14.2, 0.25, 0]], red)
+    sc.arrow([14.2, 0.25, 0], [14.2, 0.03, 0], head=0.12, color=red)
+    sc.text(gl, "12 rows -> 12 numbers", [0, -11.9, 0], 0.27)
+    sc.dump(out / "icon_coordinate_differences.json")
+    layout["icon_coordinate_differences"] = {
+        "panels": [["icon_coordinate_differences.json", [0, 0, 0]]], "views": ["top"], "caption": ""
+    }
+
+    sc = scene("icon_branch_length", "")
+    red = (0.9, 0.04, 0.04, 1)
+    sc.line([0, 0, 0], [3, 4, 0], width=0.03)
+    sc.point([0, 0, 0], width=0.12)
+    sc.point([3, 4, 0], width=0.12)
+    sc.stroke = 0.02
+    sc.arrow([3, 0, 0], [0.08, 0, 0], head=0.14, color=red)
+    sc.arrow([3, 3.92, 0], [3, 0.08, 0], head=0.14, color=red)
+    sc.polyline([[2.75, 0, 0], [2.75, 0.25, 0], [3, 0.25, 0]], red)
+    sc.text(gl, "node 1: (0, 0, 0)", [-0.6, -0.75, 0], 0.25)
+    sc.text(gl, "node 6: (3, 4, 0)", [2.0, 4.35, 0], 0.25)
+    sc.text(gl, "u = -3", [1.1, -0.35, 0], 0.27, color=red)
+    sc.text(gl, "v = -4", [3.25, 1.8, 0], 0.27, color=red)
+    sc.text(gl, "l = 5", [0.1, 2.3, 0], 0.3)
+    sc.text(gl, "u = 0 - 3 = -3", [5, 3.5, 0], 0.3)
+    sc.text(gl, "v = 0 - 4 = -4", [5, 2.7, 0], 0.3)
+    sc.text(gl, "w = 0 - 0 =  0", [5, 1.9, 0], 0.3)
+    sc.text(gl, "l = sqrt(9 + 16 + 0) = 5", [5, 0.8, 0], 0.3)
+    sc.text(gl, "Repeat for each branch.", [5, -0.4, 0], 0.27)
+    sc.dump(out / "icon_branch_length.json")
+    layout["icon_branch_length"] = {
+        "panels": [["icon_branch_length.json", [0, 0, 0]]], "views": ["top"], "caption": ""
+    }
+
     # icon 7: the right-hand side, fixed nodes move to the known side
     sc = scene("icon_rhs", "")
     x1, yb = matrix_icon(sc, gl, D_f, 0, 0, cell, "D_f = C^t Q C_f  (5 x 4)", cols[:n], cols[n:])
