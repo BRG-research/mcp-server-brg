@@ -5,6 +5,7 @@
 | Note | Package | Repository |
 |---|---|---|
 | [Force density method with compas_fd](compas_fd.md) | `compas_fd` — linear and constrained force density solvers; full derivation of Schek (1974) | <https://github.com/BlockResearchGroup/compas_fd> |
+| [The same tutorial as a notebook](compas_fd.ipynb) | runnable cells with their outputs already stored | generated from `examples/form_finding/schek_app.py` |
 | [Dynamic relaxation with compas_dr](compas_dr.md) | `compas_dr` — iterative solver with prescribed forces, lengths, and elastic bars | <https://github.com/BlockResearchGroup/compas_dr> |
 | [COMPAS FormFinder (compas-FoFin)](compas_fofin.md) | Rhino 8 plugin that drives `compas_fd` interactively | <https://github.com/BlockResearchGroup/compas-FoFin> |
 
@@ -30,8 +31,14 @@ net — every matrix printed with labelled rows and columns. Append each
 implementation block in order; A.4 has no code. **D.2 completes the linear force
 density method**; part F adds wishes about lengths and forces on top of it.
 
-The derivation uses NumPy directly. Printed output provides optional numerical
-checks. Matrices are shown as labelled numbers in the text rather than as diagrams;
+The tutorial exists in two forms, both generated from the same
+`examples/form_finding/schek_app.py`: the Markdown note above, and
+[compas_fd.ipynb](compas_fd.ipynb), a Jupyter notebook whose cells you can run and
+change. The notebook ships with every output already stored, so it reads without
+running anything.
+
+The derivation uses NumPy directly, plus `scipy.optimize` in part F. Printed output
+provides optional numerical checks. Matrices are shown as labelled numbers in the text rather than as diagrams;
 the only images are the network figures of the paper. See the
 [example README](../../examples/form_finding/README.md) for commands and how to
 regenerate the tutorial. Compare with `compas_fd` after understanding the linear

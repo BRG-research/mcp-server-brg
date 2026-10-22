@@ -10,6 +10,7 @@ additional length and force conditions. Each step builds on the preceding steps.
 |---|---|---|
 | `schek_app.py` | NumPy, SciPy | Runnable derivation of Schek (1974), with one code cell per tutorial subsection. Computes the small example and the reconstructed networks in part G. |
 | `build_note.py` | NumPy, SciPy | Executes the tutorial cells and updates the note with their instructions, code, and numerical output. |
+| `build_notebook.py` | NumPy, SciPy, nbformat, nbclient | Turns the same cells into `knowledge/04_form_finding/compas_fd.ipynb` and runs it so every output is stored. |
 | `schek_equations.py` | NumPy, SciPy | Checks the equations, analytic Jacobians against finite differences, and constrained iterations. |
 
 Run from the repository root with Python 3.11 or later:
@@ -50,9 +51,14 @@ Edit the explanations and code cells in `schek_app.py`, then regenerate the note
 python examples/form_finding/build_note.py
 ```
 
+```bash
+python examples/form_finding/build_notebook.py          # notebook, executed
+python examples/form_finding/build_notebook.py --fast   # notebook, without running it
+```
+
 The generated section lies between `<!-- schek-app:start -->` and
 `<!-- schek-app:end -->` in `knowledge/04_form_finding/compas_fd.md`. Changes made
-directly inside that section will be overwritten. Edit the introductory theory,
+directly inside that section will be overwritten, and so is the whole notebook. Edit the introductory theory,
 package API comparison, verification, and references directly in the Markdown file.
 
 The generator rounds displayed output for readability; computations retain full

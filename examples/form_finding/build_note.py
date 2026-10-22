@@ -23,6 +23,11 @@ APP = HERE / "schek_app.py"
 NOTE = HERE.parents[1] / "knowledge/04_form_finding/compas_fd.md"
 START, END = "<!-- schek-app:start -->", "<!-- schek-app:end -->"
 
+PARTS_TITLES = {"a": "Part A. The network as data", "b": "Part B. Equilibrium, the nonlinear form",
+                "c": "Part C. The force density trick: a linear system", "d": "Part D. The form-finding loop",
+                "e": "Part E. What the force densities mean", "f": "Part F. Asking for lengths and forces",
+                "g": "Part G. The paper's examples, recomputed"}
+
 
 def cells(source: str):
     parts = re.split(r"^# %% \[([a-z0-9]+)\] (.*)$", source, flags=re.M)
@@ -45,10 +50,7 @@ def main():
     source = APP.read_text()
     namespace = {"__name__": "schek_app", "__file__": str(APP)}
     sys.path.insert(0, str(HERE))
-    PARTS = {"a": "Part A. The network as data", "b": "Part B. Equilibrium, the nonlinear form",
-             "c": "Part C. The force density trick: a linear system", "d": "Part D. The form-finding loop",
-             "e": "Part E. What the force densities mean", "f": "Part F. Asking for lengths and forces",
-             "g": "Part G. The paper's examples, recomputed"}
+    PARTS = PARTS_TITLES
     def anchor(title):
         t = "".join(ch for ch in title.lower() if ch.isalnum() or ch in " -_")
         return t.replace(" ", "-")
