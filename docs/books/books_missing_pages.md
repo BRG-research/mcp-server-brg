@@ -18,6 +18,12 @@ The other plates are reproduced from archive.org scans of the atlases.
 |---|---|
 | Tafel I (fold-out plate) | Rescan with the left edge: about 1–2 cm (part of the dome drawing and the running title) is cut off in the scan |
 
+## Henneberg, *Die graphische Statik der starren Systeme* (1911)
+
+| Item | Needed |
+|---|---|
+| p. 26, Fig. 18 | Rescan or photo with the inner margin: the right end of the force polygon (vertex 3) lies in the binding gutter |
+
 ## Theses and papers
 
 | Item | Needed |
