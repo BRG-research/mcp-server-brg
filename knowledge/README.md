@@ -8,7 +8,8 @@ in `concepts/` and can link to multiple domains without duplicating explanations
 - Executable examples belong in `examples/`; reusable computation in `src/brg_mcp/adapters/`.
 - Start with the [Form Finding walkthrough](04_form_finding/README.md).
 
-Use [the note template](../docs/templates/knowledge-note.md). The authoritative
+Write formulas as in [the formula style](FORMULA_STYLE.md) (formula, plain reading, symbol table,
+worked numbers). Use [the note template](../docs/templates/knowledge-note.md). The authoritative
 lookup catalog is `config/knowledge.yaml`: each entry needs a unique, stable `id`,
 `title`, a domain from `config/domains.yaml`, a repository-relative Markdown `path`,
 and a `sources` list. Keep IDs unchanged when moving files. Use simple lowercase
