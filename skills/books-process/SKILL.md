@@ -15,6 +15,8 @@ Input: a local PDF path or HTTPS URL supplied by the user.
 - Find the existing Books workspace from the supplied path, `BRG_BOOKS_DIR`, or a
   sibling `Books/` directory. Otherwise create a separate local workspace beside
   the PDF, or ask for a location when the input is a URL. Keep PDFs outside this code repo.
+- The workspace `tools/` folder is this repo's `books-tools/` (symlink it: `ln -s <repo>/books-tools <Books>/tools`);
+  `books-tools/templates/` holds example per-book briefs and a PROCESSING.md from a finished book.
 - Check PDF/image tooling and the workspace's trusted conversion scripts/briefs.
   If required tools are missing, report the exact missing dependency and complete
   any feasible scan/contents inspection; do not pretend conversion was completed.
@@ -25,7 +27,14 @@ Input: a local PDF path or HTTPS URL supplied by the user.
 ## Process
 
 1. Check pages, scan quality, contents, and errata. Save scope/progress in the book's `PROCESSING.md`.
-   Spread scans: `tools/scan_split.py` (check one spread's rotation first); OCR draft: `tools/scan_ocr.sh`.
+   Spread scans: `tools/scan_split.py` (check one spread's rotation first).
+   OCR draft: `tools/mistral_ocr.py` (preferred: Markdown with LaTeX equations and equation numbers, about $0.001/page;
+   key in `~/.config/mistral/api_key`; only public-domain scans and BRG's own publications), else `tools/scan_ocr.sh` (tesseract).
+   Map printed pages, detect duplicate scans (same printed number / near-identical image) and gaps with Python, not by reading.
+   Cost: translation and proofread sub-agents run on Sonnet, ≤ 12 printed pages per job, working from the OCR draft and
+   cropped equation/figure zones (never whole spreads in bulk). Sonnet proofreaders list doubtful pages under FLAGS;
+   one Opus pass checks only those pages. Run automatic checks first (KaTeX compiles; every number, equation, figure
+   and § number of the OCR appears in the translation; page markers complete).
 2. Read workspace `tools/TRANSLATE_BRIEF.md` (or `AGENT_BRIEF.md`; ETH variant for course material);
    follow the shared guide. Work in chapter-sized units and resume existing work without overwriting it.
 3. Transcribe/translate to `src/` with exact formulas, printed page/section markers,
@@ -38,8 +47,9 @@ Input: a local PDF path or HTTPS URL supplied by the user.
    and FIGURES; follow the guide's construction rules. Publish the scanned pages with `tools/scan_index.py`
    (`scans/` images + `SCANS.md`, printed page → scan) and link SCANS.md from README, so every page can be checked.
    Add `cover.jpg` (the scanned cover, or the title page; ≈600 px wide, scanner edges trimmed) for the library shelf.
-6. Regenerate `LIBRARY.md` (`tools/r2_library_map.sh` for the published library, or `tools/library_map.py`);
-   verify build reports. Keep incomplete chapters explicitly marked unfinished.
+6. After upload, add the book to R2 `PROCESSED.md` (`| \`<id>/\` | YYYY-MM-DD | done |`; only `done` entries appear
+   in LIBRARY.md and on the course website, with that date), then regenerate and upload `LIBRARY.md`
+   (`tools/r2_library_map.sh --upload`); verify build reports. Unfinished books get no `done` row.
 7. Record what is still missing or unreadable (pages, plates, sources) in the repo's
    `docs/books/books_missing_pages.md`: a short needs-only list; remove items once resolved and books once complete.
 

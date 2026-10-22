@@ -1,0 +1,817 @@
+[
+ {
+  "n": 1,
+  "file": "01-sd1-l00-introduction-p1.md",
+  "title": "Lecture 0 \u2014 Structural Design (introduction), part 1",
+  "src": [
+   "01-lecture-l-structural-design-lecture-slides 1-62",
+   "01-lecture-l-structural-design-l00-einf-hrung-teil-2 1-34"
+  ],
+  "kind": "slides",
+  "pos": 1
+ },
+ {
+  "n": 2,
+  "file": "02-sd1-l00-introduction-p2.md",
+  "title": "Lecture 0 \u2014 Structural Design (introduction), part 2",
+  "src": [
+   "01-lecture-l-structural-design-l00-einf-hrung-teil-3 1-63"
+  ],
+  "kind": "slides",
+  "pos": 2
+ },
+ {
+  "n": 3,
+  "file": "03-sd1-l00-introduction-p3.md",
+  "title": "Lecture 0 \u2014 Structural Design (introduction), part 3",
+  "src": [
+   "01-lecture-l-structural-design-l00-einf-hrung-teil-4 1-49",
+   "01-lecture-l-structural-design-l00-einf-hrung-teil-5 1-28"
+  ],
+  "kind": "slides",
+  "pos": 3
+ },
+ {
+  "n": 4,
+  "file": "04-sd1-l01-equilibrium.md",
+  "title": "Lecture 1 \u2014 Equilibrium",
+  "src": [
+   "01-lecture-l1-equilibrium-lecture-slides 1-76"
+  ],
+  "kind": "slides",
+  "pos": 4
+ },
+ {
+  "n": 5,
+  "file": "05-sd1-l02-graphic-statics-p1.md",
+  "title": "Lecture 2 \u2014 Graphic statics and dimensioning, part 1",
+  "src": [
+   "01-lecture-l2-graphic-statics-dimensioning-lecture-slides 1-61"
+  ],
+  "kind": "slides",
+  "pos": 5
+ },
+ {
+  "n": 6,
+  "file": "06-sd1-l02-graphic-statics-p2.md",
+  "title": "Lecture 2 \u2014 Graphic statics (VL02 slides)",
+  "src": [
+   "01-lecture-l2-graphic-statics-dimensioning-vl02-graphische-statik-grap 1-72"
+  ],
+  "kind": "slides",
+  "pos": 6
+ },
+ {
+  "n": 14,
+  "file": "07-sd1-ex01-02-equilibrium-graphic-statics.md",
+  "title": "Exercises I.1\u2013I.2 \u2014 Equilibrium; graphic statics",
+  "src": [
+   "01-exercise-equilibrium-1-1-resultant-of-two-non-parallel-forces",
+   "01-exercise-equilibrium-1-2-resultant-of-several-non-parallel-forces",
+   "01-exercise-equilibrium-1-3-resultant-of-parallel-forces",
+   "01-exercise-equilibrium-1-4-stability",
+   "01-exercise-equilibrium-task-exercise-01",
+   "01-exercise-graphic-statics-2-1-form-diagram-subsystem-force-diagram",
+   "01-exercise-graphic-statics-2-2-analysis-step-by-step",
+   "01-exercise-graphic-statics-2-3-comparison-analysis-form-finding",
+   "01-exercise-graphic-statics-2-4-form-finding-step-by-step",
+   "01-exercise-graphic-statics-2-5-dimensioning",
+   "01-exercise-graphic-statics-2-6-formulary",
+   "01-exercise-graphic-statics-task-exercise-02"
+  ],
+  "kind": "exercise",
+  "pos": 7
+ },
+ {
+  "n": 7,
+  "file": "08-sd1-l03-cables-p1.md",
+  "title": "Lecture 3 \u2014 Cables, part 1",
+  "src": [
+   "01-lecture-l3-cables-lecture-slides 1-82"
+  ],
+  "kind": "slides",
+  "pos": 8
+ },
+ {
+  "n": 8,
+  "file": "09-sd1-l03-cables-p2.md",
+  "title": "Lecture 3 \u2014 Cables, part 2",
+  "src": [
+   "01-lecture-l3-cables-lecture-slides 83-164"
+  ],
+  "kind": "slides",
+  "pos": 9
+ },
+ {
+  "n": 9,
+  "file": "10-sd1-l04-arches-p1.md",
+  "title": "Lecture 4 \u2014 Arches, part 1",
+  "src": [
+   "01-lecture-l4-arches-lecture-slides 1-74"
+  ],
+  "kind": "slides",
+  "pos": 10
+ },
+ {
+  "n": 10,
+  "file": "11-sd1-l04-arches-p2.md",
+  "title": "Lecture 4 \u2014 Arches, part 2",
+  "src": [
+   "01-lecture-l4-arches-lecture-slides 75-148"
+  ],
+  "kind": "slides",
+  "pos": 11
+ },
+ {
+  "n": 11,
+  "file": "12-sd1-l05-arch-cable-p1.md",
+  "title": "Lecture 5 \u2014 Arch-cable structures, part 1",
+  "src": [
+   "01-lecture-l5-arch-cable-structures-lecture-slides 1-67"
+  ],
+  "kind": "slides",
+  "pos": 12
+ },
+ {
+  "n": 12,
+  "file": "13-sd1-l05-arch-cable-p2.md",
+  "title": "Lecture 5 \u2014 Arch-cable structures, part 2",
+  "src": [
+   "01-lecture-l5-arch-cable-structures-lecture-slides 68-134"
+  ],
+  "kind": "slides",
+  "pos": 13
+ },
+ {
+  "n": 13,
+  "file": "14-sd1-l05-arch-cable-p3.md",
+  "title": "Lecture 5 \u2014 Arch-cable structures, part 3",
+  "src": [
+   "01-lecture-l5-arch-cable-structures-lecture-slides 135-201"
+  ],
+  "kind": "slides",
+  "pos": 14
+ },
+ {
+  "n": 15,
+  "file": "15-sd1-ex03-05-cables-arches-arch-cable.md",
+  "title": "Exercises I.3\u2013I.5 \u2014 Cables; arches; arch-cable structures",
+  "src": [
+   "01-exercise-cables-3-1-from-point-load-to-uniformly-distributed-load",
+   "01-exercise-cables-3-2-construction-of-a-parabola",
+   "01-exercise-cables-3-3-loads",
+   "01-exercise-cables-3-4-tributary-area",
+   "01-exercise-arches-4-1-thrust-line-trial-funicular",
+   "01-exercise-arches-4-2-form-finding-under-specific-constraints",
+   "01-exercise-arches-4-3-dividing-systems",
+   "01-exercise-arches-task-exercise-4",
+   "01-exercise-arch-cable-structures-5-1-supports",
+   "01-exercise-arch-cable-structures-5-2-arch-cable-structures",
+   "01-exercise-arch-cable-structures-5-3-comparison-span-and-cantilever",
+   "01-exercise-arch-cable-structures-task-exercise-5"
+  ],
+  "kind": "exercise",
+  "pos": 15
+ },
+ {
+  "n": 16,
+  "file": "16-sd1-ex-additional.md",
+  "title": "Additional exercise (Structural Design I) with solution",
+  "src": [
+   "01-exercise-additional-exercise-exercise-bung-x",
+   "01-exercise-additional-exercise-solution-bung-x"
+  ],
+  "kind": "exercise",
+  "pos": 16
+ },
+ {
+  "n": 17,
+  "file": "17-sd2-doc-overview-glossary-compendium.md",
+  "title": "Structural Design II \u2014 semester overview, glossary, compendium",
+  "src": [
+   "02-course-documents-semester-bersicht-teii-fs23",
+   "02-course-documents-glossary-engl-germ",
+   "02-exercise-additional-exercise-compendium-sd-i-ii"
+  ],
+  "kind": "exercise",
+  "pos": 17
+ },
+ {
+  "n": 24,
+  "file": "18-sd2-l06-trusses-p1.md",
+  "title": "Lecture 6 \u2014 Trusses, part 1",
+  "src": [
+   "02-lecture-l06-trusses-lecture-slides 1-62"
+  ],
+  "kind": "slides",
+  "pos": 18
+ },
+ {
+  "n": 25,
+  "file": "19-sd2-l06-trusses-p2.md",
+  "title": "Lecture 6 \u2014 Trusses, part 2",
+  "src": [
+   "02-lecture-l06-trusses-lecture-slides 63-121",
+   "02-lecture-l06-trusses-vl06-kolloquium-fachwerke-trusses 1-3"
+  ],
+  "kind": "slides",
+  "pos": 19
+ },
+ {
+  "n": 26,
+  "file": "20-sd2-l07-beams-p1.md",
+  "title": "Lecture 7 \u2014 Beams, part 1",
+  "src": [
+   "02-lecture-l07-beams-lecture-slides 1-50"
+  ],
+  "kind": "slides",
+  "pos": 20
+ },
+ {
+  "n": 27,
+  "file": "21-sd2-l07-beams-p2.md",
+  "title": "Lecture 7 \u2014 Beams, part 2",
+  "src": [
+   "02-lecture-l07-beams-lecture-slides 51-94",
+   "02-lecture-l07-beams-vl07-beams-colloquium 1-5"
+  ],
+  "kind": "slides",
+  "pos": 21
+ },
+ {
+  "n": 28,
+  "file": "22-sd2-l08-frames-p1.md",
+  "title": "Lecture 8 \u2014 Frames, part 1",
+  "src": [
+   "02-lecture-l08-frames-lecture-slides 1-45"
+  ],
+  "kind": "slides",
+  "pos": 22
+ },
+ {
+  "n": 29,
+  "file": "23-sd2-l08-frames-p2.md",
+  "title": "Lecture 8 \u2014 Frames, part 2",
+  "src": [
+   "02-lecture-l08-frames-lecture-slides 46-85",
+   "02-lecture-l08-frames-vl08-rahmen-frames-colloquium 1-6"
+  ],
+  "kind": "slides",
+  "pos": 23
+ },
+ {
+  "n": 30,
+  "file": "24-sd2-l09-plates-columns-bracing-p1.md",
+  "title": "Lecture 9 \u2014 Plates, columns and bracing, part 1",
+  "src": [
+   "02-lecture-l09-plates-columns-and-bracing-lecture-slides 1-56"
+  ],
+  "kind": "slides",
+  "pos": 24
+ },
+ {
+  "n": 31,
+  "file": "25-sd2-l09-plates-columns-bracing-p2.md",
+  "title": "Lecture 9 \u2014 Plates, columns and bracing, part 2",
+  "src": [
+   "02-lecture-l09-plates-columns-and-bracing-lecture-slides 57-112"
+  ],
+  "kind": "slides",
+  "pos": 25
+ },
+ {
+  "n": 32,
+  "file": "26-sd2-l09-plates-columns-bracing-p3.md",
+  "title": "Lecture 9 \u2014 Plates, columns and bracing, part 3",
+  "src": [
+   "02-lecture-l09-plates-columns-and-bracing-lecture-slides 113-168"
+  ],
+  "kind": "slides",
+  "pos": 26
+ },
+ {
+  "n": 33,
+  "file": "27-sd2-ex06-10-trusses-beams-frames-plates-columns.md",
+  "title": "Exercises II.6\u2013II.10 \u2014 Trusses; beams; frames; plates; columns and bracing",
+  "src": [
+   "02-exercise-trusses-6-1-reaction-forces",
+   "02-exercise-trusses-6-2-internal-statical-determinacy",
+   "02-exercise-trusses-6-3-zero-members",
+   "02-exercise-trusses-task-exercise-06",
+   "02-exercise-beams-7-2-force-flow-in-a-beam-node-by-node",
+   "02-exercise-beams-7-3-force-flow-in-a-beam-superposition",
+   "02-exercise-beams-7-1-intersecting-elements",
+   "02-exercise-beams-task-exercise-07",
+   "02-exercise-frames-8-1-redirecting-forces",
+   "02-exercise-frames-2-6-formulary",
+   "02-exercise-frames-2-5-dimensioning",
+   "02-exercise-frames-task-exercise-08",
+   "02-exercise-plates-9-1-transferring-of-vertical-loads",
+   "02-exercise-plates-3-4-tributary-area",
+   "02-exercise-plates-task-exercise-09",
+   "02-exercise-columns-and-bracing-task-exercise-10",
+   "02-exercise-columns-and-bracing-10-1-horizontal-forces",
+   "02-exercise-columns-and-bracing-10-2-buckling"
+  ],
+  "kind": "exercise",
+  "pos": 27
+ },
+ {
+  "n": 34,
+  "file": "28-sd2-ex-additional.md",
+  "title": "Additional exercise (Structural Design II)",
+  "src": [
+   "02-exercise-additional-exercise-exercise-bung-x"
+  ],
+  "kind": "exercise",
+  "pos": 28
+ },
+ {
+  "n": 42,
+  "file": "29-sd3-doc-symbols-formulae-loads-profiles.md",
+  "title": "Structural Design III \u2014 symbols, formulae, loads and characteristic values, steel sections",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz",
+   "03-course-documents-symbols",
+   "03-course-documents-formelsammlung",
+   "03-course-documents-lasten-und-kennwerte",
+   "03-course-documents-stahlprofile"
+  ],
+  "kind": "exercise",
+  "pos": 29
+ },
+ {
+  "n": 43,
+  "file": "30-sd3-l00-introduction-p1.md",
+  "title": "Lecture 0 (HS22) \u2014 Introduction, part 1",
+  "src": [
+   "03-lecture-l-introduction-hs22-lecture-slides 1-80"
+  ],
+  "kind": "slides",
+  "pos": 30
+ },
+ {
+  "n": 44,
+  "file": "31-sd3-l00-introduction-p2.md",
+  "title": "Lecture 0 (HS22) \u2014 Introduction, part 2",
+  "src": [
+   "03-lecture-l-introduction-hs22-te-iii-introduction-part-2 1-72"
+  ],
+  "kind": "slides",
+  "pos": 31
+ },
+ {
+  "n": 45,
+  "file": "32-sd3-l00-colloquium.md",
+  "title": "Lecture 0 (HS22) \u2014 Colloquium and solutions",
+  "src": [
+   "03-lecture-l-introduction-hs22-l0-colloquium-hs22",
+   "03-lecture-l-introduction-hs22-l0-colloquium-hs22-solutions"
+  ],
+  "kind": "slides",
+  "pos": 32
+ },
+ {
+  "n": 46,
+  "file": "33-sd3-l01-steel-p1.md",
+  "title": "Lecture 1 (SD III) \u2014 Steel, part 1",
+  "src": [
+   "03-lecture-l1-steel-lecture-slides 1-71"
+  ],
+  "kind": "slides",
+  "pos": 33
+ },
+ {
+  "n": 47,
+  "file": "34-sd3-l01-steel-p2.md",
+  "title": "Lecture 1 (SD III) \u2014 Steel, part 2",
+  "src": [
+   "03-lecture-l1-steel-lecture-slides 72-142"
+  ],
+  "kind": "slides",
+  "pos": 34
+ },
+ {
+  "n": 48,
+  "file": "35-sd3-l01-steel-p3.md",
+  "title": "Lecture 1 (SD III) \u2014 Steel, part 3",
+  "src": [
+   "03-lecture-l1-steel-lecture-slides 143-211"
+  ],
+  "kind": "slides",
+  "pos": 35
+ },
+ {
+  "n": 49,
+  "file": "36-sd3-l02-reinforced-concrete-p1.md",
+  "title": "Lecture 2 (SD III) \u2014 Reinforced concrete, part 1",
+  "src": [
+   "03-lecture-l2-reinforced-concrete-lecture-slides 1-60"
+  ],
+  "kind": "slides",
+  "pos": 36
+ },
+ {
+  "n": 50,
+  "file": "37-sd3-l02-reinforced-concrete-p2.md",
+  "title": "Lecture 2 (SD III) \u2014 Reinforced concrete, part 2",
+  "src": [
+   "03-lecture-l2-reinforced-concrete-lecture-slides 61-120"
+  ],
+  "kind": "slides",
+  "pos": 37
+ },
+ {
+  "n": 51,
+  "file": "38-sd3-l02-reinforced-concrete-p3.md",
+  "title": "Lecture 2 (SD III) \u2014 Reinforced concrete, part 3",
+  "src": [
+   "03-lecture-l2-reinforced-concrete-lecture-slides 121-180"
+  ],
+  "kind": "slides",
+  "pos": 38
+ },
+ {
+  "n": 52,
+  "file": "39-sd3-l02-reinforced-concrete-p4.md",
+  "title": "Lecture 2 (SD III) \u2014 Reinforced concrete, part 4",
+  "src": [
+   "03-lecture-l2-reinforced-concrete-lecture-slides 181-240"
+  ],
+  "kind": "slides",
+  "pos": 39
+ },
+ {
+  "n": 53,
+  "file": "40-sd3-l03-timber-p1.md",
+  "title": "Lecture 3 (SD III) \u2014 Timber, part 1",
+  "src": [
+   "03-lecture-l3-timber-lecture-slides 1-60"
+  ],
+  "kind": "slides",
+  "pos": 40
+ },
+ {
+  "n": 54,
+  "file": "41-sd3-l03-timber-p2.md",
+  "title": "Lecture 3 (SD III) \u2014 Timber, part 2",
+  "src": [
+   "03-lecture-l3-timber-lecture-slides 61-120"
+  ],
+  "kind": "slides",
+  "pos": 41
+ },
+ {
+  "n": 55,
+  "file": "42-sd3-l03-timber-p3.md",
+  "title": "Lecture 3 (SD III) \u2014 Timber, part 3",
+  "src": [
+   "03-lecture-l3-timber-lecture-slides 121-180"
+  ],
+  "kind": "slides",
+  "pos": 42
+ },
+ {
+  "n": 56,
+  "file": "43-sd3-l03-timber-p4.md",
+  "title": "Lecture 3 (SD III) \u2014 Timber, part 4",
+  "src": [
+   "03-lecture-l3-timber-lecture-slides 181-237"
+  ],
+  "kind": "slides",
+  "pos": 43
+ },
+ {
+  "n": 57,
+  "file": "44-sd3-l04-masonry-p1.md",
+  "title": "Lecture 4 (SD III) \u2014 Masonry, part 1",
+  "src": [
+   "03-lecture-l4-masonry-lecture-slides 1-67"
+  ],
+  "kind": "slides",
+  "pos": 44
+ },
+ {
+  "n": 58,
+  "file": "45-sd3-l04-masonry-p2.md",
+  "title": "Lecture 4 (SD III) \u2014 Masonry, part 2",
+  "src": [
+   "03-lecture-l4-masonry-lecture-slides 68-134"
+  ],
+  "kind": "slides",
+  "pos": 45
+ },
+ {
+  "n": 59,
+  "file": "46-sd3-l04-masonry-p3.md",
+  "title": "Lecture 4 (SD III) \u2014 Masonry, part 3",
+  "src": [
+   "03-lecture-l4-masonry-lecture-slides 135-201"
+  ],
+  "kind": "slides",
+  "pos": 46
+ },
+ {
+  "n": 60,
+  "file": "47-sd3-l04-masonry-p4.md",
+  "title": "Lecture 4 (SD III) \u2014 Masonry, part 4",
+  "src": [
+   "03-lecture-l4-masonry-lecture-slides 202-265"
+  ],
+  "kind": "slides",
+  "pos": 47
+ },
+ {
+  "n": 61,
+  "file": "48-sd3-l05-construction-details-p1.md",
+  "title": "Lecture 5 (SD III) \u2014 Construction details, part 1",
+  "src": [
+   "03-lecture-l5-construction-details-lecture-slides 1-63"
+  ],
+  "kind": "slides",
+  "pos": 48
+ },
+ {
+  "n": 62,
+  "file": "49-sd3-l05-construction-details-p2.md",
+  "title": "Lecture 5 (SD III) \u2014 Construction details, part 2",
+  "src": [
+   "03-lecture-l5-construction-details-lecture-slides 64-126"
+  ],
+  "kind": "slides",
+  "pos": 49
+ },
+ {
+  "n": 63,
+  "file": "50-sd3-l05-construction-details-p3.md",
+  "title": "Lecture 5 (SD III) \u2014 Construction details, part 3",
+  "src": [
+   "03-lecture-l5-construction-details-lecture-slides 127-189"
+  ],
+  "kind": "slides",
+  "pos": 50
+ },
+ {
+  "n": 64,
+  "file": "51-sd3-l05-construction-details-p4.md",
+  "title": "Lecture 5 (SD III) \u2014 Construction details, part 4",
+  "src": [
+   "03-lecture-l5-construction-details-lecture-slides 190-252"
+  ],
+  "kind": "slides",
+  "pos": 51
+ },
+ {
+  "n": 65,
+  "file": "52-sd3-l05-construction-details-p5.md",
+  "title": "Lecture 5 (SD III) \u2014 Construction details, part 5",
+  "src": [
+   "03-lecture-l5-construction-details-lecture-slides 253-315"
+  ],
+  "kind": "slides",
+  "pos": 52
+ },
+ {
+  "n": 66,
+  "file": "53-sd3-l05-construction-details-p6.md",
+  "title": "Lecture 5 (SD III) \u2014 Construction details, part 6",
+  "src": [
+   "03-lecture-l5-construction-details-lecture-slides 316-378"
+  ],
+  "kind": "slides",
+  "pos": 53
+ },
+ {
+  "n": 67,
+  "file": "54-sd3-ex01-03-steel-concrete-timber.md",
+  "title": "Exercises III.1\u2013III.3 \u2014 Steel; reinforced concrete; timber (with solutions)",
+  "src": [
+   "03-exercise-steel-exercise-1-hs22-steel",
+   "03-exercise-steel-exercise-1-hs22-steel-solutions",
+   "03-exercise-reinforced-concrete-exercise-1-hs22-reinforced-concrete",
+   "03-exercise-reinforced-concrete-exercise-2-hs22-reinforced-concrete-so",
+   "03-exercise-timber-exercise-3-hs22-timber",
+   "03-exercise-timber-exercise-3-hs22-timber-solution"
+  ],
+  "kind": "exercise",
+  "pos": 54
+ },
+ {
+  "n": 68,
+  "file": "55-sd3-ex04-05-masonry-construction-details.md",
+  "title": "Exercises III.4\u2013III.5 \u2014 Masonry; construction details (with solutions)",
+  "src": [
+   "03-exercise-masonry-exercise-4-hs22-masonry",
+   "03-exercise-masonry-exercise-4-hs22-masonry-solution",
+   "03-exercise-construction-details-exercise-5-hs22-construction-details-",
+   "03-exercise-construction-details-exercise-5-hs22-construction-details"
+  ],
+  "kind": "exercise",
+  "pos": 55
+ },
+ {
+  "n": 69,
+  "file": "56-sd4-l01-case-studies-p1.md",
+  "title": "Structural Design IV \u2014 Case studies, part 1",
+  "src": [
+   "04-lecture-l1-case-studies-lecture-slides 1-56"
+  ],
+  "kind": "slides",
+  "pos": 56
+ },
+ {
+  "n": 70,
+  "file": "57-sd4-l01-case-studies-p2.md",
+  "title": "Structural Design IV \u2014 Case studies, part 2",
+  "src": [
+   "04-lecture-l1-case-studies-lecture-slides 57-111"
+  ],
+  "kind": "slides",
+  "pos": 57
+ },
+ {
+  "n": 71,
+  "file": "58-dbaug-doc-syllabus-introduction-tectonics.md",
+  "title": "D-BAUG + MIBS \u2014 syllabus, introduction, tectonics and stress fields (with solution)",
+  "src": [
+   "05-course-documents-syllabus-hs22",
+   "05-lecture-l1-introduction-lecture-slides",
+   "05-lecture-l3-tectonics-stress-fields-and-dimensioning-lecture-slides",
+   "05-lecture-l3-tectonics-stress-fields-and-dimensioning-week-9-tributar"
+  ],
+  "kind": "exercise",
+  "pos": 58
+ },
+ {
+  "n": 72,
+  "file": "59-dbaug-l02-plasticity-p1.md",
+  "title": "D-BAUG + MIBS \u2014 Theory of plasticity, part 1",
+  "src": [
+   "05-lecture-l2-theory-of-plasticity-lecture-slides 1-56"
+  ],
+  "kind": "slides",
+  "pos": 59
+ },
+ {
+  "n": 73,
+  "file": "60-dbaug-l02-plasticity-p2.md",
+  "title": "D-BAUG + MIBS \u2014 Theory of plasticity, part 2",
+  "src": [
+   "05-lecture-l2-theory-of-plasticity-lecture-slides 57-112"
+  ],
+  "kind": "slides",
+  "pos": 60
+ },
+ {
+  "n": 74,
+  "file": "61-dbaug-l02-plasticity-p3.md",
+  "title": "D-BAUG + MIBS \u2014 Theory of plasticity, part 3",
+  "src": [
+   "05-lecture-l2-theory-of-plasticity-lecture-slides 113-168"
+  ],
+  "kind": "slides",
+  "pos": 61
+ },
+ {
+  "n": 75,
+  "file": "62-dbaug-project-design-exercise.md",
+  "title": "D-BAUG + MIBS \u2014 Design exercise project and final review",
+  "src": [
+   "05-project-design-exercise-introduction-to-design-exercise",
+   "05-project-design-exercise-task-1-rhino-template-and-instructions",
+   "05-project-final-review-final-review-schedule"
+  ],
+  "kind": "exercise",
+  "pos": 62
+ },
+ {
+  "n": 18,
+  "file": "63-skript12-sheets-001-030.md",
+  "title": "Skript Structural Design I & II \u2014 sheets 1\u201330",
+  "src": [
+   "02-course-documents-skript-te-i-ii 1-30"
+  ],
+  "kind": "skript",
+  "pos": 63
+ },
+ {
+  "n": 19,
+  "file": "64-skript12-sheets-031-060.md",
+  "title": "Skript Structural Design I & II \u2014 sheets 31\u201360",
+  "src": [
+   "02-course-documents-skript-te-i-ii 31-60"
+  ],
+  "kind": "skript",
+  "pos": 64
+ },
+ {
+  "n": 20,
+  "file": "65-skript12-sheets-061-090.md",
+  "title": "Skript Structural Design I & II \u2014 sheets 61\u201390",
+  "src": [
+   "02-course-documents-skript-te-i-ii 61-90"
+  ],
+  "kind": "skript",
+  "pos": 65
+ },
+ {
+  "n": 21,
+  "file": "66-skript12-sheets-091-120.md",
+  "title": "Skript Structural Design I & II \u2014 sheets 91\u2013120",
+  "src": [
+   "02-course-documents-skript-te-i-ii 91-120"
+  ],
+  "kind": "skript",
+  "pos": 66
+ },
+ {
+  "n": 22,
+  "file": "67-skript12-sheets-121-150.md",
+  "title": "Skript Structural Design I & II \u2014 sheets 121\u2013150",
+  "src": [
+   "02-course-documents-skript-te-i-ii 121-150"
+  ],
+  "kind": "skript",
+  "pos": 67
+ },
+ {
+  "n": 23,
+  "file": "68-skript12-sheets-151-176.md",
+  "title": "Skript Structural Design I & II \u2014 sheets 151\u2013176",
+  "src": [
+   "02-course-documents-skript-te-i-ii 151-176"
+  ],
+  "kind": "skript",
+  "pos": 68
+ },
+ {
+  "n": 35,
+  "file": "69-skript34-sheets-001-029.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 1\u201329",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 1-29"
+  ],
+  "kind": "skript",
+  "pos": 69
+ },
+ {
+  "n": 36,
+  "file": "70-skript34-sheets-030-058.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 30\u201358",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 30-58"
+  ],
+  "kind": "skript",
+  "pos": 70
+ },
+ {
+  "n": 37,
+  "file": "71-skript34-sheets-059-087.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 59\u201387",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 59-87"
+  ],
+  "kind": "skript",
+  "pos": 71
+ },
+ {
+  "n": 38,
+  "file": "72-skript34-sheets-088-116.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 88\u2013116",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 88-116"
+  ],
+  "kind": "skript",
+  "pos": 72
+ },
+ {
+  "n": 39,
+  "file": "73-skript34-sheets-117-145.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 117\u2013145",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 117-145"
+  ],
+  "kind": "skript",
+  "pos": 73
+ },
+ {
+  "n": 40,
+  "file": "74-skript34-sheets-146-174.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 146\u2013174",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 146-174"
+  ],
+  "kind": "skript",
+  "pos": 74
+ },
+ {
+  "n": 41,
+  "file": "75-skript34-sheets-175-202.md",
+  "title": "Skript Structural Design III & IV \u2014 sheets 175\u2013202",
+  "src": [
+   "03-course-documents-skript-te-iii-iv-professur-schwartz 175-202"
+  ],
+  "kind": "skript",
+  "pos": 75
+ }
+]
