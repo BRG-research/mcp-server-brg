@@ -72,6 +72,9 @@ Use after translating (step 4) and for books already in R2. Do not reprocess or 
    `tools/fix_anchors.py`, check that no new equation images are missing on R2, upload only the changed files to the
    same keys (delete nothing), and append a neutral note to the book's REVIEW log (or the README "Review status"):
    "Equations and numbers re-checked against a second OCR of the scan, <month year>" with the corrections listed.
+   Text: `tools/mistral_textcheck.py SRC OCR OFFSET OUT --jobs` flags pages whose English length departs from the
+   source (omissions, additions); check them with `tools/TEXT_CHECK_BRIEF.md` (Sonnet, ≤ 12 pages) and verify every
+   OURS_WRONG against the source yourself before fixing.
 6. Report per book: pages OCR'd, pages billed and cost, mismatches, fixes (page + what), unclear items, files uploaded.
    Delete local work files afterwards.
 
