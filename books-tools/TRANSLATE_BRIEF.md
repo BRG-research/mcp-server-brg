@@ -18,7 +18,7 @@ English ones (chapter/section titles, book title). Never write anything about AI
 ## Inputs
 - Page images: `WORK/work/<key>/pages/sNNNL.jpg`, `sNNNR.jpg` (left/right page of spread NNN). Locate pages by the printed page number in the header
   (levy3: P ≈ s{(P+12)//2} early in the book, s{(P+14)//2} from about p. 180; levy4: P ≈ s{(P+14)//2}, even P on L, odd P on R; faust: read the page numbers).
-- OCR draft text (tesseract): `WORK/work/<key>/ocr/sNNNL.txt` — a cheap DRAFT of the wording. Use it to speed up reading, but verify against the
+- OCR draft text (Mistral, Markdown with LaTeX; tesseract `.txt` only as a fallback): `WORK/work/<key>/ocr/` — a cheap DRAFT of the wording. Use it to speed up reading, but verify against the
   page image. OCR is unreliable for formulas, Greek letters, fractions, sub/superscripts, numbers and tables — always take those from the image.
 - Zoom: `/usr/bin/python3 -I <Books>/tools/pagetool.py zoom <key> <page> x0 y0 x1 y1 WORK/tools-<yourjob>/z1.jpg` (fractions of the page image; Read it).
 - Crop a figure: levy3/levy4 (black on paper, whitened): `/usr/bin/python3 -I <Books>/tools/pagetool.py crop <key> <page> x0 y0 x1 y1 <out dir> <name> [--white x0,y0,x1,y1] [--rot 90]`;

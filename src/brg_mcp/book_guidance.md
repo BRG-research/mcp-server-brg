@@ -32,7 +32,9 @@ Book status and review claims belong to that source; they are not independently 
 Run these steps in a separate, trusted local Books workspace when authoring is requested.
 
 1. Check scan completeness, duplicates, printed numbering, and errata.
-2. Split page images with `tools/split.py`; inspect formulas against images, not OCR alone.
+2. Split page images with `tools/split.py`; OCR every page with `tools/mistral_ocr.py` (report pages billed and
+   cost); inspect formulas against images, not OCR alone. After translating, run `tools/mistral_compare.py` and check
+   the mismatches with `tools/CHECK_BRIEF.md`.
 3. Translate contents into README; establish chapters and page boundaries.
 4. Write `src/<chapter>.md` using `tools/AGENT_BRIEF.md` or `tools/AGENT_BRIEF_ETH.md`.
 5. Preserve `<sub>page N</sub>`, slide markers, `## § N`, exact formulas, and equation numbers.
