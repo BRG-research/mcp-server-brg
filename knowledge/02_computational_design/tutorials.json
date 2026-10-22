@@ -1,0 +1,109 @@
+{
+  "title": "Computational Structural Design with COMPAS",
+  "tutorials": [
+    {
+      "id": "box",
+      "file": "01-compas-box-scene.ipynb",
+      "title": "A COMPAS box",
+      "summary": "One geometric primitive, a mesh and an interactive COMPAS scene.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "data",
+      "file": "03-data-basics.ipynb",
+      "title": "Data: values and COMPAS objects",
+      "summary": "Read and change Python values, metadata and geometric object properties.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "exchange",
+      "file": "08-structural-data-exchange.ipynb",
+      "title": "Data exchange: COMPAS JSON",
+      "summary": "Save and restore a box, a point and metadata with a verified round trip.",
+      "minutes": 45,
+      "section": "foundation"
+    },
+    {
+      "id": "vectors",
+      "file": "03-vectors-frames.ipynb",
+      "title": "Geometry: vectors and frames",
+      "summary": "Use dot and cross products, local frames and geometry transformations.",
+      "minutes": 60,
+      "section": "foundation"
+    },
+    {
+      "id": "patterns",
+      "file": "04-parametric-patterns.ipynb",
+      "title": "Algorithms: grids and brick patterns",
+      "summary": "Grow a point grid into a staggered wall with loops and one row-offset rule.",
+      "minutes": 75,
+      "section": "foundation"
+    },
+    {
+      "id": "graph",
+      "file": "09-graph-basics.ipynb",
+      "title": "Data structures: a graph",
+      "summary": "Three nodes and two edges introduce connectivity, attributes and key-to-row maps.",
+      "minutes": 45,
+      "section": "foundation"
+    },
+    {
+      "id": "topology",
+      "file": "05-topology-matrices.ipynb",
+      "title": "Data structures: a mesh",
+      "summary": "One quad introduces face cycles, normals and connectivity matrices.",
+      "minutes": 60,
+      "section": "foundation"
+    },
+    {
+      "id": "model",
+      "file": "11-compas-model.ipynb",
+      "title": "A COMPAS model",
+      "summary": "Group a reusable building element and preserve a model hierarchy.",
+      "minutes": 35,
+      "section": "foundation"
+    },
+    {
+      "id": "ifc",
+      "file": "12-ifc-wall.ipynb",
+      "title": "AEC exchange: an IFC wall",
+      "summary": "Create and round-trip one IFC4 wall with units, a storey and a representation; COMPAS previews the same parameters.",
+      "minutes": 45,
+      "section": "foundation"
+    },
+    {
+      "id": "matrices",
+      "file": "10-matrix-decomposition.ipynb",
+      "title": "Solvers: matrix decomposition",
+      "summary": "Solve two geometric line constraints with QR and check the equation residual.",
+      "minutes": 60,
+      "section": "foundation"
+    },
+    {
+      "id": "optimization",
+      "file": "07-constrained-optimisation.ipynb",
+      "title": "Solvers: constrained optimisation",
+      "summary": "Minimise box area with volume and height constraints and checked gradients.",
+      "minutes": 90,
+      "section": "foundation"
+    },
+    {
+      "id": "truss",
+      "file": "06-truss-equilibrium.ipynb",
+      "title": "Extension: truss equilibrium",
+      "summary": "Assemble joint equilibrium, solve axial forces and reactions, and verify balance.",
+      "minutes": 90,
+      "section": "extension"
+    },
+    {
+      "id": "cable",
+      "file": "02-cable-graph.ipynb",
+      "title": "Extension: force-density cable",
+      "summary": "An optional bridge to form-finding with a five-node cable and COMPAS FD.",
+      "minutes": 45,
+      "section": "extension"
+    }
+  ]
+}

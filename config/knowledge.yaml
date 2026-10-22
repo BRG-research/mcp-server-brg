@@ -3,6 +3,19 @@
   domain: graphic_statics
   path: knowledge/concepts/equilibrium.md
   sources: []  # Original starter note; add verified literature before scholarly use.
+- id: computational-design-tutorials
+  title: Computational Structural Design with COMPAS — notebook tutorials
+  domain: computational_design
+  path: knowledge/02_computational_design/README.md
+  sources:
+    - source_id: brg-seoul-2025
+      url: https://github.com/BRG-teaching/seoul_2025
+      revision: b641b732a3e337eb3a19d7a91048946820695e7a
+      verified: true
+    - source_id: compas-jupyterlite
+      url: https://github.com/compas-dev/compas-jupyterlite
+      revision: d9df5aef10685c80507236554900d72b86504d6a
+      verified: true
 - id: form-finding-compas-fd
   title: Force density method with compas_fd
   domain: form_finding
