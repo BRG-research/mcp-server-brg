@@ -46,6 +46,32 @@ def cells(source: str):
         yield cid, title, prose, code.strip("\n"), explain
 
 
+
+DISPLAY_MATH = re.compile(r"^\$\$\n(.*?)\n\$\$$", re.M | re.S)
+ONELINE_MATH = re.compile(r"^\$\$ (.*?) \$\$$", re.M)
+
+
+def portable_math(text: str) -> str:
+    """Rewrite display math so it survives inside an HTML <details> block.
+
+    GitHub wraps `$...$` inline math in a <math-renderer> even inside raw HTML, but it
+    does NOT wrap `$$...$$` display math there -- it comes out as literal dollar signs.
+    Every subsection of this note lives inside a collapsible part, so display math is
+    emitted as a blockquoted inline formula, which both GitHub and the VS Code preview
+    render.  Verified against GitHub's own /markdown API and @vscode/markdown-it-katex.
+    """
+    def collapse(m):
+        body = " ".join(ln.strip() for ln in m.group(1).splitlines() if ln.strip())
+        return "> $" + body + "$"
+    text = ONELINE_MATH.sub(lambda m: "> $" + m.group(1).strip() + "$", DISPLAY_MATH.sub(collapse, text))
+    # GitHub also refuses to wrap inline math that sits inside *emphasis*, so keep the
+    # emphasis on the label only and let the formula stand outside it.
+    text = re.sub(r"(?<!\*)\*(?!\*)([^*\n]*?:)[ ]*([^*\n]*\$[^*\n]*)\*(?!\*)",
+                  lambda m: f"*{m.group(1)}* {m.group(2)}", text)
+    text = re.sub(r"(?<!\*)\*(?!\*)([^*\n]*\$[^*\n]*)\*(?!\*)", lambda m: m.group(1), text)
+    return text
+
+
 def main():
     source = APP.read_text()
     namespace = {"__name__": "schek_app", "__file__": str(APP)}
@@ -103,11 +129,11 @@ def main():
         printed = buf.getvalue().rstrip()
         out += [f"### {title}", ""]
         if prose:
-            out += [prose, ""]
+            out += [portable_math(prose), ""]
         if code:
             out += ["**Add to your program:**", "", "```python", code, "```", ""]
         if explain:
-            out += [explain, ""]
+            out += [portable_math(explain), ""]
         if printed:
             out += ["Example output:", "", "```text", printed, "```", ""]
     out += ["</details>", "", END]

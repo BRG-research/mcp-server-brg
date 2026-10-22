@@ -47,6 +47,21 @@ explanatory notes), never inside the translation.
 7. **"Why those numbers?"** when a pattern is not obvious: expand one row or term so the reader sees what survives,
    e.g. $(+1)x_1 + 0x_2 + \dots + (-1)x_6 = x_1 - x_6$, and say the conclusion in bold in one line.
 
+## What GitHub will not render
+
+Verified against GitHub's own `/markdown` API. `examples/form_finding/check_math_rendering.py`
+fails the build if any of these creep back in.
+
+- **`$$...$$` display math inside an HTML `<details>` block is never rendered** — it shows
+  as literal dollar signs. Inline `$...$` inside `<details>` *is* rendered, so write display
+  maths there as a blockquoted inline formula: `> $a = b$`.
+- **Inline maths inside `*emphasis*` is never rendered.** Keep the emphasis on the label
+  only: `*Read it as:* the sum of $q_j$ …`, not `*Read it as: the sum of $q_j$ …*`.
+- **An opening `$` glued to the previous word is not rendered** — write `positive $q$`,
+  not `positive-$q$`.
+- ` ```math ` fenced blocks render on GitHub but **not** in the VS Code preview, so they are
+  not portable; do not use them.
+
 ## Tone
 
 - Short sentences, active voice, second person for instructions ("Multiply that row by …").

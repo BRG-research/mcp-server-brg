@@ -11,6 +11,7 @@ additional length and force conditions. Each step builds on the preceding steps.
 | `schek_app.py` | NumPy, SciPy | Runnable derivation of Schek (1974), with one code cell per tutorial subsection. Computes the small example and the reconstructed networks in part G. |
 | `build_note.py` | NumPy, SciPy | Executes the tutorial cells and updates the note with their instructions, code, and numerical output. |
 | `build_notebook.py` | NumPy, SciPy, nbformat, nbclient | Turns the same cells into `knowledge/04_form_finding/compas_fd.ipynb` and runs it so every output is stored. |
+| `check_math_rendering.py` | `gh` CLI | Sends the note through GitHub's own `/markdown` API and fails if any formula would show as literal dollar signs. Run it after editing the note. |
 | `schek_equations.py` | NumPy, SciPy | Checks the equations, analytic Jacobians against finite differences, and constrained iterations. |
 
 Run from the repository root with Python 3.11 or later:

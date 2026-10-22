@@ -289,7 +289,7 @@ Not one line here makes geometry or a force. Pure topology.
 | **−1** | node $i$ is the **END** of branch $j$ |
 | **0** | node $i$ is not on branch $j$ |
 
-*Read it as: the entry in row $j$, column $i$ records how node $i$ sits on branch $j$.* That is all it says.
+*Read it as:* the entry in row $j$, column $i$ records how node $i$ sits on branch $j$. That is all it says.
 
 **Why those numbers?** Branch 1 is `(1, 6)`, so its row is +1 in column 1 and −1 in column 6. Multiply that row by the nine $x$-coordinates:
 
@@ -419,7 +419,7 @@ Shapes: `(5, 12) @ (12,) -> (5,)`. Operation 2 carries information **nodes → b
 
 $$Q u \quad \text{where} \quad Q = \mathrm{diag}(q)$$
 
-*Read it as: entry $j$ of the answer is just $q_j$ times $u_j$.*
+*Read it as:* entry $j$ of the answer is just $q_j$ times $u_j$.
 
 | branch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -431,7 +431,7 @@ Each column is the product of the two above it. So the order can swap: $Uq = Qu$
 
 #### 5 — SOLVING $Dx = b$
 
-*Read it as: find the list $x$ that, pushed through $D$, gives back $b$.*
+*Read it as:* find the list $x$ that, pushed through $D$, gives back $b$.
 
 **The matrix $D$ (5 × 5)**
 
@@ -528,9 +528,7 @@ p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)                           
 
 **Do this.** Write one function that, **given** node positions, measures every branch: three coordinate differences and a length. It never moves a node.
 
-$$
-u = C\,x + C_f\,x_f, \qquad v = C\,y + C_f\,y_f, \qquad w = C\,z + C_f\,z_f
-$$
+> $u = C\,x + C_f\,x_f, \qquad v = C\,y + C_f\,y_f, \qquad w = C\,z + C_f\,z_f$
 
 *Read it as: for every branch, subtract the coordinates of its two end nodes — the free end from one product, the anchored end from the other.*
 
@@ -541,9 +539,7 @@ $$
 
 **Why two products?** A branch can have one end free and one anchored. $C\,x$ collects the free part, $C_f\,x_f$ the anchored part, and `+` puts the two halves of one subtraction back together.
 
-$$
-l_j = \sqrt{u_j^{2} + v_j^{2} + w_j^{2}}
-$$
+> $l_j = \sqrt{u_j^{2} + v_j^{2} + w_j^{2}}$
 
 *Read it as: ordinary Pythagoras on each branch alone.* This is **not** a matrix operation.
 
@@ -602,11 +598,9 @@ def coordinate_differences(
 
 **Do this.** Write the honest force balance: at every free node the cable pulls must add up to the load. Then test it on a guessed shape and watch it fail.
 
-$$
-C^{t} U L^{-1} s = p_x, \qquad C^{t} V L^{-1} s = p_y, \qquad C^{t} W L^{-1} s = p_z
-$$
+> $C^{t} U L^{-1} s = p_x, \qquad C^{t} V L^{-1} s = p_y, \qquad C^{t} W L^{-1} s = p_z$
 
-*Read it as: split each cable force into its $x$, $y$ and $z$ shares, add the shares up at every node, and the total must equal the load there.*
+*Read it as:* split each cable force into its $x$, $y$ and $z$ shares, add the shares up at every node, and the total must equal the load there.
 
 #### READ IT RIGHT TO LEFT — FOUR STAGES
 
@@ -689,21 +683,17 @@ out of balance at the free nodes for the flat guess, z direction: [0.5   0.184 0
 
 **Do this.** Add one number per branch: its force density. One line of code, and the nonlinear problem of Part B becomes linear.
 
-$$
-q_j = \frac{s_j}{l_j}
-$$
+> $q_j = \frac{s_j}{l_j}$
 
 *Read it as: how hard the cable pulls, per metre of its own length.* Dimension: force / length (kN/m).
 
-$$
-\text{one cable:}\quad l = 2.5\ \text{m},\;\; s = 10\ \text{kN} \;\longrightarrow\; q = \tfrac{10}{2.5} = 4\ \text{kN/m}
-$$
+> $\text{one cable:}\quad l = 2.5\ \text{m},\;\; s = 10\ \text{kN} \;\longrightarrow\; q = \tfrac{10}{2.5} = 4\ \text{kN/m}$
 
 #### WHY THE LENGTH CANCELS — THE WHOLE TRICK
 
 $$\text{Force}_{x,j} = s_j \cdot u_j / l_j \quad \text{and} \quad s_j = q_j l_j \quad \text{so} \quad \text{Force}_{x,j} = q_j u_j = q_j (x_i - x_k)$$
 
-*Read it as: the $l_j$ on top cancels the $l_j$ underneath, leaving a plain multiple of the coordinates.*
+*Read it as:* the $l_j$ on top cancels the $l_j$ underneath, leaving a plain multiple of the coordinates.
 
 With our branch 1, after the solve of C.3:
 
@@ -716,11 +706,9 @@ The square root is gone. $q_j(x_i - x_k)$ is **linear** in the unknown coordinat
 
 #### THE SWAP (EQUATION 6)
 
-$$
-C^{t} U q \;=\; C^{t} Q u \;=\; p_x
-$$
+> $C^{t} U q \;=\; C^{t} Q u \;=\; p_x$
 
-*Read it as: the known $q$ and the unknown $u$ can trade places, because both are only scaling entries one at a time.* After the swap the **known** numbers sit in $Q$ and the **unknown** geometry $u$ stands outside, ready to solve for.
+*Read it as:* the known $q$ and the unknown $u$ can trade places, because both are only scaling entries one at a time. After the swap the **known** numbers sit in $Q$ and the **unknown** geometry $u$ stands outside, ready to solve for.
 
 #### OUR CHOICE — INPUT
 
@@ -753,13 +741,13 @@ That is the whole cell.
 
 Put $u = C\,x + C_f\,x_f$ from B.2 into $C^{t} Q u = p_x$ from C.1:
 
-$$ (C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D\,x = p_x - D_f\,x_f $$
+> $(C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D\,x = p_x - D_f\,x_f$
 
 *Read it as: separate the terms with unknown free coordinates from the terms with known anchor coordinates, and move the known ones to the right.*
 
 The same $D$ serves all three axes — $x$ never appears in the $z$ equation:
 
-$$ D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f $$
+> $D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f$
 
 | Step | Symbol | Say it as | What it does | Shape of the result |
 |---|---|---|---|---|
@@ -887,7 +875,7 @@ right-hand sides (columns x, y, z; shape 5x3):
 
 **Do this.** Solve the three linear systems. The shape appears here — one direct step, no iteration, no initial guess.
 
-$$ D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f $$
+> $D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f$
 
 *Read it as: three separate problems that happen to share one matrix.*
 
@@ -950,9 +938,7 @@ The whole 3-D equilibrium geometry came out of three ordinary linear solves. No 
 
 **Do this.** Measure the solved net, recover the force in each cable, then check it against Part B's nonlinear equation.
 
-$$
-s_j = q_j \, l_j
-$$
+> $s_j = q_j \, l_j$
 
 *Read it as: force density times length gives the force back.* No second solve needed.
 
@@ -970,15 +956,11 @@ Branch 2: $2.0 \times 1.374 = 2.748$ kN. **Where $q$ is equal, the longer cable 
 
 #### THE CHECK
 
-$$
-e = C^{t} U L^{-1} s - p \;\approx\; 0
-$$
+> $e = C^{t} U L^{-1} s - p \;\approx\; 0$
 
 *Read it as: collected cable pulls minus applied load, at every node, must be zero.*
 
-$$
-\max |e| = 1.11 \times 10^{-15}\ \text{kN}
-$$
+> $\max |e| = 1.11 \times 10^{-15}\ \text{kN}$
 
 Machine zero. **The linear solve of C.3 satisfies the nonlinear equilibrium of B.3 exactly** — Schek's central claim, checked rather than assumed.
 
@@ -1208,21 +1190,17 @@ C.1 introduced $q$ as a convenient ratio. That is an excuse, not an explanation.
 
 Forget forces. Which node positions make this as small as possible?
 
-$$
-u^{t} P u + v^{t} P v + w^{t} P w \;\longrightarrow\; \min
-$$
+> $u^{t} P u + v^{t} P v + w^{t} P w \;\longrightarrow\; \min$
 
 *Read it as: make the weighted sum of squared branch lengths as small as possible.*
 
-$$ u^t P u = \sum_j P_j u_j^2 \qquad \text{all three terms together} = \sum_j P_j l_j^2 $$
+> $u^t P u = \sum_j P_j u_j^2 \qquad \text{all three terms together} = \sum_j P_j l_j^2$
 
 Set the derivative to zero, with $\partial u/\partial x = C$:
 
-$$
-(C^{t} P C)\, x = -(C^{t} P C_f)\, x_f
-$$
+> $(C^{t} P C)\, x = -(C^{t} P C_f)\, x_f$
 
-*Read it as: the minimiser satisfies exactly the equilibrium equation of C.2, with the weights $P$ playing the part of the force densities $Q$.*
+*Read it as:* the minimiser satisfies exactly the equilibrium equation of C.2, with the weights $P$ playing the part of the force densities $Q$.
 
 That is **exactly equation (8)** with $P$ in place of $Q$ and no load.
 
@@ -1333,11 +1311,9 @@ For a given $q$, the linear solve gives a shape; the shape gives lengths and for
 
 #### EQUATION (11)
 
-$$
-g^{\ast}(q) = 0
-$$
+> $g^{\ast}(q) = 0$
 
-*Read it as: every wish, written as an error that must become zero, is ultimately a function of $q$ alone.*
+*Read it as:* every wish, written as an error that must become zero, is ultimately a function of $q$ alone.
 
 | Symbol | Say it as | One entry means | Shape |
 |---|---|---|---|
@@ -1396,7 +1372,7 @@ still wrong by:    [0.001 0.174 0.001 0.174]
 
 #### THE SHAPE OF THE LOOP
 
-$$ \text{guess } q \;\rightarrow\; \texttt{form-finding}(q) \;\rightarrow\; \text{lengths, forces} \;\rightarrow\; \text{how wrong?} $$
+> $\text{guess } q \;\rightarrow\; \texttt{form-finding}(q) \;\rightarrow\; \text{lengths, forces} \;\rightarrow\; \text{how wrong?}$
 
 `least_squares` runs that loop for you, changing $q$ each time. It needs only the function that says **how wrong** the current $q$ is — F.1's $g$.
 
@@ -1496,7 +1472,7 @@ mixed wishes -> spokes [0.9 0.9 0.9 0.9] m, anchor forces [2. 2. 2. 2.] kN, wors
 
 **Do this.** Look at what the solver feels its way with: a table of **sensitivities**, one row per wish, one column per knob.
 
-$$ G^t := \partial g^* / \partial q \qquad \text{row } i, \text{ column } j: \text{ how much wish } i \text{ changes when } q_j \text{ changes} $$
+> $G^t := \partial g^* / \partial q \qquad \text{row } i, \text{ column } j: \text{ how much wish } i \text{ changes when } q_j \text{ changes}$
 
 *Read it as: a table of sensitivities — one row per wish, one column per knob.*
 
@@ -1521,9 +1497,7 @@ $$ G^t := \partial g^* / \partial q \qquad \text{row } i, \text{ column } j: \te
 
 He derived this table by hand. Differentiating equilibrium implicitly gives equation (28),
 
-$$
-\frac{\partial x}{\partial q} = -D^{-1} C^{t} U
-$$
+> $\frac{\partial x}{\partial q} = -D^{-1} C^{t} U$
 
 *Read it as: how far every free node moves when one force density is nudged.* For the heights, with our numbers:
 
@@ -2054,8 +2028,8 @@ adjacent face, from the current coordinates) by thickness × density.
   result after one iteration.
 - `fd_numpy` has no input validation: an edge index out of range raises inside
   `connectivity_matrix`, mismatched lengths of `forcedensities` and `edges` raise in
-  `diags`/`dot`, and a free node not connected to any fixed node by a positive-$q$
-  path makes `Ai` singular (`spsolve` warns and returns `nan`/`inf`).
+  `diags`/`dot`, and a free node not connected to any fixed node by a path of positive $q$
+  makes `Ai` singular (`spsolve` warns and returns `nan`/`inf`).
 - `requirements.txt` lists only `compas`; `numpy` and `scipy` arrive through
   `compas`. Tested here with compas 2.15.1, numpy 2.4.6, scipy 1.17.1.
 
