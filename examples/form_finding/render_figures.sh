@@ -28,7 +28,6 @@ render() { # out.ppm manifest w h [env...]
 # single plan drawings
 render fig2 fig2 3000 1600 VIEWER_VIEW=top
 render fig3 fig3 2400 2800 VIEWER_VIEW=top
-render fig4 fig4 3000 1100 VIEWER_VIEW=top
 render fig5 fig5 2600 2600 VIEWER_VIEW=top
 # figure 1: two perspective views of the same net
 render fig1_a fig1_net 2000 1600 VIEWER_ORBIT="$ORBIT"
@@ -54,7 +53,7 @@ def row(ims, gap=60):
     for i in ims:
         sheet.paste(i, (x, h - i.height)); x += i.width + gap      # bottom-aligned, like the paper
     return sheet
-for name in ["fig2", "fig3", "fig4", "fig5"] + [f"fig{k}_plan" for k in range(6, 11)]:
+for name in ["fig2", "fig3", "fig5"] + [f"fig{k}_plan" for k in range(6, 11)]:
     im = load(name); im.save(out / f"schek_{name}.png", optimize=True); print(name, im.size)
 row([load("fig1_a"), load("fig1_b")]).save(out / "schek_fig1.png", optimize=True)
 for k in range(6, 11):

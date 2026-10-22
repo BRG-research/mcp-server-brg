@@ -2140,10 +2140,10 @@ fig8_3: border q = 1: border lengths 2.9-6.5 m
 
 **Do this.** Apply length wishes to the big network with F.2's solver. **Read the returned error** — a shape comes back either way.
 
-![Fig. 9](images/schek_fig9_persp.png)
-![Fig. 9, plan](images/schek_fig9_plan.png)
-
-*Fig. 9, recomputed: additional distance conditions.*
+> **No figure here yet.** The stored fig. 9 images showed the *stalled* shapes of the
+> old solver, so they were removed. Regenerate them with
+> `python examples/form_finding/schek_app.py` then `bash examples/form_finding/render_figures.sh`.
+> The numbers below are current.
 
 #### THE WISHES
 
@@ -2203,10 +2203,10 @@ fig9_3: radial l = 4.5 m, rings x0.7: worst length error 7.5e-10 after 58 tries
 
 **Do this.** Generate a grid topology, renumber so the four supports come last, put half of each bar's weight at each end, then run three cases.
 
-![Fig. 10](images/schek_fig10_persp.png)
-![Fig. 10, plan](images/schek_fig10_plan.png)
-
-*Fig. 10, recomputed: hanging and prestressed net with the same structure.*
+> **No figure here yet.** Case 10.3 changed with the new solver, so the stored fig. 10
+> images no longer match all three panels and were removed. Regenerate with
+> `python examples/form_finding/schek_app.py` then `bash examples/form_finding/render_figures.sh`.
+> The numbers below are current.
 
 #### 8 × 8 NODES, 112 BARS
 
