@@ -47,8 +47,8 @@ def main():
     sys.path.insert(0, str(HERE))
     PARTS = {"a": "Part A. The network as data", "b": "Part B. Equilibrium, the nonlinear form",
              "c": "Part C. The force density trick: a linear system", "d": "Part D. The form-finding loop",
-             "e": "Part E. What the force densities mean", "f": "Part F. Additional conditions",
-             "g": "Part G. The paper's examples, computed and drawn"}
+             "e": "Part E. What the force densities mean", "f": "Part F. Asking for lengths and forces",
+             "g": "Part G. The paper's examples, recomputed"}
     def anchor(title):
         t = "".join(ch for ch in title.lower() if ch.isalnum() or ch in " -_")
         return t.replace(" ", "-")
@@ -73,11 +73,11 @@ def main():
            "| C.1–C.4 | Derive and execute the linear force density solve. |",
            "| D.1–D.2 | Reuse a complete linear solver with different supports and force densities. |",
            "| E.1 | Interpret the geometric effect of force densities. |",
-           "| F.1–F.5 | Extend the solver to prescribed lengths and forces. |",
+           "| F.1–F.3 | Ask for wanted lengths and forces on top of equilibrium. |",
            "| G.1–G.5 | Apply the same solvers to larger reconstructed examples. |", "",
-           "**The linear force density method is complete at D.2.** Part F is a nonlinear",
-           "extension, not a prerequisite for using the linear method. Package API details",
-           "follow the tutorial for comparison after implementing the method yourself.", "",
+           "**The linear force density method is complete at D.2.** Part F sits on top of it",
+           "and is not a prerequisite. Package API details follow the tutorial, for",
+           "comparison after implementing the method yourself.", "",
            "This tutorial is generated from the program by `build_note.py`; it executes",
            "each implementation block before updating this Markdown.", "",
            "Contents", ""]
