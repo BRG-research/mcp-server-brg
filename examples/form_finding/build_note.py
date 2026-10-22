@@ -58,13 +58,14 @@ def main():
            "each adds data or a calculation that the following steps need. The complete",
            "program is also available in `examples/form_finding/schek_app.py`.", "",
            "Read each explanation, then append its code to the same Python file or notebook.",
-           "A.4 is a visual reference: its operations are implemented in the solver steps",
-           "that follow. The runnable tutorial contains the implementation, not repeated",
-           "demo calculations or assertion blocks. Numerical verification is separate.", "",
-           "The implementation uses NumPy. A Python list of node pairs stores topology;",
-           "NumPy arrays store vectors and matrices. Every step identifies what it creates.",
-           "`print` calls only inspect values. Displayed output is rounded; calculations",
-           "retain full floating-point precision. No package solver is needed for this derivation.", "",
+           "Every subsection has the same shape: **what the step does**, the **equation**,",
+           "the **stages read right to left**, and **the same thing with our numbers** —",
+           "every matrix printed with labelled rows and columns so you can point at any",
+           "entry and say where it came from. A.4 has no code: it is the five matrix",
+           "operations worked through with real numbers.", "",
+           "`@` is matrix multiplication. `*` is entry-by-entry multiplication. Shapes are",
+           "written next to every array. Displayed output is rounded; the calculation keeps",
+           "full precision. Parts A to E need only NumPy; part F adds `scipy.optimize`.", "",
            "| Milestone | What you can do |",
            "|---|---|",
            "| A.1–A.4 | Represent a network and understand its matrix operations. |",
@@ -103,10 +104,6 @@ def main():
             out += [explain, ""]
         if printed:
             out += ["Example output:", "", "```text", printed, "```", ""]
-        if cid == "d2":
-            out += ["**Milestone reached:** you have implemented the linear force density method.",
-                    "Parts E–G explain and extend this solver; the basic method needs no",
-                    "additional iteration.", ""]
     out += [END]
     note = NOTE.read_text()
     i, j = note.index(START), note.index(END) + len(END)

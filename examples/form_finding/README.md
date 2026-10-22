@@ -8,8 +8,8 @@ additional length and force conditions. Each step builds on the preceding steps.
 
 | Script | Dependencies | Purpose |
 |---|---|---|
-| `schek_app.py` | NumPy | Runnable derivation of Schek (1974), with one code cell per tutorial subsection. Computes the small example and the reconstructed networks in part G. |
-| `build_note.py` | NumPy | Executes the tutorial cells and updates the note with their instructions, code, and numerical output. |
+| `schek_app.py` | NumPy, SciPy | Runnable derivation of Schek (1974), with one code cell per tutorial subsection. Computes the small example and the reconstructed networks in part G. |
+| `build_note.py` | NumPy, SciPy | Executes the tutorial cells and updates the note with their instructions, code, and numerical output. |
 | `schek_equations.py` | NumPy, SciPy | Checks the equations, analytic Jacobians against finite differences, and constrained iterations. |
 
 Run from the repository root with Python 3.11 or later:
@@ -20,10 +20,12 @@ python examples/form_finding/schek_app.py
 python examples/form_finding/schek_equations.py
 ```
 
-Read each explanation and append its implementation code in order. A.4 is a
-visual reference for the solver operations. D.2 completes the linear solver;
-F adds the nonlinear extension. Verification lives in the equation checks,
-not in repeated assertion blocks in the tutorial.
+Read each explanation and append its implementation code in order. A.4 has no
+code: it works the five matrix operations through with the real numbers of the
+example net. D.2 completes the linear solver; F adds length and force wishes on
+top of it with `scipy.optimize.least_squares`.
+Verification lives in the equation checks, not in repeated assertion blocks in
+the tutorial.
 
 The data types are introduced explicitly: `branches` starts as a Python list of
 node-pair tuples; the next step constructs `C_s`, a two-dimensional NumPy array.
@@ -35,8 +37,10 @@ matrix, `C.T` transposes a matrix, `@` multiplies matrices, and
 is needed. The `print` calls inspect intermediate values and numerical errors;
 they are optional and do not affect the solution.
 
-Figures in the note illustrate the calculations. Generating images is separate
-from implementing or running the numerical method.
+Matrices, vectors and intermediate results are shown in the note as labelled
+numbers next to the notation they illustrate, not as diagrams. The images in the
+note are the paper's network figures, rendered from what these programs compute;
+generating them is separate from implementing or running the numerical method.
 
 ## Update the tutorial
 

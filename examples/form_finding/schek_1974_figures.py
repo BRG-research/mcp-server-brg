@@ -646,8 +646,9 @@ def main(out: Path):
     flow_diagram(sc, gl)
     sc.dump(out / "fig3_flow.json")
     layout["fig3"] = {"panels": [["fig3_flow.json", [0, 0, 0]]], "views": ["top"], "caption": "Fig. 3. Diagram of the form finding."}
-    icon_scenes(gl, out, layout)
-    scheme_scenes(gl, out, layout)
+    # icon_scenes() and scheme_scenes() are no longer called: the matrix-operation
+    # diagrams they drew were replaced by labelled numbers in compas_fd.md itself.
+    # The functions are kept below in case the diagrams are ever wanted again.
 
     # ------------------------------------------------------------------ figure 4: matrix D (symbolic)
     sc = Scene("fig4_matrix", stroke=0.016)

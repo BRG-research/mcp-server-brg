@@ -21,16 +21,18 @@ Follow [the force density tutorial](compas_fd.md) in order:
 3. **Part C:** prescribed force densities and the linear equilibrium solve.
 4. **Part D:** combine the steps into a reusable form-finding function.
 5. **Part E:** understand the geometric meaning of force densities.
-6. **Part F:** iterate on force densities to satisfy additional conditions.
+6. **Part F:** search for the force densities that also give wanted lengths and forces.
 7. **Part G:** apply the method to the paper's reconstructed examples.
 
-Each subsection explains the task, the data types being created, and the meaning
-of the array rows and columns. Append its implementation code in order; A.4
-provides diagrams for reference without a separate demo program. **D.2 completes the linear force density method**;
-the nonlinear conditions in part F extend it.
+Each subsection has the same shape: what the step does, the equation, the stages
+read right to left, and the same thing with the actual numbers of the 12-branch
+net — every matrix printed with labelled rows and columns. Append each
+implementation block in order; A.4 has no code. **D.2 completes the linear force
+density method**; part F adds wishes about lengths and forces on top of it.
 
 The derivation uses NumPy directly. Printed output provides optional numerical
-checks; image generation is independent of the method. See the
+checks. Matrices are shown as labelled numbers in the text rather than as diagrams;
+the only images are the network figures of the paper. See the
 [example README](../../examples/form_finding/README.md) for commands and how to
 regenerate the tutorial. Compare with `compas_fd` after understanding the linear
 solve; continue to `compas_dr` and other methods afterwards.
