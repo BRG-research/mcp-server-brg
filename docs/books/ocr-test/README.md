@@ -7,7 +7,7 @@ many display equations). Public domain.
 |---|---|
 | `henneberg-p217-228.pdf` | the 12 scanned pages, 300 dpi |
 | `tesseract/p0217.txt` … | current OCR draft (tesseract, German), used today for translation |
-| `marker/` | Marker output (local, CPU), if present |
+| `marker/henneberg-p217-228.md` | Marker 1.x output (local, CPU: 63 min for 12 pages; display equations as LaTeX, inline symbols sometimes wrong, e.g. ϱ read as o) |
 | `mistral/` | Mistral OCR output — create it with the steps below |
 
 Reference: the finished English translation of these pages is chapter 9 of the published book
