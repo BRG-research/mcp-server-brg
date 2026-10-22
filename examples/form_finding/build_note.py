@@ -80,17 +80,21 @@ def main():
            "comparison after implementing the method yourself.", "",
            "This tutorial is generated from the program by `build_note.py`; it executes",
            "each implementation block before updating this Markdown.", "",
-           "Contents", ""]
+           "**Each part below opens on click.** Open one, work through it, close it,",
+           "open the next.", ""]
+    subs = {}
+    for cid, title, *_ in all_cells:
+        subs.setdefault(cid[0], []).append(re.sub(r"\s*\((section|sections|figure|equation|equations)[^)]*\)", "", title))
     last_part = None
     for cid, title, prose, code, explain in all_cells:
         if cid[0] != last_part:
-            out.append(f"- **{PARTS[cid[0]]}**"); last_part = cid[0]
-        out.append(f"  - [{title}](#{anchor(title)})")
-    out.append("")
-    last_part = None
-    for cid, title, prose, code, explain in all_cells:
-        if cid[0] != last_part:
-            out += [f"## {PARTS[cid[0]]}", ""]; last_part = cid[0]
+            if last_part is not None:
+                out += ["</details>", ""]
+            ids = " · ".join(subs[cid[0]])
+            out += ["<details>",
+                    f"<summary><h3>{PARTS[cid[0]]}</h3>{ids}</summary>",
+                    ""]
+            last_part = cid[0]
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), np.printoptions(precision=3, suppress=True, linewidth=120):
             exec(compile(code, f"{APP.name}[{cid}]", "exec"), namespace)
@@ -104,7 +108,7 @@ def main():
             out += [explain, ""]
         if printed:
             out += ["Example output:", "", "```text", printed, "```", ""]
-    out += [END]
+    out += ["</details>", "", END]
     note = NOTE.read_text()
     i, j = note.index(START), note.index(END) + len(END)
     NOTE.write_text(note[:i] + "\n".join(out) + note[j:])

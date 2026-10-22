@@ -152,39 +152,11 @@ comparison after implementing the method yourself.
 This tutorial is generated from the program by `build_note.py`; it executes
 each implementation block before updating this Markdown.
 
-Contents
+**Each part below opens on click.** Open one, work through it, close it,
+open the next.
 
-- **Part A. The network as data**
-  - [A.1 Vectors, matrices and the diagonal trick (section 1.4)](#a1-vectors-matrices-and-the-diagonal-trick-section-14)
-  - [A.2 Numbering the nodes and branches (section 2.1)](#a2-numbering-the-nodes-and-branches-section-21)
-  - [A.3 The branch-node matrix and its two column blocks (section 2.1)](#a3-the-branch-node-matrix-and-its-two-column-blocks-section-21)
-  - [A.4 The five matrix operations the paper uses](#a4-the-five-matrix-operations-the-paper-uses)
-- **Part B. Equilibrium, the nonlinear form**
-  - [B.1 The inputs: anchors and loads (section 2.2)](#b1-the-inputs-anchors-and-loads-section-22)
-  - [B.2 Coordinate differences and lengths, equation (1)](#b2-coordinate-differences-and-lengths-equation-1)
-  - [B.3 Equilibrium with the unknown forces, equation (2)](#b3-equilibrium-with-the-unknown-forces-equation-2)
-- **Part C. The force density trick: a linear system**
-  - [C.1 The force density, equations (4) to (6)](#c1-the-force-density-equations-4-to-6)
-  - [C.2 The matrices D and D_f, equations (7) and (8)](#c2-the-matrices-d-and-d_f-equations-7-and-8)
-  - [C.3 Solving for the free coordinates, equation (9)](#c3-solving-for-the-free-coordinates-equation-9)
-  - [C.4 Lengths, forces and the equilibrium check, equation (10)](#c4-lengths-forces-and-the-equilibrium-check-equation-10)
-- **Part D. The form-finding loop**
-  - [D.1 The form-finding loop as one function (figure 3)](#d1-the-form-finding-loop-as-one-function-figure-3)
-  - [D.2 Using the loop: move the anchors, change the force densities](#d2-using-the-loop-move-the-anchors-change-the-force-densities)
-- **Part E. What the force densities mean**
-  - [E.1 What the force densities mean geometrically (section 4)](#e1-what-the-force-densities-mean-geometrically-section-4)
-- **Part F. Asking for lengths and forces**
-  - [F.1 Wishes beyond equilibrium (section 3.1)](#f1-wishes-beyond-equilibrium-section-31)
-  - [F.2 Finding the force densities with SciPy (sections 3.1 to 3.6)](#f2-finding-the-force-densities-with-scipy-sections-31-to-36)
-  - [F.3 The Jacobian: how each wish reacts to each q (sections 3.2 to 3.5)](#f3-the-jacobian-how-each-wish-reacts-to-each-q-sections-32-to-35)
-- **Part G. The paper's examples, recomputed**
-  - [G.1 The network of figure 5 (section 5)](#g1-the-network-of-figure-5-section-5)
-  - [G.2 Figure 6: different fixed points](#g2-figure-6-different-fixed-points)
-  - [G.3 Figures 7 and 8: changing the force densities](#g3-figures-7-and-8-changing-the-force-densities)
-  - [G.4 Figure 9: additional distance conditions](#g4-figure-9-additional-distance-conditions)
-  - [G.5 Figure 10: the grid-shell model of 112 identical bars](#g5-figure-10-the-grid-shell-model-of-112-identical-bars)
-
-## Part A. The network as data
+<details>
+<summary><h3>Part A. The network as data</h3>A.1 Vectors, matrices and the diagonal trick · A.2 Numbering the nodes and branches · A.3 The branch-node matrix and its two column blocks · A.4 The five matrix operations the paper uses</summary>
 
 ### A.1 Vectors, matrices and the diagonal trick (section 1.4)
 
@@ -192,30 +164,37 @@ Contents
 
 **THE RULE:** a small letter is a **list**; the same letter capitalised is that list laid on a **diagonal**. Schek never writes "diag" because the capital already says it.
 
-$$
-u = \begin{pmatrix} 2 \\ -1 \\ 3 \end{pmatrix}
-\qquad\longrightarrow\qquad
-U = \mathrm{diag}(u) = \begin{pmatrix} 2 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 3 \end{pmatrix}
-$$
+**The list $u$**
+
+| | value |
+|---|---|
+| $u_1$ | 2 |
+| $u_2$ | −1 |
+| $u_3$ | 3 |
+
+**becomes the diagonal matrix $U = \mathrm{diag}(u)$**
+
+| | **c1** | **c2** | **c3** |
+|---|---|---|---|
+| **r1** | **2** | 0 | 0 |
+| **r2** | 0 | **−1** | 0 |
+| **r3** | 0 | 0 | **3** |
 
 *Read it as: put the three numbers down the diagonal, zeros everywhere else.*
 
-**Why bother?** Multiplying by a diagonal matrix **scales each entry on its own** — entry 1 by 2, entry 2 by $-1$, entry 3 by 3. Nothing mixes. C.1 uses this to give every cable its own force density.
+**Why bother?** Multiplying by a diagonal matrix **scales each entry on its own** — entry 1 by 2, entry 2 by −1, entry 3 by 3. Nothing mixes. C.1 uses this to give every cable its own force density.
 
-<details>
-<summary><b>The whole alphabet</b> — click to open</summary>
+#### THE WHOLE ALPHABET
 
 | Symbol | Say it as | What it is | Code | Shape |
 |---|---|---|---|---|
 | $u$ | "u" | a **list**, one number per branch | `u` | `(12,)` |
 | $U$ | "capital U" | that list on a **diagonal** | `np.diag(u)` | `(12, 12)` |
 | $C$ | "C" | a **table** of numbers | `C` | `(12, 5)` |
-| $C^{t}$ | "C transposed" | the table turned on its side | `C.T` | `(5, 12)` |
-| $A B$ | "A times B" | matrix multiplication | `A @ B` | |
+| $C^t$ | "C transposed" | the table turned on its side | `C.T` | `(5, 12)` |
+| $AB$ | "A times B" | matrix multiplication | `A @ B` | |
 | $a_j b_j$ | "a times b, entry by entry" | **not** a matrix product | `a * b` | |
 | $L^{-1}$ | "L inverse" | for a diagonal $L$: one over each entry | `np.diag(1.0 / l)` | |
-
-</details>
 
 **Add to your program:**
 
@@ -230,22 +209,18 @@ u_example = np.array([2.0, -1.0, 3.0])
 U_example = np.diag(u_example)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `import numpy as np` — the array library. From here `np.something` is NumPy.
 - `FloatMatrix` / `FloatVector` — **labels for the reader only**. They say "2-D array of decimals" and "1-D array". No new kind of array is created.
 - `u_example = np.array([2.0, -1.0, 3.0])` — the list, shape `(3,)`.
 - `U_example = np.diag(u_example)` — the `(3, 3)` table with those numbers on the diagonal.
 
-</details>
-
 ### A.2 Numbering the nodes and branches (section 2.1)
 
 **Do this.** Write down the branch list and the two node counts. **Free nodes first, anchors last.** Topology only — no coordinates, no forces yet.
 
-<details>
-<summary><b>The counts</b> — click to open</summary>
+#### THE COUNTS
 
 | Symbol | Say it as | Meaning | Value |
 |---|---|---|---|
@@ -255,17 +230,13 @@ U_example = np.diag(u_example)
 | $m$ | "m" | branches (cables) | `12` |
 | $i(j)$ | "i of j" | **start** node of branch $j$ | $i(1) = 1$ |
 | $k(j)$ | "k of j" | **end** node of branch $j$ | $k(1) = 6$ |
-
-</details>
-
 **REASON for free-first:** in A.3 the connectivity table is cut in two by one straight vertical line — free columns left, anchor columns right. Scattered anchors would make that single cut impossible.
 
 ![Fig. 2](images/schek_fig2.png)
 
 *Fig. 2, redrawn: the graph and its branch-node matrix.*
 
-<details>
-<summary><b>The 12 branches</b> — click to open</summary>
+#### THE 12 BRANCHES
 
 | $j$ | $i(j)$ start | $k(j)$ end | tuple | group |
 |---|---|---|---|---|
@@ -281,9 +252,6 @@ U_example = np.diag(u_example)
 | 10 | 1 | 5 | `(1, 5)` | spoke to centre |
 | 11 | 2 | 5 | `(2, 5)` | spoke to centre |
 | 12 | 3 | 5 | `(3, 5)` | spoke to centre |
-
-</details>
-
 **Every matrix in the rest of the tutorial is this table in another shape.**
 
 #### TWO NUMBERING SYSTEMS — DO NOT MIX
@@ -301,8 +269,7 @@ n, n_f = 5, 4                                    # free nodes 1..5, fixed nodes 
 m = len(branches)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `branches = [(1, 6), (2, 7), ...]` — the twelve tuples above, in order. **Position in the list = branch number.** The two entries are node numbers, never coordinates.
 - `n, n_f = 5, 4` — five free, four fixed.
@@ -310,64 +277,47 @@ m = len(branches)
 
 Not one line here makes geometry or a force. Pure topology.
 
-</details>
-
 ### A.3 The branch-node matrix and its two column blocks (section 2.1)
 
 **Do this.** Turn the branch list into a table of numbers. One row per branch, one column per node. Then cut the columns into free and anchor blocks.
 
-$$
-c(j, i) =
-\begin{cases}
-+1 & \text{node } i \text{ is the START of branch } j \\
--1 & \text{node } i \text{ is the END of branch } j \\
-0 & \text{node } i \text{ is not on branch } j
-\end{cases}
-$$
+**The rule for every entry**
 
-*Read it as: the entry in row $j$, column $i$ records how node $i$ sits on branch $j$.* That is all the formula says.
+| entry | when |
+|---|---|
+| **+1** | node $i$ is the **START** of branch $j$ |
+| **−1** | node $i$ is the **END** of branch $j$ |
+| **0** | node $i$ is not on branch $j$ |
 
-**Why those numbers?** Branch 1 is `(1, 6)`, so its row is $+1$ in column 1 and $-1$ in column 6. Multiply that row by the nine $x$-coordinates:
+*Read it as: the entry in row $j$, column $i$ records how node $i$ sits on branch $j$.* That is all it says.
 
-$$
-(+1)x_1 + 0x_2 + 0x_3 + 0x_4 + 0x_5 + (-1)x_6 + 0x_7 + 0x_8 + 0x_9 \;=\; x_1 - x_6
-$$
+**Why those numbers?** Branch 1 is `(1, 6)`, so its row is +1 in column 1 and −1 in column 6. Multiply that row by the nine $x$-coordinates:
+
+$$(+1)x_1 + 0x_2 + 0x_3 + 0x_4 + 0x_5 + (-1)x_6 + 0x_7 + 0x_8 + 0x_9 = x_1 - x_6$$
 
 The seven zeros delete seven nodes. **One row measures one cable.**
 
-#### $C_s$ WITH OUR NUMBERS
+#### $C_s$ WITH OUR NUMBERS — 12 cables (rows) × 9 nodes (columns)
 
-$$
-C_s \;=\;
-\begin{array}{r|ccccc|cccc}
- & n_1 & n_2 & n_3 & n_4 & n_5 & n_6 & n_7 & n_8 & n_9 \\
-\hline
-b_1\ (1,6) & +1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 \\
-b_2\ (2,7) & 0 & +1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 \\
-b_3\ (3,8) & 0 & 0 & +1 & 0 & 0 & 0 & 0 & -1 & 0 \\
-b_4\ (4,9) & 0 & 0 & 0 & +1 & 0 & 0 & 0 & 0 & -1 \\
-b_5\ (1,4) & +1 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 \\
-b_6\ (1,2) & +1 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-b_7\ (2,3) & 0 & +1 & -1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-b_8\ (3,4) & 0 & 0 & +1 & -1 & 0 & 0 & 0 & 0 & 0 \\
-b_9\ (4,5) & 0 & 0 & 0 & +1 & -1 & 0 & 0 & 0 & 0 \\
-b_{10}\ (1,5) & +1 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 \\
-b_{11}\ (2,5) & 0 & +1 & 0 & 0 & -1 & 0 & 0 & 0 & 0 \\
-b_{12}\ (3,5) & 0 & 0 & +1 & 0 & -1 & 0 & 0 & 0 & 0
-\end{array}
-\;=\;
-\begin{bmatrix} C & C_f \end{bmatrix}
-$$
+| branch | n1 | n2 | n3 | n4 | n5 | n6 | n7 | n8 | n9 | measures |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **b1** (1,6) | **+1** | 0 | 0 | 0 | 0 | **−1** | 0 | 0 | 0 | $x_1-x_6$ |
+| **b2** (2,7) | 0 | **+1** | 0 | 0 | 0 | 0 | **−1** | 0 | 0 | $x_2-x_7$ |
+| **b3** (3,8) | 0 | 0 | **+1** | 0 | 0 | 0 | 0 | **−1** | 0 | $x_3-x_8$ |
+| **b4** (4,9) | 0 | 0 | 0 | **+1** | 0 | 0 | 0 | 0 | **−1** | $x_4-x_9$ |
+| **b5** (1,4) | **+1** | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | 0 | $x_1-x_4$ |
+| **b6** (1,2) | **+1** | **−1** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | $x_1-x_2$ |
+| **b7** (2,3) | 0 | **+1** | **−1** | 0 | 0 | 0 | 0 | 0 | 0 | $x_2-x_3$ |
+| **b8** (3,4) | 0 | 0 | **+1** | **−1** | 0 | 0 | 0 | 0 | 0 | $x_3-x_4$ |
+| **b9** (4,5) | 0 | 0 | 0 | **+1** | **−1** | 0 | 0 | 0 | 0 | $x_4-x_5$ |
+| **b10** (1,5) | **+1** | 0 | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | $x_1-x_5$ |
+| **b11** (2,5) | 0 | **+1** | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | $x_2-x_5$ |
+| **b12** (3,5) | 0 | 0 | **+1** | 0 | **−1** | 0 | 0 | 0 | 0 | $x_3-x_5$ |
+| | ⟵ | | $C$ | | ⟶ | ⟵ | | $C_f$ | ⟶ | |
 
-12 rows (cables) × 9 columns (nodes). The vertical bar is the cut:
+**The cut:** columns n1–n5 are $C$ (12 × 5, free nodes); columns n6–n9 are $C_f$ (12 × 4, anchors).
 
-$$
-C:\; 12 \times 5 \;\text{(free nodes)}
-\qquad
-C_f:\; 12 \times 4 \;\text{(anchors)}
-$$
-
-**Only rows 1–4 of $C_f$ carry anything** — the ring and spokes join free nodes to free nodes, so they never reach an anchor. **Every row sums to zero:** one $+1$, one $-1$.
+**Only rows b1–b4 reach an anchor** — the ring and spokes join free nodes to free nodes, so the rest of $C_f$ is zero. **Every row sums to zero:** one +1, one −1.
 
 **Add to your program:**
 
@@ -383,8 +333,7 @@ print("C_s shape:", C_s.shape)
 print(C_s)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `C_s = np.zeros((m, n + n_f))` — empty table, 12 rows (branches) by 9 columns (nodes), all `0.0`.
 - `for j, (i, k) in enumerate(branches):` — `j` counts branches from `0`; `i`, `k` are the end nodes as **Schek** numbers them (from `1`).
@@ -395,8 +344,6 @@ print(C_s)
 **CHECK IT YOURSELF:** row `0` of the printout should read `[1 0 0 0 0 -1 0 0 0]` — branch 1, node 1 to node 6. Row index `j` is branch `j+1`; column index `i` is node `i+1`.
 
 > **Try it.** Change `(1, 6)` to `(6, 1)`. Row 0 flips to `[-1 0 0 0 0 1 0 0 0]`, so it measures $x_6 - x_1$ instead. The final shape the solver finds is **identical** — only the bookkeeping direction changed.
-
-</details>
 
 Example output:
 
@@ -420,11 +367,7 @@ C_s shape: (12, 9)
 
 **Read only — no code.** Five operations. Everything the paper does to matrices is one of these.
 
-Trial shape used throughout (free nodes flat, anchors from B.1):
-
-$$
-x_s = \begin{pmatrix} -1 & 0 & 1 & 0 & 0 \;\big|\; -2 & 0 & 2 & 0 \end{pmatrix}^{t}
-$$
+Trial shape used throughout: free nodes flat at $x = (-1, 0, 1, 0, 0)$, anchors at $x_f = (-2, 0, 2, 0)$.
 
 #### 1 — A MATRIX IS A LABELLED TABLE
 
@@ -432,109 +375,102 @@ Row $j$ = branch. Column $i$ = node. Entry = how node $i$ sits on branch $j$.
 
 #### 2 — MATRIX @ VECTOR : MULTIPLY, THEN ADD
 
-$$ u = C_s\, x_s $$
+$$u = C_s \, x_s$$
 
 *Read it as: multiply each row by the list, entry by entry, and add the products into one number.*
 
-Row 1 against $x_s$:
+**Row 1 against $x_s$:**
 
-$$
-\begin{array}{r|ccccccccc}
-\text{row 1} & +1 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 \\
-x_s & -1 & 0 & 1 & 0 & 0 & -2 & 0 & 2 & 0 \\
-\hline
-\text{product} & -1 & 0 & 0 & 0 & 0 & +2 & 0 & 0 & 0
-\end{array}
-\qquad \sum = +1 \;=\; x_1 - x_6
-$$
+| | n1 | n2 | n3 | n4 | n5 | n6 | n7 | n8 | n9 | sum |
+|---|---|---|---|---|---|---|---|---|---|---|
+| row 1 of $C_s$ | **+1** | 0 | 0 | 0 | 0 | **−1** | 0 | 0 | 0 | |
+| $x_s$ | −1 | 0 | 1 | 0 | 0 | −2 | 0 | 2 | 0 | |
+| **product** | **−1** | 0 | 0 | 0 | 0 | **+2** | 0 | 0 | 0 | **+1** |
+
+and $+1$ is exactly $x_1 - x_6 = -1 - (-2)$.
 
 **One row → one number. Twelve rows → twelve numbers:**
 
-$$
-C_s x_s = \begin{pmatrix} 1 & 0 & -1 & 0 & -1 & -1 & -1 & 1 & 0 & -1 & 0 & 1 \end{pmatrix}^{t}
-$$
+| branch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| $C_s x_s$ | 1 | 0 | −1 | 0 | −1 | −1 | −1 | 1 | 0 | −1 | 0 | 1 |
 
-$$
-(12 \times 9) \;@\; (9,) \;\longrightarrow\; (12,)
-\qquad\text{the inner 9's must match}
-$$
+Shapes: `(12, 9) @ (9,) -> (12,)`. **The inner 9s must match**; the outer number is the answer's size.
 
 #### 3 — TRANSPOSE @ VECTOR : ADD UP AT THE NODES
 
-$$ C^{t} f $$
+$$C^t f$$
 
-*Read it as: collect the branch values at each node, $+$ if the branch starts there, $-$ if it ends there.*
+*Read it as: collect the branch values at each node, + if the branch starts there, − if it ends there.*
 
 This is summing forces at a joint. With $f_j = 1$ on every branch:
 
-$$
-\begin{array}{r|l|r}
-\text{node} & \text{branches meeting it} & C^{t}f \\
-\hline
-1 & +b_1 +b_5 +b_6 +b_{10} & +4 \\
-2 & +b_2 -b_6 +b_7 +b_{11} & +2 \\
-3 & +b_3 -b_7 +b_8 +b_{12} & +2 \\
-4 & +b_4 -b_5 -b_8 +b_9 & 0 \\
-5 & -b_9 -b_{10} -b_{11} -b_{12} & -4
-\end{array}
-$$
+| node | branches meeting it | sum |
+|---|---|---|
+| 1 | +b1 +b5 +b6 +b10 | **+4** |
+| 2 | +b2 −b6 +b7 +b11 | **+2** |
+| 3 | +b3 −b7 +b8 +b12 | **+2** |
+| 4 | +b4 −b5 −b8 +b9 | **0** |
+| 5 | −b9 −b10 −b11 −b12 | **−4** |
 
-Operation 2 carries information **nodes → branches**; operation 3 carries it **branches → nodes**. Every equilibrium equation below is one of each.
+Shapes: `(5, 12) @ (12,) -> (5,)`. Operation 2 carries information **nodes → branches**; operation 3 carries it **branches → nodes**. Every equilibrium equation below is one of each.
 
 #### 4 — DIAGONAL @ VECTOR : SCALE EACH ENTRY ALONE
 
-$$ Q u \quad\text{where}\quad Q = \mathrm{diag}(q) $$
+$$Q u \quad \text{where} \quad Q = \mathrm{diag}(q)$$
 
 *Read it as: entry $j$ of the answer is just $q_j$ times $u_j$.*
 
-$$
-\begin{array}{r|cccccccccccc}
-q & 2 & 2 & 2 & 2 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 \\
-u & 1 & 0 & -1 & 0 & -1 & -1 & -1 & 1 & 0 & -1 & 0 & 1 \\
-\hline
-Qu & 2 & 0 & -2 & 0 & -1 & -1 & -1 & 1 & 0 & -1 & 0 & 1
-\end{array}
-$$
+| branch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| $q$ | 2 | 2 | 2 | 2 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| $u$ | 1 | 0 | −1 | 0 | −1 | −1 | −1 | 1 | 0 | −1 | 0 | 1 |
+| **$Qu$** | **2** | **0** | **−2** | **0** | **−1** | **−1** | **−1** | **1** | **0** | **−1** | **0** | **1** |
 
-Each column is the product of the two above it. So the order can swap: $U q = Q u$. **That swap is the whole force density trick.**
+Each column is the product of the two above it. So the order can swap: $Uq = Qu$. **That swap is the whole force density trick.**
 
-#### 5 — SOLVING $D x = b$
-
-$$ D x = b \quad\longrightarrow\quad \texttt{x = np.linalg.solve(D, b)} $$
+#### 5 — SOLVING $Dx = b$
 
 *Read it as: find the list $x$ that, pushed through $D$, gives back $b$.*
 
-$$
-\begin{pmatrix}
-5 & -1 & 0 & -1 & -1 \\
--1 & 5 & -1 & 0 & -1 \\
-0 & -1 & 5 & -1 & -1 \\
--1 & 0 & -1 & 5 & -1 \\
--1 & -1 & -1 & -1 & 4
-\end{pmatrix}
-\begin{pmatrix} z_1 \\ z_2 \\ z_3 \\ z_4 \\ z_5 \end{pmatrix}
-=
-\begin{pmatrix} -0.5 \\ 1.5 \\ -0.5 \\ 1.5 \\ -0.5 \end{pmatrix}
-\quad\Rightarrow\quad
-z = \begin{pmatrix} 0.045 \\ 0.330 \\ 0.045 \\ 0.330 \\ 0.063 \end{pmatrix}
-$$
+**The matrix $D$ (5 × 5)**
 
-**Check it:** $Dz$ gives back exactly $b$. NumPy never forms $D^{-1}$ to do this, and neither should you.
+| | n1 | n2 | n3 | n4 | n5 |
+|---|---|---|---|---|---|
+| **n1** | **5** | −1 | 0 | −1 | −1 |
+| **n2** | −1 | **5** | −1 | 0 | −1 |
+| **n3** | 0 | −1 | **5** | −1 | −1 |
+| **n4** | −1 | 0 | −1 | **5** | −1 |
+| **n5** | −1 | −1 | −1 | −1 | **4** |
+
+**times the unknown $z$, equals the known $b_z$**
+
+| node | $z$ (unknown) | $b_z$ (known) | answer $z$ |
+|---|---|---|---|
+| 1 | $z_1$ | −0.5 | **0.045** |
+| 2 | $z_2$ | 1.5 | **0.330** |
+| 3 | $z_3$ | −0.5 | **0.045** |
+| 4 | $z_4$ | 1.5 | **0.330** |
+| 5 | $z_5$ | −0.5 | **0.063** |
+
+**Check it:** multiply $D$ by that answer and you get $b_z$ back exactly. NumPy never forms $D^{-1}$ to do this, and neither should you.
 
 #### WHERE THIS GOES
 
-$$ D = C^{t} Q C $$
+$$D = C^t Q C$$
 
 *Read it as: spread the coordinates onto the branches, scale each branch by its force density, sum back at the nodes.* Operations 3, 4 and 2 nested.
 
-## Part B. Equilibrium, the nonlinear form
+</details>
+
+<details>
+<summary><h3>Part B. Equilibrium, the nonlinear form</h3>B.1 The inputs: anchors and loads · B.2 Coordinate differences and lengths, equation (1) · B.3 Equilibrium with the unknown forces, equation (2)</summary>
 
 ### B.1 The inputs: anchors and loads (section 2.2)
 
 **Do this.** Add the anchor coordinates and the loads. Metres, kilonewtons, $z$ up. Free coordinates stay unknown until C.3.
 
-<details>
-<summary><b>What is known, what is not</b> — click to open</summary>
+#### WHAT IS KNOWN, WHAT IS NOT
 
 | Symbol | Say it as | Known? | Shape | Holds |
 |---|---|---|---|---|
@@ -543,9 +479,6 @@ $$ D = C^{t} Q C $$
 | $x, y, z$ | "x, y, z" | **unknown — the answer** | `(5,)` each | one coordinate of each free node 1–5 |
 | $l_j$ | "l sub j" | follows from the shape | `(12,)` | length of branch $j$ |
 | $s_j$ | "s sub j" | follows from the shape | `(12,)` | force in branch $j$ |
-
-</details>
-
 **These values are our choice, not measurements from Schek.** Figure 2 gives only the connectivity.
 
 #### WITH OUR NUMBERS — INPUT
@@ -557,19 +490,16 @@ $$ D = C^{t} Q C $$
 | 8 | 2 | 0 | 0 | ground level |
 | 9 | 0 | −2 | **1** | lifted |
 
-$$
-\begin{array}{r|rrr}
-\text{anchor} & x_f & y_f & z_f \\
-\hline
-6 & -2 & 0 & 0 \\
-7 & 0 & 2 & \mathbf{1} \\
-8 & 2 & 0 & 0 \\
-9 & 0 & -2 & \mathbf{1}
-\end{array}
-\qquad
-p_z = \begin{pmatrix} -0.5 \\ -0.5 \\ -0.5 \\ -0.5 \\ -0.5 \end{pmatrix}
-\quad p_x = p_y = 0
-$$
+**Anchors — INPUT**
+
+| anchor | $x_f$ | $y_f$ | $z_f$ | |
+|---|---|---|---|---|
+| 6 | −2 | 0 | 0 | ground level |
+| 7 | 0 | 2 | **1** | lifted |
+| 8 | 2 | 0 | 0 | ground level |
+| 9 | 0 | −2 | **1** | lifted |
+
+**Loads — INPUT:** $p_x = p_y = 0$ at every free node, and $p_z = -0.5$ kN at every free node.
 
 Nodes 7 and 9 are the lifted pair. **The minus sign on $p_z$ is the only thing making this net hang instead of rise** — $z$ points up, so gravity is negative.
 
@@ -588,14 +518,11 @@ p_y: FloatVector = np.zeros(n, dtype=np.float64)
 p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)                            # 0.5 kN downward at every free node
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `np.array([-2.0, 0.0, 2.0, 0.0], dtype=np.float64)` — one anchor coordinate list. `dtype=np.float64` means ordinary decimals.
 - `np.zeros(n)` — five zeros: no sideways load.
 - `np.full(n, -0.5)` — five copies of `-0.5`: half a kilonewton down at every free node.
-
-</details>
 
 ### B.2 Coordinate differences and lengths, equation (1)
 
@@ -607,9 +534,10 @@ $$
 
 *Read it as: for every branch, subtract the coordinates of its two end nodes — the free end from one product, the anchored end from the other.*
 
-$$
-\underbrace{(12,)}_{u} \;=\; \underbrace{(12\times5)}_{C}\,\underbrace{(5,)}_{x} \;+\; \underbrace{(12\times4)}_{C_f}\,\underbrace{(4,)}_{x_f}
-$$
+| | $C$ | $x$ | | $C_f$ | $x_f$ | | $u$ |
+|---|---|---|---|---|---|---|---|
+| shape | (12 × 5) | (5,) | + | (12 × 4) | (4,) | = | (12,) |
+| meaning | cable × free | free coords | | cable × anchor | anchor coords | | one per cable |
 
 **Why two products?** A branch can have one end free and one anchored. $Cx$ collects the free part, $C_f x_f$ the anchored part, and `+` puts the two halves of one subtraction back together.
 
@@ -661,8 +589,7 @@ def coordinate_differences(
     return u, v, w, l
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `u = C @ x + C_f @ x_f` — `(12,5)@(5,)` gives 12 numbers, `(12,4)@(4,)` gives 12 numbers, added entry by entry. For branch 1 that is $x_1 - x_6$: the $+1$ lives in `C`, the $-1$ in `C_f`.
 - `v = ...`, `w = ...` — the identical product with the $y$ and $z$ coordinates.
@@ -670,8 +597,6 @@ def coordinate_differences(
 - The function takes `C`, `C_f` and the coordinates as **arguments**, so D.1 can reuse it on any network.
 
 **THIS IS WHERE THE DIFFICULTY COMES FROM.** $l$ holds a square root of the unknown coordinates, and B.3 divides by it.
-
-</details>
 
 ### B.3 Equilibrium with the unknown forces, equation (2)
 
@@ -696,28 +621,23 @@ $u_j / l_j$ is the **direction cosine** — how much of branch $j$ points along 
 
 #### WITH OUR NUMBERS — flat shape, 1 kN in every cable, vertical axis
 
-$$
-\begin{array}{r|cccccccccccc}
-\text{branch} & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 \\
-\hline
-s & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 \\
-l & 1 & 3.162 & 1 & 3.162 & 1.414 & 1.414 & 1.414 & 1.414 & 1 & 1 & 1 & 1 \\
-\hline
-\textbf{1}\;\; s/l & 1 & 0.316 & 1 & 0.316 & 0.707 & 0.707 & 0.707 & 0.707 & 1 & 1 & 1 & 1 \\
-w & 0 & -1 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-\textbf{2}\;\; w\,s/l & 0 & -0.316 & 0 & -0.316 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
-\end{array}
-$$
+| branch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| $s$ | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| $l$ | 1 | 3.162 | 1 | 3.162 | 1.414 | 1.414 | 1.414 | 1.414 | 1 | 1 | 1 | 1 |
+| **1.** $s/l$ | 1 | 0.316 | 1 | 0.316 | 0.707 | 0.707 | 0.707 | 0.707 | 1 | 1 | 1 | 1 |
+| $w$ | 0 | **−1** | 0 | **−1** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **2.** $w\,s/l$ | 0 | **−0.316** | 0 | **−0.316** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 Only the two cables to the **lifted** anchors pull vertically at all. Stage 3 sums them at the nodes, stage 4 subtracts the load:
 
-$$
-\underbrace{\begin{pmatrix} 0 \\ -0.316 \\ 0 \\ -0.316 \\ 0 \end{pmatrix}}_{\textbf{3}\;\;C^{t}(\ldots)}
--
-\underbrace{\begin{pmatrix} -0.5 \\ -0.5 \\ -0.5 \\ -0.5 \\ -0.5 \end{pmatrix}}_{p_z}
-=
-\underbrace{\begin{pmatrix} 0.500 \\ 0.184 \\ 0.500 \\ 0.184 \\ 0.500 \end{pmatrix}}_{\textbf{4}\;\;e_z \;\neq\; 0}
-$$
+| node | **3.** $C^t(\ldots)$ | minus $p_z$ | **4.** error $e_z$ |
+|---|---|---|---|
+| 1 | 0 | −(−0.5) | **0.500** |
+| 2 | −0.316 | −(−0.5) | **0.184** |
+| 3 | 0 | −(−0.5) | **0.500** |
+| 4 | −0.316 | −(−0.5) | **0.184** |
+| 5 | 0 | −(−0.5) | **0.500** |
 
 The other two axes give $e_x = (-1.414,\, 0,\, 1.414,\, 0,\, 0)$ and $e_y = (0,\, -3.363,\, 0,\, 3.363,\, 0)$.
 
@@ -747,15 +667,12 @@ ex, ey, ez = equilibrium_error(x_guess, y_guess, z_guess, s_guess)
 print("out of balance at the free nodes for the flat guess, z direction:", ez)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `L_inv = np.diag(1.0 / l)` — the paper's $L^{-1}$. For a diagonal matrix the inverse is the diagonal of the reciprocals, so `1.0 / l` divides entry by entry.
 - `C.T @ np.diag(u) @ L_inv @ s - p_x` — the four stages above, in one line, read from the right.
 - The three return values are the three axes; `ez` is the one printed.
 - `x_guess`, `y_guess`, `z_guess`, `s_guess` — a deliberately wrong start: free nodes flat, 1 kN everywhere.
-
-</details>
 
 Example output:
 
@@ -763,7 +680,10 @@ Example output:
 out of balance at the free nodes for the flat guess, z direction: [0.5   0.184 0.5   0.184 0.5  ]
 ```
 
-## Part C. The force density trick: a linear system
+</details>
+
+<details>
+<summary><h3>Part C. The force density trick: a linear system</h3>C.1 The force density, equations (4) to (6) · C.2 The matrices D and D_f, equations (7) and (8) · C.3 Solving for the free coordinates, equation (9) · C.4 Lengths, forces and the equilibrium check, equation (10)</summary>
 
 ### C.1 The force density, equations (4) to (6)
 
@@ -781,21 +701,16 @@ $$
 
 #### WHY THE LENGTH CANCELS — THE WHOLE TRICK
 
-$$
-\text{Force}_{x,\,j} = s_j \cdot \frac{u_j}{l_j}
-\qquad\xrightarrow{\;s_j = q_j l_j\;}\qquad
-(q_j\,l_j) \cdot \frac{u_j}{l_j} = q_j\,u_j = q_j\,(x_i - x_k)
-$$
+$$\text{Force}_{x,j} = s_j \cdot u_j / l_j \quad \text{and} \quad s_j = q_j l_j \quad \text{so} \quad \text{Force}_{x,j} = q_j u_j = q_j (x_i - x_k)$$
 
 *Read it as: the $l_j$ on top cancels the $l_j$ underneath, leaving a plain multiple of the coordinates.*
 
 With our branch 1, after the solve of C.3:
 
-$$
-\underbrace{2.402 \cdot \frac{1.200}{1.201}}_{\text{the long way}} \;=\; 2.400
-\qquad
-\underbrace{2.0 \cdot 1.200}_{\text{the short way}} \;=\; 2.400
-$$
+| | calculation | result |
+|---|---|---|
+| the long way | $2.402 \times 1.200 / 1.201$ | **2.400 kN** |
+| the short way | $2.0 \times 1.200$ | **2.400 kN** |
 
 The square root is gone. $q_j(x_i - x_k)$ is **linear** in the unknown coordinates.
 
@@ -809,20 +724,12 @@ $$
 
 #### OUR CHOICE — INPUT
 
-$$
-q = \begin{pmatrix} \underbrace{2\;\;2\;\;2\;\;2}_{\text{anchor cables}} & \underbrace{1\;\;1\;\;1\;\;1}_{\text{ring}} & \underbrace{1\;\;1\;\;1\;\;1}_{\text{spokes}} \end{pmatrix}^{t}
-\qquad
-Q = \mathrm{diag}(q) =
-\begin{pmatrix}
-2 & & & & \\
- & \ddots & & & \\
- & & 2 & & \\
- & & & \ddots & \\
- & & & & 1
-\end{pmatrix}
-$$
+| branch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| $q$ | **2** | **2** | **2** | **2** | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| | anchor cables | | | | ring | | | | spokes | | | |
 
-$Q$ is $12\times12$: 144 entries, only 12 of them non-zero.
+$Q = \mathrm{diag}(q)$ is the 12 × 12 table with those twelve numbers down the diagonal: 144 entries, only 12 non-zero.
 
 **$q$ is NOT a stiffness and NOT a cross-section.** Nothing here knows about steel. It is a ratio you choose; E.1 shows what choosing it controls.
 
@@ -832,8 +739,7 @@ $Q$ is $12\times12$: 144 entries, only 12 of them non-zero.
 q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)   # one force density per branch: the design input
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)` — one force density per branch, **in branch order**: entry `0` is branch 1 `(1, 6)`, entry `11` is branch 12 `(3, 5)`.
 
@@ -841,27 +747,19 @@ That is the whole cell.
 
 > **Try it.** Raise $q$ on the four anchor cables from $2.0$ to $10.0$ kN/m. Does centre node 5 end up **higher** or **lower**? Write your answer down — D.2 runs it and prints the number.
 
-</details>
-
 ### C.2 The matrices D and D_f, equations (7) and (8)
 
 **Do this.** Build the two matrices that turn the net into a linear system, then the right-hand sides.
 
 Put $u = C x + C_f x_f$ from B.2 into $C^{t} Q u = p_x$ from C.1:
 
-$$
-\underbrace{(C^{t} Q C)}_{D}\,x + \underbrace{(C^{t} Q C_f)}_{D_f}\,x_f = p_x
-\qquad\Longrightarrow\qquad
-D x = p_x - D_f x_f
-$$
+$$ (C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D x = p_x - D_f x_f $$
 
 *Read it as: separate the terms with unknown free coordinates from the terms with known anchor coordinates, and move the known ones to the right.*
 
 The same $D$ serves all three axes — $x$ never appears in the $z$ equation:
 
-$$
-D x = p_x - D_f x_f, \qquad D y = p_y - D_f y_f, \qquad D z = p_z - D_f z_f
-$$
+$$ D x = p_x - D_f x_f \qquad D y = p_y - D_f y_f \qquad D z = p_z - D_f z_f $$
 
 | Step | Symbol | Say it as | What it does | Shape of the result |
 |---|---|---|---|---|
@@ -871,57 +769,56 @@ $$
 
 #### HOW TO READ EVERY ENTRY OF $D$
 
-$$
-D_{ii} = \sum_{\text{branches at node } i} q_j
-\qquad
-D_{ik} = -q_j \;\text{ if a branch joins nodes } i,k \;\text{ else } 0
-$$
+| entry | value |
+|---|---|
+| **diagonal** $D_{ii}$ | the **sum** of $q$ over all branches touching free node $i$ |
+| **off-diagonal** $D_{ik}$ | $-q_j$ if a branch joins nodes $i$ and $k$, else 0 |
 
 #### TRACEABLE DEMO — give every branch a different $q$
 
 Set $q_j = j$ so you can follow where each number lands. This is Schek's own figure 4.
 
-$$
-\begin{array}{r|l|r}
-\text{node} & \text{branches at it} & \textstyle\sum q \\
-\hline
-1 & 1,\,5,\,6,\,10 & 1+5+6+10 = 22 \\
-2 & 2,\,6,\,7,\,11 & 2+6+7+11 = 26 \\
-3 & 3,\,7,\,8,\,12 & 3+7+8+12 = 30 \\
-4 & 4,\,5,\,8,\,9 & 4+5+8+9 = 26 \\
-5 & 9,\,10,\,11,\,12 & 9+10+11+12 = 42
-\end{array}
-\qquad
-D = \begin{pmatrix}
-22 & -6 & 0 & -5 & -10 \\
--6 & 26 & -7 & 0 & -11 \\
-0 & -7 & 30 & -8 & -12 \\
--5 & 0 & -8 & 26 & -9 \\
--10 & -11 & -12 & -9 & 42
-\end{pmatrix}
-$$
+| node | branches at it | sum of $q$ | so $D_{ii}$ |
+|---|---|---|---|
+| 1 | 1, 5, 6, 10 | 1+5+6+10 | **22** |
+| 2 | 2, 6, 7, 11 | 2+6+7+11 | **26** |
+| 3 | 3, 7, 8, 12 | 3+7+8+12 | **30** |
+| 4 | 4, 5, 8, 9 | 4+5+8+9 | **26** |
+| 5 | 9, 10, 11, 12 | 9+10+11+12 | **42** |
+
+**$D$ with $q_j = j$**
+
+| | n1 | n2 | n3 | n4 | n5 |
+|---|---|---|---|---|---|
+| **n1** | **22** | −6 | 0 | −5 | −10 |
+| **n2** | −6 | **26** | −7 | 0 | −11 |
+| **n3** | 0 | −7 | **30** | −8 | −12 |
+| **n4** | −5 | 0 | −8 | **26** | −9 |
+| **n5** | −10 | −11 | −12 | −9 | **42** |
 
 Every number traces to a branch: $-6$ is $-q_6$, and branch 6 joins nodes 1–2. The $0$ at $(1,3)$ means nodes 1 and 3 have no branch between them. **$D$ is symmetric.**
 
 #### WITH OUR ACTUAL $q$
 
-$$
-D = \begin{pmatrix}
-5 & -1 & 0 & -1 & -1 \\
--1 & 5 & -1 & 0 & -1 \\
-0 & -1 & 5 & -1 & -1 \\
--1 & 0 & -1 & 5 & -1 \\
--1 & -1 & -1 & -1 & 4
-\end{pmatrix}
-\qquad
-D_f = \begin{pmatrix}
--2 & 0 & 0 & 0 \\
-0 & -2 & 0 & 0 \\
-0 & 0 & -2 & 0 \\
-0 & 0 & 0 & -2 \\
-0 & 0 & 0 & 0
-\end{pmatrix}
-$$
+**$D$ (5 × 5)**
+
+| | n1 | n2 | n3 | n4 | n5 |
+|---|---|---|---|---|---|
+| **n1** | **5** | −1 | 0 | −1 | −1 |
+| **n2** | −1 | **5** | −1 | 0 | −1 |
+| **n3** | 0 | −1 | **5** | −1 | −1 |
+| **n4** | −1 | 0 | −1 | **5** | −1 |
+| **n5** | −1 | −1 | −1 | −1 | **4** |
+
+**$D_f$ (5 × 4)**
+
+| | n6 | n7 | n8 | n9 |
+|---|---|---|---|---|
+| **n1** | **−2** | 0 | 0 | 0 |
+| **n2** | 0 | **−2** | 0 | 0 |
+| **n3** | 0 | 0 | **−2** | 0 |
+| **n4** | 0 | 0 | 0 | **−2** |
+| **n5** | 0 | 0 | 0 | 0 |
 
 Node 1: $2+1+1+1 = 5$. Node 5 (centre): $1+1+1+1 = 4$. **The last row of $D_f$ is all zeros — the centre touches no anchor.**
 
@@ -929,13 +826,13 @@ Node 1: $2+1+1+1 = 5$. Node 5 (centre): $1+1+1+1 = 4$. **The last row of $D_f$ i
 
 The anchors cannot move, so their pull is a known number and belongs on the right. For the vertical axis, with $z_f = (0,1,0,1)$ and $p_z = -0.5$ everywhere:
 
-$$
-\underbrace{\begin{pmatrix} 0 \\ 2 \\ 0 \\ 2 \\ 0 \end{pmatrix}}_{-D_f z_f}
-+
-\underbrace{\begin{pmatrix} -0.5 \\ -0.5 \\ -0.5 \\ -0.5 \\ -0.5 \end{pmatrix}}_{p_z}
-=
-\underbrace{\begin{pmatrix} -0.5 \\ 1.5 \\ -0.5 \\ 1.5 \\ -0.5 \end{pmatrix}}_{b_z}
-$$
+| node | $-D_f z_f$ | $+\,p_z$ | $= b_z$ |
+|---|---|---|---|
+| 1 | 0 | −0.5 | **−0.5** |
+| 2 | **2.0** | −0.5 | **1.5** |
+| 3 | 0 | −0.5 | **−0.5** |
+| 4 | **2.0** | −0.5 | **1.5** |
+| 5 | 0 | −0.5 | **−0.5** |
 
 Nodes 2 and 4 get $+1.5$ because they hang from the **lifted** anchors.
 
@@ -952,8 +849,7 @@ print("D_f (shape 5x4):", D_f, sep="\n")
 print("right-hand sides (columns x, y, z; shape 5x3):", rhs, sep="\n")
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `Q = np.diag(q)` — the 12 force densities on a `(12, 12)` diagonal.
 - `D = C.T @ Q @ C` — equation (8), the three stages above. `(5,12) @ (12,12) @ (12,5)` → `(5, 5)`.
@@ -963,8 +859,6 @@ print("right-hand sides (columns x, y, z; shape 5x3):", rhs, sep="\n")
 **CHECK IT YOURSELF:** node 5's row of `D` must be `[-1, -1, -1, -1, 4]` — four spokes of $q = 1$ pulling it, no anchor term anywhere.
 
 > **Try it.** Change only `p_z` and rerun: `D` and `D_f` print **unchanged**, only `rhs` moves. Change one entry of `q`: `D` changes too. That is the difference between the two loops of D.1.
-
-</details>
 
 Example output:
 
@@ -993,42 +887,41 @@ right-hand sides (columns x, y, z; shape 5x3):
 
 **Do this.** Solve the three linear systems. The shape appears here — one direct step, no iteration, no initial guess.
 
-$$
-D x = p_x - D_f x_f, \qquad D y = p_y - D_f y_f, \qquad D z = p_z - D_f z_f
-$$
+$$ D x = p_x - D_f x_f \qquad D y = p_y - D_f y_f \qquad D z = p_z - D_f z_f $$
 
 *Read it as: three separate problems that happen to share one matrix.*
 
 #### THE VERTICAL SYSTEM IN FULL
 
-$$
-\begin{pmatrix}
-5 & -1 & 0 & -1 & -1 \\
--1 & 5 & -1 & 0 & -1 \\
-0 & -1 & 5 & -1 & -1 \\
--1 & 0 & -1 & 5 & -1 \\
--1 & -1 & -1 & -1 & 4
-\end{pmatrix}
-\begin{pmatrix} z_1 \\ z_2 \\ z_3 \\ z_4 \\ z_5 \end{pmatrix}
-=
-\begin{pmatrix} -0.5 \\ 1.5 \\ -0.5 \\ 1.5 \\ -0.5 \end{pmatrix}
-\quad\Rightarrow\quad
-z = \begin{pmatrix} 0.045 \\ 0.330 \\ 0.045 \\ 0.330 \\ 0.063 \end{pmatrix}
-$$
+**$D$ (5 × 5)**
+
+| | n1 | n2 | n3 | n4 | n5 |
+|---|---|---|---|---|---|
+| **n1** | **5** | −1 | 0 | −1 | −1 |
+| **n2** | −1 | **5** | −1 | 0 | −1 |
+| **n3** | 0 | −1 | **5** | −1 | −1 |
+| **n4** | −1 | 0 | −1 | **5** | −1 |
+| **n5** | −1 | −1 | −1 | −1 | **4** |
+
+**times the unknown $z$, equals the known $b_z$**
+
+| node | $z$ (unknown) | $b_z$ (known) | answer |
+|---|---|---|---|
+| 1 | $z_1$ | −0.5 | **0.045** |
+| 2 | $z_2$ | 1.5 | **0.330** |
+| 3 | $z_3$ | −0.5 | **0.045** |
+| 4 | $z_4$ | 1.5 | **0.330** |
+| 5 | $z_5$ | −0.5 | **0.063** |
 
 All three axes together:
 
-$$
-\begin{array}{r|rrr}
-\text{node} & x & y & z \\
-\hline
-1 & -0.800 & 0.000 & 0.045 \\
-2 & 0.000 & 0.800 & 0.330 \\
-3 & 0.800 & 0.000 & 0.045 \\
-4 & 0.000 & -0.800 & 0.330 \\
-5 & 0.000 & 0.000 & 0.063
-\end{array}
-$$
+| node | $x$ | $y$ | $z$ | |
+|---|---|---|---|---|
+| 1 | −0.800 | 0.000 | 0.045 | |
+| 2 | 0.000 | 0.800 | **0.330** | pulled up by lifted anchor 7 |
+| 3 | 0.800 | 0.000 | 0.045 | |
+| 4 | 0.000 | −0.800 | **0.330** | pulled up by lifted anchor 9 |
+| 5 | 0.000 | 0.000 | 0.063 | centre saddle |
 
 Nodes 2 and 4 are pulled up by the lifted anchors; node 5 is the centre saddle. Compare with the flat guess of B.3, out of balance by up to 0.5 kN everywhere — these coordinates balance to machine precision.
 
@@ -1044,8 +937,7 @@ y: FloatVector = np.linalg.solve(D, p_y - D_f @ y_f)
 z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `x = np.linalg.solve(D, p_x - D_f @ x_f)` — builds the right-hand side for the $x$ axis and solves. Returns `(5,)`: the $x$ of each free node.
 - `y = ...`, `z = ...` — same two lines with the $y$ and $z$ data. **`D` is identical in all three calls**; only the right-hand side changes.
@@ -1053,8 +945,6 @@ z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)
 The whole 3-D equilibrium geometry came out of three ordinary linear solves. No starting shape, no tolerance, no risk of the wrong answer. That is the payoff for prescribing $q$ instead of $s$.
 
 > **Try it.** Add 1 m to every anchor height (`z_f + 1.0`) and resolve. Every free node rises by exactly 1 m, shape unchanged — the right-hand side moved, the matrix did not.
-
-</details>
 
 ### C.4 Lengths, forces and the equilibrium check, equation (10)
 
@@ -1105,8 +995,7 @@ print("forces  s:", s)
 print("equilibrium error (2) on the solution:", max(np.abs(e).max() for e in equilibrium_error(x, y, z, s)))
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `u, v, w, l = coordinate_differences(...)` — the B.2 function, now on the **solved** coordinates instead of a guess.
 - `s = l * q` — equation (10). `*` is entry by entry, **not** a matrix product.
@@ -1117,8 +1006,6 @@ print("equilibrium error (2) on the solution:", max(np.abs(e).max() for e in equ
 > - `p_z = np.full(n, -2.0)` — net sags deeper, forces grow. $D$ untouched, only `rhs` changes.
 > - `z_f += 1.0` — whole net rises 1 m, identical shape. Again only `rhs`.
 > - `q[:4] = 10.0` — now $D$ itself is rebuilt and the shape genuinely changes.
-
-</details>
 
 Example output:
 
@@ -1134,7 +1021,10 @@ forces  s: [2.402 2.748 2.402 2.748 1.167 1.167 1.167 1.167 0.844 0.8   0.844 0.
 equilibrium error (2) on the solution: 1.1102230246251565e-15
 ```
 
-## Part D. The form-finding loop
+</details>
+
+<details>
+<summary><h3>Part D. The form-finding loop</h3>D.1 The form-finding loop as one function · D.2 Using the loop: move the anchors, change the force densities</summary>
 
 ### D.1 The form-finding loop as one function (figure 3)
 
@@ -1181,10 +1071,11 @@ equilibrium error (2) on the solution: 1.1102230246251565e-15
 
 Earlier $x$, $y$, $z$ were three `(5,)` arrays. Here they are one `(5, 3)` table, because a matrix times a 3-column table is three matrix-vector products side by side:
 
-$$
-\underbrace{(12\times5)}_{C}\;\underbrace{(5\times3)}_{xyz} \longrightarrow (12\times3)
-\qquad\text{column 0 is the old } Cx,\;\text{column 1 } Cy,\;\text{column 2 } Cz
-$$
+| | $C$ | $xyz$ | | result |
+|---|---|---|---|---|
+| shape | (12 × 5) | (5 × 3) | → | (12 × 3) |
+
+Column 0 is the old $Cx$, column 1 is $Cy$, column 2 is $Cz$.
 
 Nothing new happens. The same arithmetic is written once instead of three times.
 
@@ -1207,8 +1098,7 @@ def form_finding(branches, n_free, xyz_fixed, q, p):
     return xyz, l, s, reactions
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - First four lines — A.3 with `branches` as an argument.
 - `D, D_f = C.T @ np.diag(q) @ C, C.T @ np.diag(q) @ C_f` — equation (8), both on one line.
@@ -1225,8 +1115,6 @@ def form_finding(branches, n_free, xyz_fixed, q, p):
 
 **CHECK:** `reactions.sum(axis=0) + p.sum(axis=0)` is zero at equilibrium — total pull up equals total load down.
 
-</details>
-
 ### D.2 Using the loop: move the anchors, change the force densities
 
 **Do this.** Call the function with the original data, then change one input at a time. After this cell you own a reusable linear force density solver.
@@ -1241,15 +1129,11 @@ def form_finding(branches, n_free, xyz_fixed, q, p):
 
 #### WITH OUR NUMBERS
 
-$$
-\begin{array}{l|r}
-\text{centre node height } z_5 & \\
-\hline
-\text{base case} & 0.063\ \text{m} \\
-\text{all anchors lifted 1 m} & 1.063\ \text{m} \\
-\text{anchor cables } q = 10 & 0.313\ \text{m}
-\end{array}
-$$
+| run | centre node height $z_5$ |
+|---|---|
+| base case | 0.063 m |
+| all anchors lifted 1 m | **1.063 m** |
+| anchor cables $q = 10$ | **0.313 m** |
 
 Run 2 is the one to stare at: the net moved up by precisely what the anchors moved and kept its shape exactly. $D$ never saw the change.
 
@@ -1262,10 +1146,11 @@ Run 3 answers the prediction from C.1 — stiffer anchor cables pull the corners
 
 #### THE REACTIONS — AND THE GLOBAL CHECK
 
-$$
-R_z = \begin{pmatrix} -0.089 \\ \mathbf{1.339} \\ -0.089 \\ \mathbf{1.339} \end{pmatrix}
-\qquad \sum R_z = 2.500\ \text{kN} \;=\; \underbrace{5 \times 0.5}_{\text{total load}}
-$$
+| anchor | 6 | 7 | 8 | 9 | **sum** |
+|---|---|---|---|---|---|
+| $R_z$ (kN) | −0.089 | **1.339** | −0.089 | **1.339** | **2.500** |
+
+and the total applied load is $5 \times 0.5 = 2.500$ kN. They balance.
 
 The two **lifted** anchors carry nearly everything; the ground-level pair is pulled slightly **down**. If that sum does not balance the load, something upstream is wrong — the cheapest check there is.
 
@@ -1287,8 +1172,7 @@ xyz3, *_ = form_finding(branches, n, xyz_fixed, np.where(np.arange(m) < 4, 10.0,
 print("centre node height: base %.3f | anchors lifted by 1 m %.3f | anchor branches q = 10: %.3f" % (xyz1[4, 2], xyz2[4, 2], xyz3[4, 2]))
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `xyz_fixed = np.c_[x_f, y_f, z_f]`, `p = np.c_[p_x, p_y, p_z]` — repackage B.1's separate axis arrays into the `(4,3)` and `(5,3)` tables the function wants.
 - `xyz_fixed + np.array([0, 0, 1.0])` — NumPy **broadcasting**: the 3-vector is added to every row, lifting all four anchors 1 m with no loop.
@@ -1299,8 +1183,6 @@ print("centre node height: base %.3f | anchors lifted by 1 m %.3f | anchor branc
 
 **You have implemented the linear force density method.** Everything up to here is the complete, usable tool. E explains what $q$ means; F adds wishes about lengths and forces. Neither is needed to use what you just built.
 
-</details>
-
 Example output:
 
 ```text
@@ -1309,7 +1191,10 @@ reactions at the anchors (sum of z components balances the total load): [-0.089 
 centre node height: base 0.063 | anchors lifted by 1 m 1.063 | anchor branches q = 10: 0.313
 ```
 
-## Part E. What the force densities mean
+</details>
+
+<details>
+<summary><h3>Part E. What the force densities mean</h3>E.1 What the force densities mean geometrically</summary>
 
 ### E.1 What the force densities mean geometrically (section 4)
 
@@ -1329,10 +1214,7 @@ $$
 
 *Read it as: make the weighted sum of squared branch lengths as small as possible.*
 
-$$
-u^{t} P u = \sum_j P_j\, u_j^{2}
-\qquad\text{all three terms together} = \sum_j P_j\, l_j^{2}
-$$
+$$ u^t P u = \sum_j P_j u_j^2 \qquad \text{all three terms together} = \sum_j P_j l_j^2 $$
 
 Set the derivative to zero, with $\partial u/\partial x = C$:
 
@@ -1358,28 +1240,30 @@ So a **minimum way net** (smallest total length) is the same thing as a net with
 
 #### WITH OUR NUMBERS — load removed
 
-$$
-\begin{array}{r|rrr}
-\text{node} & x & y & z \\
-\hline
-1 & -0.800 & 0.000 & 0.357 \\
-2 & 0.000 & 0.800 & 0.643 \\
-3 & 0.800 & 0.000 & 0.357 \\
-4 & 0.000 & -0.800 & 0.643 \\
-5 & 0.000 & 0.000 & \mathbf{0.500}
-\end{array}
-\qquad
-l_0:\;\; \underbrace{1.252}_{\times 4 \text{ anchors}}\;\; \underbrace{1.167}_{\times 4 \text{ ring}}\;\; \underbrace{0.813}_{\times 4 \text{ spokes}}
-$$
+| node | $x$ | $y$ | $z$ |
+|---|---|---|---|
+| 1 | −0.800 | 0.000 | 0.357 |
+| 2 | 0.000 | 0.800 | 0.643 |
+| 3 | 0.800 | 0.000 | 0.357 |
+| 4 | 0.000 | −0.800 | 0.643 |
+| 5 | 0.000 | 0.000 | **0.500** |
+
+| group | branches | length $l_0$ |
+|---|---|---|
+| anchor cables | 1–4 | 1.252 |
+| ring | 5–8 | 1.167 |
+| spokes | 9–12 | 0.813 |
 
 Node 5 sits exactly midway: no load, perfect symmetry.
 
 **TEST THEOREM 1** — the weighted sum at this shape:
 
-$$
-\underbrace{4(2 \cdot 1.252^2)}_{12.540} + \underbrace{4(1 \cdot 1.167^2)}_{5.447} + \underbrace{4(1 \cdot 0.813^2)}_{2.644}
-\;=\; \sum_j q_j l_j^{2} \;=\; 20.629
-$$
+| group | contribution $q\,l^2$ |
+|---|---|
+| anchors | $4 \times 2 \times 1.252^2$ = 12.540 |
+| ring | $4 \times 1 \times 1.167^2$ = 5.447 |
+| spokes | $4 \times 1 \times 0.813^2$ = 2.644 |
+| **total** | **20.629** |
 
 If this is the minimum the gradient must vanish — and it does, to $2.22 \times 10^{-15}$. Move any free node in any direction and 20.629 can only grow.
 
@@ -1387,9 +1271,7 @@ Move any free node in any direction and 20.629 can only grow.
 
 **TEST THEOREM 2** — set $q_j = 1/l_j$ and compute $s_j = q_j l_j$:
 
-$$
-s = \begin{pmatrix} 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1 \end{pmatrix}^{t}
-$$
+All twelve forces come out as **1.000** — same force in every cable, whatever its length.
 
 Twelve ones. Same force in every cable, whatever its length.
 
@@ -1416,8 +1298,7 @@ q_const = 1.0 / l0                                                              
 print("Theorem 2: forces with q = 1 / l:", l0 * q_const)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `form_finding(..., np.zeros((n, 3)))` — the D.1 solver with a `(5, 3)` block of zeros as the load: the unloaded, purely prestressed net.
 - `uvw0 = C @ xyz0 + C_f @ xyz_fixed` — equation (1) on that solution.
@@ -1426,8 +1307,6 @@ print("Theorem 2: forces with q = 1 / l:", l0 * q_const)
 
 **$q$ is the weight you put on a cable in a competition to be short.**
 
-</details>
-
 Example output:
 
 ```text
@@ -1435,7 +1314,10 @@ Theorem 1: gradient of the weighted squared lengths at the unloaded equilibrium:
 Theorem 2: forces with q = 1 / l: [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 ```
 
-## Part F. Asking for lengths and forces
+</details>
+
+<details>
+<summary><h3>Part F. Asking for lengths and forces</h3>F.1 Wishes beyond equilibrium · F.2 Finding the force densities with SciPy · F.3 The Jacobian: how each wish reacts to each q</summary>
 
 ### F.1 Wishes beyond equilibrium (section 3.1)
 
@@ -1466,11 +1348,12 @@ $$
 
 Ask the four anchor cables to be exactly 1.2 m. After the linear solve of Part C they are not:
 
-$$
-g = \begin{pmatrix} l_1 \\ l_2 \\ l_3 \\ l_4 \end{pmatrix} - \begin{pmatrix} 1.2 \\ 1.2 \\ 1.2 \\ 1.2 \end{pmatrix}
-= \begin{pmatrix} 1.20083 \\ 1.37420 \\ 1.20083 \\ 1.37420 \end{pmatrix} - \begin{pmatrix} 1.2 \\ 1.2 \\ 1.2 \\ 1.2 \end{pmatrix}
-= \begin{pmatrix} 0.00083 \\ \mathbf{0.17420} \\ 0.00083 \\ \mathbf{0.17420} \end{pmatrix}
-$$
+| wish | branch | have (m) | want (m) | error $g$ |
+|---|---|---|---|---|
+| 1 | 1 | 1.20083 | 1.200 | +0.00083 |
+| 2 | 2 | 1.37420 | 1.200 | **+0.17420** |
+| 3 | 3 | 1.20083 | 1.200 | +0.00083 |
+| 4 | 4 | 1.37420 | 1.200 | **+0.17420** |
 
 Branches 1 and 3 are nearly right; branches 2 and 4 — hanging from the **lifted** anchors — are 17 cm too long.
 
@@ -1478,9 +1361,7 @@ Four numbers, and all four must become zero. Branches 1 and 3 are nearly right; 
 
 #### 4 WISHES, 12 KNOBS
 
-$$
-\underbrace{4}_{\text{wishes}} \;\text{equations},\qquad \underbrace{12}_{\text{force densities}} \;\text{unknowns}
-$$
+**4 equations, 12 unknowns** — many different $q$ grant the same wishes, so there is no single answer. F.2 lets SciPy pick one.
 
 There is no single answer. F.2 lets SciPy pick one.
 
@@ -1495,15 +1376,12 @@ print("wanted 1.2 m, got:", l[length_rows])
 print("still wrong by:   ", g_lengths)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `length_rows = [0, 1, 2, 3]` — **array indices** of the constrained branches, so branches 1–4 in Schek's numbering.
 - `target_lengths = np.full(4, 1.2)` — four copies of 1.2 m.
 - `l[length_rows]` — picks just those four lengths out of the twelve (NumPy "fancy indexing").
 - the subtraction gives the error vector, one entry per wish.
-
-</details>
 
 Example output:
 
@@ -1518,9 +1396,7 @@ still wrong by:    [0.001 0.174 0.001 0.174]
 
 #### THE SHAPE OF THE LOOP
 
-$$
-\text{guess } q \;\longrightarrow\; \texttt{form\_finding}(q) \;\longrightarrow\; \text{lengths, forces} \;\longrightarrow\; \text{how wrong?}
-$$
+$$ \text{guess } q \;\rightarrow\; \texttt{form-finding}(q) \;\rightarrow\; \text{lengths, forces} \;\rightarrow\; \text{how wrong?} $$
 
 `least_squares` runs that loop for you, changing $q$ each time. It needs only the function that says **how wrong** the current $q$ is — F.1's $g$.
 
@@ -1537,16 +1413,10 @@ SciPy's trust region does the rest: it takes a cautious step, checks whether thi
 
 #### WITH OUR NUMBERS — WISH 1: four cables of 1.2 m
 
-$$
-\begin{array}{l|cccc}
- & q_1 & q_2 & q_3 & q_4 \\
-\hline
-\text{start} & 2.000 & 2.000 & 2.000 & 2.000 \\
-\text{after 12 tries} & 1.972 & \mathbf{2.412} & 1.972 & \mathbf{2.412}
-\end{array}
-\qquad
-l \longrightarrow \begin{pmatrix} 1.200 \\ 1.200 \\ 1.200 \\ 1.200 \end{pmatrix}
-$$
+| | $q_1$ | $q_2$ | $q_3$ | $q_4$ | lengths |
+|---|---|---|---|---|---|
+| start | 2.000 | 2.000 | 2.000 | 2.000 | 1.201, 1.374, 1.201, 1.374 |
+| **after 12 tries** | 1.972 | **2.412** | 1.972 | **2.412** | **1.200** × 4 |
 
 Worst error $1.8 \times 10^{-8}$ m. Branches 2 and 4 were **too long**, so their $q$ went **up** to pull them in — Theorem 1 of E.1 at work.
 
@@ -1558,10 +1428,10 @@ Read what it decided: branches 2 and 4 were **too long**, so their $q$ went **up
 
 Four spokes of 0.9 m **and** four anchor cables carrying exactly 2 kN:
 
-$$
-g = \begin{pmatrix} l_9 - 0.9 \\ l_{10} - 0.9 \\ l_{11} - 0.9 \\ l_{12} - 0.9 \\ s_1 - 2.0 \\ s_2 - 2.0 \\ s_3 - 2.0 \\ s_4 - 2.0 \end{pmatrix}
-\begin{matrix} \left. \vphantom{\begin{matrix}a\\b\\c\\d\end{matrix}} \right\} \text{length wishes} \\[1.2em] \left. \vphantom{\begin{matrix}a\\b\\c\\d\end{matrix}} \right\} \text{force wishes} \end{matrix}
-$$
+| kind | wish | result after 22 tries |
+|---|---|---|
+| length | spokes 9–12 each 0.9 m | **0.900** m each |
+| force | anchor cables 1–4 each 2 kN | **2.000** kN each |
 
 After 22 tries: all four spokes at $0.900$ m, all four anchor forces at $2.000$ kN, worst error $7.5 \times 10^{-11}$. **Mixing costs nothing** — `np.r_[...]` just stacks the two kinds into one list.
 
@@ -1603,8 +1473,7 @@ q_m, xyz_m, l_m, s_m, tries, err = fit_force_densities(branches, n, xyz_fixed, q
 print(f"mixed wishes -> spokes {np.round(l_m[8:], 3)} m, anchor forces {np.round(s_m[:4], 3)} kN, worst error {err:.1e}")
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `from scipy.optimize import least_squares` — the search routine.
 - `def still_wrong(q):` — the heart of it. **Given a trial $q$, run the full linear solve of D.1, then report how far every wish is from granted.** All zeros means done.
@@ -1614,8 +1483,6 @@ print(f"mixed wishes -> spokes {np.round(l_m[8:], 3)} m, anchor forces {np.round
 - The last `form_finding` call re-runs the solver once on the winning $q$ to return the shape, lengths, forces and reactions.
 
 **ALWAYS READ THE RETURNED ERROR.** A shape comes back whether or not the wishes were granted. Only the error number tells you which happened.
-
-</details>
 
 Example output:
 
@@ -1629,11 +1496,7 @@ mixed wishes -> spokes [0.9 0.9 0.9 0.9] m, anchor forces [2. 2. 2. 2.] kN, wors
 
 **Do this.** Look at what the solver feels its way with: a table of **sensitivities**, one row per wish, one column per knob.
 
-$$
-G^{t} := \frac{\partial g^{\ast}}{\partial q}
-\qquad
-\text{row } i,\ \text{column } j: \;\; \frac{\partial\,(\text{wish } i)}{\partial\,q_j}
-$$
+$$ G^t := \partial g^* / \partial q \qquad \text{row } i, \text{ column } j: \text{ how much wish } i \text{ changes when } q_j \text{ changes} $$
 
 *Read it as: a table of sensitivities — one row per wish, one column per knob.*
 
@@ -1641,17 +1504,12 @@ $$
 
 #### WITH OUR NUMBERS — 4 wishes × 12 branches
 
-$$
-G^{t} =
-\begin{array}{r|rrrr|rrrr|rrrr}
- & b_1 & b_2 & b_3 & b_4 & b_5 & b_6 & b_7 & b_8 & b_9 & b_{10} & b_{11} & b_{12} \\
-\hline
-w_1 & \mathbf{-0.313} & 0.002 & 0.073 & 0.002 & 0.139 & 0.139 & 0.023 & 0.023 & 0.000 & 0.109 & 0.000 & 0.051 \\
-w_2 & 0.002 & \mathbf{-0.358} & 0.002 & 0.044 & 0.016 & 0.144 & 0.144 & 0.016 & 0.037 & 0.000 & 0.113 & 0.000 \\
-w_3 & 0.073 & 0.002 & \mathbf{-0.313} & 0.002 & 0.023 & 0.023 & 0.139 & 0.139 & 0.000 & 0.051 & 0.000 & 0.109 \\
-w_4 & 0.002 & 0.044 & 0.002 & \mathbf{-0.358} & 0.144 & 0.016 & 0.016 & 0.144 & 0.113 & 0.000 & 0.037 & 0.000
-\end{array}
-$$
+| | b1 | b2 | b3 | b4 | b5 | b6 | b7 | b8 | b9 | b10 | b11 | b12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **w1** | **−0.313** | 0.002 | 0.073 | 0.002 | 0.139 | 0.139 | 0.023 | 0.023 | 0.000 | 0.109 | 0.000 | 0.051 |
+| **w2** | 0.002 | **−0.358** | 0.002 | 0.044 | 0.016 | 0.144 | 0.144 | 0.016 | 0.037 | 0.000 | 0.113 | 0.000 |
+| **w3** | 0.073 | 0.002 | **−0.313** | 0.002 | 0.023 | 0.023 | 0.139 | 0.139 | 0.000 | 0.051 | 0.000 | 0.109 |
+| **w4** | 0.002 | 0.044 | 0.002 | **−0.358** | 0.144 | 0.016 | 0.016 | 0.144 | 0.113 | 0.000 | 0.037 | 0.000 |
 
 **Three things to read off it:**
 
@@ -1669,19 +1527,13 @@ $$
 
 *Read it as: how far every free node moves when one force density is nudged.* For the heights, with our numbers:
 
-$$
-\frac{\partial z}{\partial q} =
-\begin{array}{r|rrrr}
- & q_1 & q_2 & q_3 & q_4 \\
-\hline
-n_1 & -0.012 & 0.060 & -0.003 & 0.060 \\
-n_2 & -0.004 & \mathbf{0.175} & -0.004 & 0.041 \\
-n_3 & -0.003 & 0.060 & -0.012 & 0.060 \\
-n_4 & -0.004 & 0.041 & -0.004 & \mathbf{0.175} \\
-n_5 & -0.006 & 0.084 & -0.006 & 0.084
-\end{array}
-\;\cdots
-$$
+| | $q_1$ | $q_2$ | $q_3$ | $q_4$ | … |
+|---|---|---|---|---|---|
+| **n1** | −0.012 | 0.060 | −0.003 | 0.060 | |
+| **n2** | −0.004 | **0.175** | −0.004 | 0.041 | |
+| **n3** | −0.003 | 0.060 | −0.012 | 0.060 | |
+| **n4** | −0.004 | 0.041 | −0.004 | **0.175** | |
+| **n5** | −0.006 | 0.084 | −0.006 | 0.084 | |
 
 Row $n_2$, column $q_2$ is $+0.175$: raise branch 2's force density by 1 kN/m and node 2 rises about 0.175 m. It is the largest in that column, and branch 2 is the cable node 2 hangs from. Column $q_1$ is all **negative** (branch 1 runs down to anchor 6); column $q_2$ all **positive** (branch 2 runs up to lifted anchor 7). **The table knows the geometry.**
 
@@ -1706,8 +1558,7 @@ print("sensitivity of the four anchor lengths to all twelve q (shape %s):" % (G_
 print(G_t)
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `base = form_finding(...)[1][rows]` — the lengths of the watched branches at the current `q`. The `[1]` picks the second return value, `l`.
 - `G_t = np.zeros((len(rows), len(q)))` — the empty `(4, 12)` table.
@@ -1716,8 +1567,6 @@ print(G_t)
 - `G_t[:, j] = ...` — write it into **column** `j`.
 
 **COST:** one extra solve per branch. For 12 branches that is nothing; for the 112-bar net of G.5 it is still only 112 small solves per step.
-
-</details>
 
 Example output:
 
@@ -1729,7 +1578,10 @@ sensitivity of the four anchor lengths to all twelve q (shape (4, 12)):
  [ 0.002  0.044  0.002 -0.358  0.144  0.016  0.016  0.144  0.113  0.     0.037  0.   ]]
 ```
 
-## Part G. The paper's examples, recomputed
+</details>
+
+<details>
+<summary><h3>Part G. The paper's examples, recomputed</h3>G.1 The network of figure 5 · G.2 Figure 6: different fixed points · G.3 Figures 7 and 8: changing the force densities · G.4 Figure 9: additional distance conditions · G.5 Figure 10: the grid-shell model of 112 identical bars</summary>
 
 ### G.1 The network of figure 5 (section 5)
 
@@ -1819,8 +1671,7 @@ def keep(name, brs, xyz_free, xyz_fixed, fixed_nodes):
     shapes[name] = {"branches": [list(e) for e in brs], "xyz": np.vstack([xyz_free, xyz_fixed]).tolist(), "fixed": list(fixed_nodes)}
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `FIG5_PX` — plan position of each of the 67 nodes read off the printed figure, in pixels. `* np.array([0.04, -0.04])` scales to metres and flips $y$ (image rows count down); `xy -= xy[66]` moves the apex (node 67, index 66) to the origin.
 - `ring(nodes)` — turns a node list into the closed chain of branches between consecutive ones. The `seen` loop collects each branch once, giving 110.
@@ -1828,8 +1679,6 @@ def keep(name, brs, xyz_free, xyz_fixed, fixed_nodes):
 - `p5` — the `(61, 3)` load table, `-0.4` in every $z$. `anchors5(...)` — the `(6, 3)` anchor table.
 - `is_spoke`, `is_border`, `touches_border` — **boolean masks** over the 110 branches, arrays of `True`/`False`. `l[is_spoke]` picks out the ten radial lengths.
 - `keep(name, ...)` — stores a finished shape for the figure renderer, stacking 61 free + 6 fixed rows into one `(67, 3)` table.
-
-</details>
 
 ### G.2 Figure 6: different fixed points
 
@@ -1865,15 +1714,12 @@ for name, (dx, dy) in zip(["fig6_1", "fig6_2", "fig6_3"], [(0, 0), (6, 2), (12, 
 keep("fig1", *(lambda r: (branches5, r[0], anchors5(), fixed5))(form_finding(branches5, free5, anchors5(), q5, p5)))
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `form_finding(branches5, free5, anchors5(dx, dy), q5, p5)` — D.1 on the big net. Internally `D` is now `(61, 61)`; nothing else differs.
 - `l[is_spoke]` — the boolean mask picks the ten radial lengths out of 110.
 - `R[5, 2]` — the $z$ reaction at the sixth fixed node, the apex.
 - `keep(name, ...)` — stores each shape so the figures render from computed data.
-
-</details>
 
 Example output:
 
@@ -1934,14 +1780,11 @@ for name, qb in zip(["fig8_1", "fig8_2", "fig8_3"], [10.0, 5.0, 1.0]):
     print(f"{name}: border q = {qb:g}: border lengths {l[is_border].min():.1f}-{l[is_border].max():.1f} m")
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `np.where(is_spoke, qs, q5)` — builds a **copy** of `q5` with every radial branch replaced by `qs`, everything else untouched.
 - `np.where(is_border, qb, q5)` — the same for the border.
 - Everything else is the plain D.1 call. Because `q` changed, `form_finding` rebuilds `D` and `D_f` internally.
-
-</details>
 
 Example output:
 
@@ -1967,9 +1810,7 @@ fig8_3: border q = 1: border lengths 2.9-6.5 m
 
 Every branch not touching the border gets a prescribed length: 6 m for the radials, a fixed multiple of its fig. 6.1 length for the rings.
 
-$$
-\underbrace{62}_{\text{wishes}} \;\text{equations},\qquad \underbrace{110}_{\text{branches}} \;\text{knobs},\qquad D \text{ is } 61 \times 61
-$$
+**62 wishes, 110 knobs**, and $D$ is 61 × 61.
 
 #### WITH OUR NUMBERS
 
@@ -2001,16 +1842,13 @@ for name, (l_radial, ring_factor) in zip(["fig9_1", "fig9_2", "fig9_3"], [(6.0, 
           + ("  (NOT solved)" if err > 1e-6 else ""))
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 - `base_l = form_finding(...)[1]` — lengths of the unconstrained fig. 6.1 net, the reference for the ring targets. `[1]` picks `l`.
 - `inner = [j for j in range(len(branches5)) if not touches_border[j]]` — indices of every branch touching no border node. These are the wish rows.
 - `l_v = [l_radial if is_spoke[j] else base_l[j] * ring_factor for j in inner]` — one target per wish: a flat 6 m for radials, a multiple of the base length for rings.
 - `fit_force_densities(..., length_rows=inner, l_v=l_v)` — F.2 with 62 length wishes.
 - `err` is the worst remaining wish error; the printed line appends `(NOT solved)` if it exceeds `1e-6`.
-
-</details>
 
 Example output:
 
@@ -2085,8 +1923,7 @@ keep("fig10_3", grid, xyz, anchors10b, [renum[c] for c in corners])
 print(f"fig10_3: equidistant inner net and constant force near the border: worst error {err:.1e} after {tries} tries")
 ```
 
-<details>
-<summary><b>Line by line</b> — click to open</summary>
+#### LINE BY LINE
 
 **Building the grid**
 
@@ -2109,8 +1946,6 @@ print(f"fig10_3: equidistant inner net and constant force near the border: worst
 
 From a Python list of node pairs in A.2 to a constrained form-finding method handling 112 bars with mixed length and force wishes — **one linear solver, built once, never modified.**
 
-</details>
-
 Example output:
 
 ```text
@@ -2118,6 +1953,8 @@ fig10_1: 112 bars of 1.0 m hanging under their weight: worst length error 7.5e-1
 fig10_2: corners raised, inner q = 1, border q = 10: inner lengths 0.65-0.81 m
 fig10_3: equidistant inner net and constant force near the border: worst error 1.3e-08 after 38 tries
 ```
+
+</details>
 
 <!-- schek-app:end -->
 
