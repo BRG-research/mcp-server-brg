@@ -1,0 +1,54 @@
+$ 40. Analytische Einleitung. - . 225,
+
+Aus den Gleichungen (e) folgt:
+
+= 1
+R, =»P,
+=,
+R,=+#P,
+= 5
+m, = — %Pa,
+
+und sodann aus den Gleichungen (a):
+BR=-— »P ’
+De sa,
+doch wäre die Bestimmung von R, und m, nicht erforderlich gewesen,
+da in den Ausdrücken für das Biegungsmoment nur R,, R, und m,
+vorkommen.
+Das Biegungsmoment in den verschiedenen Intervallen wird jetzt
+für 0<x< oa: M=—-ZPa+%Pz,
+fr a<z<2a: M=—KPa+2Px— Pla —a),
+für 2a <a<4da: M-—APa + Pa Pa—a) +4 Pia 20).
+
+Das maximale Biegungsmoment kann nur auftreten:
+
+für c=0,2=a, 2=2a oder z—=4a. Nun ist
+frr=0: M=-$Pa,
+
+füre=a: M=-3Pa,
+
+für e=2a: M=—1Pa,
+
+füre=4a: M—;,Pa.
+
+Der gefährliche Querschnitt ist an der Einmauerungsstelle A, und das
+maximale Biegungsmoment hat den Wert:
+
+5
+ne = ig
+
+Aus der einfachen gesetzmäßigen Form der Gleichungen (b), (c),
+. (d) folgt, daß die Gleichungen der elastischen Linie für die einzelnen
+Intervalle sich sofort hinschreiben lassen, und somit auch unmittelbar
+die Gleichungen (e). Es ist daher nicht notwendig, die Rechnungen
+vollständig durchzuführen. Daß die beiden Konstanten der elastischen
+Linie gleich Null wurden und von vornherein in Wegfall kamen, hängt
+natürlich nur mit der Einmauerung :bei A zusammen; in anderen
+Fällen werden sie sich durch die ganze Rechnung schleppen.
+
+$ 41. Konstruktion der elastischen Linie.
+Sollen dieselben Gedanken, welche in $ 40 die Berechnung des
+chlaufenden Trägers ermöglicht haben, nun zur graphischen Unter-
+
+Chung verwandt werden, so wird es erforderlich sein, die elastische
+Henneberg, Graphische Statik. 15

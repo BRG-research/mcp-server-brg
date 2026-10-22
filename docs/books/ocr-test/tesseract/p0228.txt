@@ -1,0 +1,57 @@
+228 9. Kapitel. Der durchlaufende Träger.
+
+folgenden Kräfte zu einem Kräftepolygon vereinigt werden, sei ein
+Pol © angenommen, welcher einen Polabstand H besitzt. (Fig. 121).
+
+Es zei A,E,B, die elastische Linie, und zwar E, derjenige Punkt
+derselben, welcher mit dem Punkte E der Balkenachse in derselben
+Vertikalen liegt. Wird nun die Gleichung (2) auf diesen Punkt E,
+angewandt, so stellt in derselben das Integral
+
+[mas
+
+den Inhalt F derjenigen Fläche dar, welche von der Momentenfläche
+durch die Vertikale EE, abgeschnitten wird, wärend die linke Seiten
+der Gleichung (2) die
+trigonometrische
+
+S " | | Tangente des Rich-
+
+tungswinkels der
+Kurventangente ? im
+Punkte E, liefert. Der
+Inhalt der Fläche F
+ist im Kräftepolygon
+durch eime Strecke
+darzustellen. Zu die-
+sem Zwecke sei die Fläche F in ein Rechteck verwandelt mit einer
+vorgeschriebenen Grundlinie g. Ist u die Höhe dieses Rechteckes, .
+so folgt
+
+,
+|
+
+Fig. 121.
+
+F= fi mdz = gu.
+Die Gleiehung (2) wird daher
+
+und dem Punkte E, der elastischen Linie wird im Kräftepolygon ein |
+Punkt E’ entsprechen, für den ist
+
+OE=u,
+
+wenn O der Anfangspunkt des Kräftepolygones ist. Da aber der’Pol-
+strahl CE’ parallel ist zur Kurventangente ? in E,:
+
+cEIt,
+
+so ergibt sich:
+dy a—wu
+
+ds H
+und somit bei Einsetzung:
+se A 1 RE
+
+HT JE “
+

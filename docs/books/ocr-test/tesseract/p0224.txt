@@ -1,0 +1,45 @@
+224 9. Kapitel. Der durchlaufende Träger.
+
+durch deren Integration folgt:
+d 2 ‚
+JER = — ma—iRa’+1P@-a)+0,
+
+und
+JEy=— ma? — 1 Ra’ +4 Pa— a)! 4 0/0 + 0y.
+
+Da die aus diesen Gleichungen sich für x = «a ergebenden Werte von
+von y und = übereinstimmen müssen mit denjenigen, die aus der
+Gleichung (b) folgen, so muß sein
+
+Gau -58
+und die elastische Linie in dem zweiten Intervall erhält die Gleichung:
+(e) JEy=—3ma®’—ıR,2°+4P(2 —a)°.
+
+Für das dritte Intervall von =2a bis 24a ist die Differential-
+gleichung der Pa Linie
+
+FE —Y- m, — Rx + P(@—a)—R,(@— 2a).
+Durch Integration derselben folgt:
+
+d 1 it Si Mr
+JE = — ma — 3 Rı@e +5 Pa — a): — , B,(@—2a)? +0,”
+und
+JEy=— 3m, 2°— 4 R,2° +4 P(x-a)’—IR,(« 2a”? +0"2+0,".
+
+Da wieder bei 2 = 2a die sich aus diesen beiden Gleichungen erge-
+
+benden Werte 4 und a übereinstimmen müssen mit denjenigen, die
+aus Gleichung (c) folgen, so liefert das dritte Intervall die Gleichung:
+(d) JEy=- im — AR +1P(x — 20).
+Jetzt sind noch die Lagerbedingungen für x —2a und @=4u
+zu berücksichtigen. Dieselben sind:
+für <= 2a muß sein: y=0,
+für <= 4a muß sein: y= 0 und =(.
+Daraus folgen die drei Gleichungen:
+12m, + SR,a Fa Pa,
+(e) sm +16R,a+4R,a= 9Pa,
+43m, + 64R,a + 8R,4=27Pa.
+
+Es haben sich somit durch die elastische Linie tatsächlich drei
+weitere Gleichungen ergeben.
+

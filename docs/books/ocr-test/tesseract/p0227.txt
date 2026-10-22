@@ -1,0 +1,59 @@
+g 41. Konstruktion der elastischen Linie. 233
+
+Soll nun die elastische Linie gezeichnet werden, so müssen die
+sich durch dieselbe ergebenden Einsenkungen in einem vergrößerten
+Maßstabe aufgetragen werden, um bei ihrer Kleinheit dem Auge über-
+haupt sichtbar gemacht werden zu können. Es seien demgemäß die
+ Einsenkungen bzw. die Ordinaten der elastischen Linie in n-facher
+Vergrößerung aufgetragen.
+
+Wird nun die elastische Linie auf ein Koordinatensystem be-
+E ogen, dessen x-Achse in der Balkenachse liegt, und dessen positive
+Seite nach rechts gerichtet ist, während die positive y-Achse vertikal
+"nach abwärts gekehrt ist, so wird ein Punkt x, y der gezeichneten
+elastischen Linie in Wirklichkeit die Koordinaten
+
+2, = 1%
+
+| Y
+
+besitzen.
+
+“ Da in der Gleichung der elastischen Linie durch x und y die
+“ wahren Längen der Koordinaten dargestellt sind, so würde jetzt diese
+R Gleichung bei gleichzeitiger Einsetzung des für das Biegungsmoment
+j erhaltenen Ausdruckes zu schreiben sein:
+
+?
+
+KR. 2
+
+; IBG u ga
+
+y Hieraus ergibt sich bei Einsetzung der Werte von x, und y, die
+
+Gleichung: .
+
+JE nn = — mhxsn.
+
+Dies würde die Gleichung derjenigen Kurve sein, welche die elastische
+"Linie bei den betreffenden Maßstäben darstellt.
+
+Durch Integration dieser Gleichung (1) ergibt sich die @leichung
+
+dy __ hun
+de JE
+
+mds--c,
+
+elche die Neigung der Tangente der Kurve bestimmt.
+
+Ist nun die elastische Linie aus der Momentenfläche als Belastungs-
+fläche herzuleiten, so sind die aus der Belastungsfläche sich ergebenden
+Kräfte zu einem Kräftepolygon, das in eine vertikale Gerade fällt,
+üsammenzusetzen. Der Pol dieses Kräftepolygones kann willkürlich
+ählt werden und braucht nicht denselben Polabstand zu liefern,
+ie derjenige Pol, der für das aus den Belastungen des Balkens ge-
+hnete Kräftepolygon angenommen ist. Für dasjenige Kräftepolygon,
+38 sich ergibt, wenn die aus der Momentenfläche als Belastungsfläche
+R Ib*

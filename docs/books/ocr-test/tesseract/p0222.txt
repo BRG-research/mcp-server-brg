@@ -1,0 +1,59 @@
+239 9. Kapitel. Der durchlaufende Träger.
+
+Ende eingemauert, sonst aber nieht weiter gelagert ist (Fig. 119).
+Infolge der horizontalen Einmauerung bei # = O ist nicht allein dieser
+eine sich für & = 0 ergebende Punkt der Achse festgehalten, sondern
+auch der unendlich benachbarte, da die elastische Linie bei = 0 eine
+horizontale Tangente haben muß. Schon hieraus folgt:
+Die Einmauerung entspricht einer Lagerung in zwei unendlich benach-
+barten Punkten.
+In Übereinstimmung damit ergibt sich, daß es nicht genügt, um
+Gleichgewicht bevorzurufen, wenn an der Einmauerungsstelle eine
+einzige Reaktion angenommen
+
+B, wird. Dagegen wird Gleichge-
+
+Hl 8 wicht vorhanden sein, wenn
+
+zZ 3 F ia außer einer Reaktion an der Ein-
+Fi
+
+Fig. 119. mauerungsstelle noch eine zweite
+Kraft in einer anderen Wir-
+kungslinie eingeführt wird oder, wenn statt dessen die Einmauerung
+ersetzt wird dwrch eine Reaktion R an der Einmauerungsstelle und
+durch ein Kräftepaar mit dem Momente m.
+
+In Fig. 119 würde sein:
+
+R=P,+P,
+RE er: ,(a + b).
+
+Bei der Ersetzung der Einmauerung durch eine Reaktion an der
+Einmauerungsstelle und durch ein Kräftepaar wird das Moment m
+dieses Kräftepaares als das ‚Einspannungsmoment bezeichnet.
+
+Wenn aber berücksichtigt wird, daß die Einmauerung ersetzt
+werden kann durch Kraft und Kräftepaar bzw. durch zwei Reaktionen,
+während andererseits zwei Punkte der elastischen Linie durch die
+Einmauerung bestimmt sind, so hat die Einmauerung die Sonderstellung
+verloren. Der oben ausgesprochene Satz, nach welchem bei einem
+durchgehenden Träger die elastische Linie die fehlenden Gleichungen
+für die Reaktionen liefert, gilt somit auch für den Fall, daß der Träger
+an dem einen Ende oder auch an beiden eingemauert ist.
+
+Beispiel. Ein Balken von
+
+r # ’ R der Länge 4a sei an den beiden '
+Enden A und B eingemauert
+a —— 4 — 2a
+
+und außerdem in der Mitte CO
+
+Fig. 120. gelagert. Auf einen Punkt D,
+
+der in der Mitte der Strecke AC .
+
+liegt, wirkt eine Kraft P. Es sind‘ die Reaktionen und das Biegungs-
+moment zu bestimmen (Fig. 120).
+

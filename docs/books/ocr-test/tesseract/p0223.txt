@@ -1,0 +1,58 @@
+8 40. Analytische Einleitung. : 2923
+
+Die Einmauerung bei A liefert eine Reaktion R, und ein Kräfte-
+paar mit dem Momente m,, die Einmauerung bei B eine Reaktion
+R, und ein Kräftepaar mit dem Momente m,. Die Reaktion in Ü sei
+mit R, bezeichnet. Sämmtliche Reaktionen seien nach aufwärts ge-
+richtet eingeführt.
+
+Aus den Gleichgewichtsbedingungen folgen die beiden Gleichungen:
+
+R,+R+R,=P,
+(e) m, +Mm; +4R,a+2R,a=53 Pa.
+
+Die beiden Gleichgewichtsbedingungen enthalten fünf Unbekannte
+den fünf Lagern entsprechend, die sich bei Ersetzung der Einmaue-
+‚rungen durch je zwei Lager ergeben. Durch die elastische Linie sind
+somit drei weitere Gleiehungen herzuleiten.
+
+Der Punkt A sei zum Nullpunkt der x-Achse angenommen und
+die positive x-Achse durch B gelegt. s
+
+Durch die Einmauerungsstellen A und B, das weitere Lager in
+C und durch die Kraft P ist der Balken in drei Intervalle geteilt.
+Für dieselben ergeben sich die Momente:
+
+fr O<z<oa: M=m+ Rz,
+
+für a<a<2a: M=m+Re—P(&-—a),
+
+für a<x <A: M=m+Rx—-P(xe-a)+ RB (x — 20).
+
+In dem Intervalle 0 <x<.a ist die Differentialgleichung der ela-
+stischen Linie:
+
+d?
+JETa4= m — Rx.
+Durch deren Integration folgt:
+d
+JE = —-mae—tRa°+0(,
+
+JEy=— 3 ma? — Ra’ + 0,0 +0,.
+
+Da nun aber für 2—= 0 sein muß:
+
+_ ay_
+
+so verschwinden die beiden Integrationskonstanten C, und G.:
+
+0 070,0,
+und die Gleichung der elastischen Linie in dem ersten Intervall wird:
+(b) JEy—= — 4m, 2° — 4 R,a°.
+
+In dem zweiten Intervall hat die elastische Linie die Differential-
+gleichung:
+d?
+
+JE7a=— m, — Ric + P(i@-a),
+

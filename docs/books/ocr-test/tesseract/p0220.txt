@@ -1,0 +1,45 @@
+220 9. Kapitel. Der durchlaufende Träger.
+
+Durch die Kräfte und Lagerreaktionen wird der Balken in .eine
+Reihe von Intervallen geteilt, in denen das Biegungsmoment jedesmal
+durch einen anderen analytischen Ausdruck gegeben ist. Dasselbe findet
+statt, falls kontinuierliche Belastung vorhanden ist, aber an irgendeiner
+Stelle sich das Gesetz für diese kontinuierliche Belastung ändert. Es
+sei nun demgemäß der Balken in m Intervalle zerlegt, wobei in jedem
+einzelnen Intervall das Biegungsmoment durch denselben analytischen
+Ausdruck dargestellt ist. Dann wird in jedem Intervall sich eine andere
+Differentialgleichung für die elastische Linie ergeben. Die Integration
+dieser m Differentialgleichungen zweiter Ordnung liefert 2m willkür-
+liche Integrationskonstanten. In jedem Intervall wird sich als elastische
+Linie der Bogen einer gewissen Kurve ergeben, und die ganze elastische
+Linie wird sich aus m Bögen von m verschiedenen Kurven zusammen-
+setzen.
+
+In einem Punkte = a sollen zwei Intervalle I und II zusammen-
+stoßen. Die Differentialgleichung des Intervalles I möge auf eine
+
+Kurve
+
+als elastische Linie geführt haben, das Intervall Il dagegen auf eine
+Kurve
+
+Da nun in dem Punkte = die beiden Kurvenbögen, welche
+die elastischen Linien in den beiden Intervallen liefern, ohne Kniekung
+ineinander übergehen, so müssen die beiden Kurven für «= «a dieselbe
+Ordinate und dieselbe Tangente besitzen. Es ist daher:
+
+fc) = (a).
+
+Jeder Punkt, in dem zwei Intervalle zusammenstoßen, liefert somit
+zwei Bedingungen zwischen den Integrationskonstanten. Da nun bei
+m Intervallen m-1 Punkte vorhanden sind, in denen zwei Intervalle
+zusammenstoßen, so ergeben sich daraus 2 (m-1) Bedingungen zwischen
+den 2m Integrationskonstanten, die sich bei Integration der m Diffe-,
+rentialgleichungen ergeben haben. Sämtliche 2m Integrationskon-
+stanten sind somit auf zwei Konstanten zurückführbar.
+
+Es möge nun der Balken in » Punkten gelagert sein, wobei es
+gleichgültig sein soll, ob die Endpunkte des Balkens Lagerpunkte
+sind oder nicht. Dann sind » Lagerreaktionen und zwei Konstanten,
+die außer den Reaktionen in der Gleichung der elastischen Linie vor-
+
