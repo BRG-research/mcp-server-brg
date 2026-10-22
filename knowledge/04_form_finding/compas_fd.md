@@ -532,27 +532,8 @@ out of balance at the free nodes for the flat guess, z direction: [0.5   0.184 0
 
 ### C.1 The force density, equations (4) to (6)
 
-**Build this step.** Define the force-to-length ratio $q_j = s_j / l_j$ for each branch instead of fixing branch forces. This cancels the unknown lengths from nodal equilibrium, turning the nonlinear problem into a simple linear system.
-
-### Scope: What we are doing in Part C
-1. **The Problem from Part B:**
-   Equilibrium requires summing force components at each node:
-   $$\text{force}_x = s_j \cdot \frac{u_j}{l_j} = s_j \cdot \frac{x_{\text{start}} - x_{\text{end}}}{\sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}}$$
-   Because the unknown coordinates $x, y, z$ sit inside the square root of length $l_j$, the equations are severely nonlinear. We cannot solve them directly.
-2. **The Force Density Trick (Schek 1974):**
-   Define the **force density** $q_j$ as the ratio of branch force to branch length:
-   $$q_j = \frac{s_j}{l_j} \implies s_j = q_j \cdot l_j$$
-   Substitute $s_j = q_j \cdot l_j$ into the projected force:
-   $$\text{force}_x = (q_j \cdot l_j) \cdot \frac{u_j}{l_j} = q_j \cdot u_j$$
-   The unknown length $l_j$ cancels out completely!
-3. **The Swap ($U q = Q u$):**
-   In vector form, the equilibrium becomes $C^t U q = p_x$.
-   Here $U = \text{diag}(u)$ is a diagonal matrix of coordinate differences, and $q$ is the vector of force densities.
-   Because multiplying a diagonal matrix by a vector is element-by-element ($u_j q_j = q_j u_j$), we can swap the factors:
-   $$U q = Q u \qquad \text{where } Q = \text{diag}(q)$$
-   Now the known design parameters $q$ form the matrix $Q$, and the unknown geometry $u$ sits outside.
-
-In the code, `q` is a 1-D array of shape `(12,)`—one chosen value per branch.
+**The scope of Part C:** Solve for the unknown coordinates $(x, y, z)$ of the 5 free nodes in static equilibrium.
+In Part B, equilibrium was nonlinear because branch length $l_j = \sqrt{\Delta x^2 + \Delta y^2 + \Delta z^2}$ put coordinates under square roots. We fix this by defining the **force density** $q_j = s_j / l_j$ (force per unit length). Because $s_j = q_j \cdot l_j$, the length $l_j$ in direction cosines cancels out: $s_j (u_j / l_j) = q_j u_j$, turning equilibrium into a standard linear system.
 
 **Add to your program:**
 
@@ -560,73 +541,19 @@ In the code, `q` is a 1-D array of shape `(12,)`—one chosen value per branch.
 q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)   # one force density per branch: the design input
 ```
 
-![scheme: equation (4)](images/schek_scheme_eq4.png)
+**Matrix-by-matrix breakdown:**
 
-**Reading the code and understanding `q` and `Q`:**
-- `q`: a 1-D vector of shape `(12,)`. We choose $q = 2.0\text{ kN/m}$ for the four anchor branches (branches 1 to 4) to keep them stiff/taut, and $q = 1.0\text{ kN/m}$ for the inner branches (branches 5 to 12).
-- `Q = np.diag(q)`: a $(12 \times 12)$ diagonal matrix with the 12 force densities along the main diagonal and zeros everywhere else.
-- In structural terms: you do not guess coordinates or cable forces. You choose $q$ as your design input, and the equilibrium coordinates $(x, y, z)$ follow directly.
+- `q`: 1-D vector of shape `(12,)` (one value per branch).
+  - Branches 1–4 (corner cables connected to anchors): $q = 2.0\text{ kN/m}$.
+  - Branches 5–12 (inner ring and center spokes): $q = 1.0\text{ kN/m}$.
+- `Q = np.diag(q)`: 2-D diagonal matrix of shape `(12, 12)` with `q` on the diagonal and zeros elsewhere.
+- **The swap ($U q = Q u$):** The equilibrium equation on axis $x$ is $C^t U q = p_x$. Because multiplying a diagonal matrix by a vector is element-wise multiplication ($u_j q_j = q_j u_j$), we can swap the factors to $C^t Q u = p_x$. The design parameter $Q$ is now inside the matrix, and the unknown geometry $u$ is outside.
 
 ### C.2 The matrices D and D_f, equations (7) and (8)
 
-**Build this step.** Assemble the linear system matrices $D$ and $D_f$. Move the known anchor contributions to the right-hand side to form $D x = p_x - D_f x_f$.
-
-### Deriving the Linear System
-Recall from equation (1) that branch differences split into free and fixed nodes:
-$$u = C x + C_f x_f$$
-
-Substitute this into equilibrium $C^t Q u = p_x$:
-$$C^t Q (C x + C_f x_f) = p_x$$
-$$(C^t Q C) x + (C^t Q C_f) x_f = p_x$$
-
-We define two matrices:
-- **$D = C^t Q C$**: the stiffness/connectivity matrix between free nodes (shape $n \times n = 5 \times 5$).
-- **$D_f = C^t Q C_f$**: the coupling matrix between free nodes and fixed anchors (shape $n \times n_f = 5 \times 4$).
-
-Moving the known fixed-anchor term to the right gives equation (8):
-$$D x = p_x - D_f x_f, \qquad D y = p_y - D_f y_f, \qquad D z = p_z - D_f z_f$$
-
----
-
-### Step-by-Step Anatomy of the Matrices
-
-#### 1. Matrix $D = C^t Q C$ (Shape: $5 \times 5$, Free Nodes $\times$ Free Nodes)
-$D$ acts like a structural stiffness (or graph Laplacian) matrix for the free nodes:
-- **Diagonal entry $D[i, i]$:** The sum of force densities $q$ of all branches attached to free node $i+1$.
-  - Free node 1 connects to 4 branches: anchor branch 1 ($q=2$), ring branches 5 & 6 ($q=1, 1$), spoke 10 ($q=1$).
-    Sum: $2 + 1 + 1 + 1 = 5.0$.
-  - Free node 5 (center) connects to 4 spokes (branches 9, 10, 11, 12, each $q=1$).
-    Sum: $1 + 1 + 1 + 1 = 4.0$.
-- **Off-diagonal entry $D[i, k]$:** $-q$ of the branch connecting free node $i+1$ and free node $k+1$, or $0$ if not directly connected.
-  - Nodes 1 and 2 are joined by branch 6 ($q=1$) $\implies D[0, 1] = -1.0$.
-  - Nodes 1 and 3 have no direct cable $\implies D[0, 2] = 0.0$.
-
-| Free Node | Node 1 | Node 2 | Node 3 | Node 4 | Node 5 |
-|---|---|---|---|---|---|
-| **Node 1** | **5.0** | -1.0 | 0.0 | -1.0 | -1.0 |
-| **Node 2** | -1.0 | **5.0** | -1.0 | 0.0 | -1.0 |
-| **Node 3** | 0.0 | -1.0 | **5.0** | -1.0 | -1.0 |
-| **Node 4** | -1.0 | 0.0 | -1.0 | **5.0** | -1.0 |
-| **Node 5** | -1.0 | -1.0 | -1.0 | -1.0 | **4.0** |
-
-#### 2. Matrix $D_f = C^t Q C_f$ (Shape: $5 \times 4$, Free Nodes $\times$ Fixed Anchors)
-$D_f$ describes which free nodes are tethered to which fixed anchors:
-- Entry $D_f[i, k]$ is $-q$ if free node $i+1$ connects to fixed anchor $6+k$, else $0$.
-- Nodes 1, 2, 3, 4 connect to anchors 6, 7, 8, 9 with branch $q=2.0 \implies -2.0$ on their respective entries.
-- Node 5 is the center node; it does not touch any anchor $\implies$ its row is all zeros.
-
-| Free Node | Anchor 6 | Anchor 7 | Anchor 8 | Anchor 9 |
-|---|---|---|---|---|
-| **Node 1** | **-2.0** | 0.0 | 0.0 | 0.0 |
-| **Node 2** | 0.0 | **-2.0** | 0.0 | 0.0 |
-| **Node 3** | 0.0 | 0.0 | **-2.0** | 0.0 |
-| **Node 4** | 0.0 | 0.0 | 0.0 | **-2.0** |
-| **Node 5** | 0.0 | 0.0 | 0.0 | 0.0 |
-
-#### 3. Right-Hand Side Vector: $rhs = p - D_f x_f$ (Shape: $(5,)$ per axis)
-- $p$: applied external loads at the 5 free nodes.
-- $-D_f x_f$: the pulling force exerted by the fixed anchors onto the free nodes.
-Because anchors are fixed in space, this pull is a known constant force vector.
+Substitute branch coordinate differences $u = C x + C_f x_f$ into equilibrium $C^t Q u = p_x$.
+This expands to $(C^t Q C) x + (C^t Q C_f) x_f = p_x$.
+Defining $D = C^t Q C$ and $D_f = C^t Q C_f$ gives the linear system $D x = p_x - D_f x_f$.
 
 **Add to your program:**
 
@@ -636,43 +563,74 @@ D = C.T @ Q @ C                                   # (n, n)   eq. (8)
 D_f = C.T @ Q @ C_f                               # (n, n_f)
 
 rhs = np.c_[p_x - D_f @ x_f, p_y - D_f @ y_f, p_z - D_f @ z_f]
-print("D (shape 5x5):", D, sep="\n")
-print("D_f (shape 5x4):", D_f, sep="\n")
-print("right-hand sides (columns x, y, z; shape 5x3):", rhs, sep="\n")
+print("D:", D, sep="\n")
+print("D_f:", D_f, sep="\n")
+print("right-hand sides (columns x, y, z):", rhs, sep="\n")
 ```
 
-![Fig. 4](images/schek_fig4.png)
+**Matrix-by-matrix breakdown:**
 
-*Fig. 4, redrawn: the structure of $D$ for the graph of fig. 2.*
+1. **Matrix $Q$ (shape `(12, 12)`):**
+   Diagonal matrix scaling each branch by its force density $q_j$.
 
-![icon: building D](images/schek_icon_D.png)
+2. **Matrix $D = C^t Q C$ (shape `(5, 5)`):**
+   Multiplies $C^t$ `(5, 12)` $\times$ $Q$ `(12, 12)` $\times$ $C$ `(12, 5)`.
+   - **Rows:** 5 free nodes (nodes 1 to 5).
+   - **Columns:** 5 free nodes (nodes 1 to 5).
+   - **Diagonal entry $D[i, i]$:** Sum of $q$ on all branches touching node $i+1$.
+     - Node 1 touches branch 1 ($q=2$), branch 5 ($q=1$), branch 6 ($q=1$), spoke 10 ($q=1$) $\implies 2 + 1 + 1 + 1 = 5.0$.
+     - Node 5 (center) touches 4 spokes (branches 9, 10, 11, 12, each $q=1$) $\implies 1 + 1 + 1 + 1 = 4.0$.
+   - **Off-diagonal entry $D[i, k]$:** $-q$ of the branch joining free nodes $i+1$ and $k+1$, or $0$ if not connected.
+     - Node 1 connects to Node 2 via branch 6 ($q=1$) $\implies D[0, 1] = -1.0$.
+     - Node 1 does not connect to Node 3 $\implies D[0, 2] = 0.0$.
 
-![icon: the right-hand side](images/schek_icon_rhs.png)
+   ```text
+   D (5x5):
+   [[ 5. -1.  0. -1. -1.]
+    [-1.  5. -1.  0. -1.]
+    [ 0. -1.  5. -1. -1.]
+    [-1.  0. -1.  5. -1.]
+    [-1. -1. -1. -1.  4.]]
+   ```
 
-![scheme: equation (8)](images/schek_scheme_eq8.png)
+3. **Matrix $D_f = C^t Q C_f$ (shape `(5, 4)`):**
+   Multiplies $C^t$ `(5, 12)` $\times$ $Q$ `(12, 12)` $\times$ $C_f$ `(12, 4)`.
+   - **Rows:** 5 free nodes (nodes 1 to 5).
+   - **Columns:** 4 fixed anchors (nodes 6, 7, 8, 9).
+   - **Entry $D_f[i, k]$:** $-q$ if free node $i+1$ connects to anchor $6+k$, else $0$.
+     - Nodes 1, 2, 3, 4 connect to anchors 6, 7, 8, 9 with $q=2 \implies -2.0$.
+     - Node 5 has no anchor branches $\implies$ its row is all zeros.
 
-**Reading the code.**
-- `Q = np.diag(q)`: creates the $(12 \times 12)$ diagonal matrix from the 12-element vector `q`.
-- `D = C.T @ Q @ C`: multiplies $(5 \times 12) \times (12 \times 12) \times (12 \times 5) \to (5 \times 5)$.
-- `D_f = C.T @ Q @ C_f`: multiplies $(5 \times 12) \times (12 \times 12) \times (12 \times 4) \to (5 \times 4)$.
-- `np.c_[...]`: stacks the three 5-element right-hand side vectors into a $(5 \times 3)$ table, one column per coordinate axis.
+   ```text
+   D_f (5x4):
+   [[-2.  0.  0.  0.]
+    [ 0. -2.  0.  0.]
+    [ 0.  0. -2.  0.]
+    [ 0.  0.  0. -2.]
+    [ 0.  0.  0.  0.]]
+   ```
+
+4. **Right-Hand Side $rhs = p - D_f x_f$ (shape `(5,)` per axis, stacked to `(5, 3)`):**
+   - $p$: applied external loads at the 5 free nodes.
+   - $-D_f x_f$: pulling forces from the fixed anchors transferred to the free nodes.
+   Since anchors are stationary, their pull is known and moves to the right-hand side.
 
 Example output:
 
 ```text
-D (shape 5x5):
+D:
 [[ 5. -1.  0. -1. -1.]
  [-1.  5. -1.  0. -1.]
  [ 0. -1.  5. -1. -1.]
  [-1.  0. -1.  5. -1.]
  [-1. -1. -1. -1.  4.]]
-D_f (shape 5x4):
+D_f:
 [[-2.  0.  0.  0.]
  [ 0. -2.  0.  0.]
  [ 0.  0. -2.  0.]
  [ 0.  0.  0. -2.]
  [ 0.  0.  0.  0.]]
-right-hand sides (columns x, y, z; shape 5x3):
+right-hand sides (columns x, y, z):
 [[-4.   0.  -0.5]
  [ 0.   4.   1.5]
  [ 4.   0.  -0.5]
@@ -682,16 +640,8 @@ right-hand sides (columns x, y, z; shape 5x3):
 
 ### C.3 Solving for the free coordinates, equation (9)
 
-**Build this step.** Solve the linear system for the unknown free coordinates $x, y, z$. 
-
-Because matrix $D$ is strictly positive definite (all $q_j > 0$ and the net is tied to fixed supports), there is exactly one unique equilibrium position:
-
-$$
-x = D^{-1}(p_x - D_f x_f), \qquad y = D^{-1}(p_y - D_f y_f), \qquad z = D^{-1}(p_z - D_f z_f)
-$$
-
-### Important Matrix Concept: Solving vs Inverting
-In code we do **not** calculate $D^{-1}$ directly because computing matrix inverses is slower and introduces numerical rounding errors. Instead, we use `np.linalg.solve(D, b)`, which performs Gaussian elimination / Cholesky factorization to solve $D x = b$ in one efficient, exact step.
+Solve $D x = p_x - D_f x_f$, $D y = p_y - D_f y_f$, and $D z = p_z - D_f z_f$ for the free coordinates.
+Because $D$ is symmetric positive definite when all $q_j > 0$ and anchored, the solution exists and is unique.
 
 **Add to your program:**
 
@@ -701,25 +651,21 @@ y: FloatVector = np.linalg.solve(D, p_y - D_f @ y_f)
 z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)
 ```
 
-![scheme: equation (9)](images/schek_scheme_eq9.png)
+**Matrix-by-matrix breakdown:**
 
-**Reading the code and inspecting the result:**
-- `np.linalg.solve(D, b)` is called 3 times. Matrix `D` is **identical** for $x, y,$ and $z$; only the right-hand side changes!
-- Each solve returns a 1-D vector of length 5: the exact equilibrium coordinates of the free nodes (nodes 1 to 5).
-- Notice how the anchors shape the network:
-  - Anchors 6 and 8 are at $z = 0\text{ m}$; anchors 7 and 9 are elevated to $z = 1.0\text{ m}$.
-  - In response, free nodes 2 and 4 are pulled upward to $z \approx 0.330\text{ m}$, while nodes 1 and 3 stay near $z \approx 0.045\text{ m}$.
-  - The center node (node 5) sits at $(0.0, 0.0, 0.062\text{ m})$, pulled into a gentle anticlastic (saddle) equilibrium shape!
+- `np.linalg.solve(D, rhs)`: solves the linear system $D x = b$ directly in $O(n^3)$ operations without inverting $D$.
+- Notice matrix $D$ (`5x5`) is **identical** for all three axes ($x, y, z$); only the right-hand side vector `(5,)` changes per axis.
+- Output vectors `x`, `y`, `z`: each is a 1-D array of shape `(5,)` containing the exact equilibrium coordinates of nodes 1 to 5:
+  - Node 1: `[-0.800,  0.000,  0.045]`
+  - Node 2: `[ 0.000,  0.800,  0.330]` (pulled upward by lifted anchor 7 at $z = 1.0$)
+  - Node 3: `[ 0.800,  0.000,  0.045]`
+  - Node 4: `[ 0.000, -0.800,  0.330]` (pulled upward by lifted anchor 9 at $z = 1.0$)
+  - Node 5: `[ 0.000,  0.000,  0.062]` (saddle center)
+- The entire equilibrium geometry is found in a single direct solve—no iterative guessing.
 
 ### C.4 Lengths, forces and the equilibrium check, equation (10)
 
-**Build this step.** Calculate the equilibrium branch lengths $l$, recover the actual member forces $s = q \cdot l$, and run an independent equilibrium check.
-
-Now that we know the coordinates $(x, y, z)$, we can post-process the network:
-1. **Branch lengths $l$:** We call `coordinate_differences` from step B.2 to measure $u, v, w$ and $l = \sqrt{u^2 + v^2 + w^2}$ for all 12 branches (shape `(12,)`).
-2. **Branch forces $s$ (Eq. 10):** From $q_j = s_j / l_j$, the axial force in each branch is simply:
-   $$s_j = q_j \cdot l_j \qquad \text{or in vector form: } s = q \cdot l$$
-3. **Verification:** We pass the solved coordinates and forces into the original nonlinear `equilibrium_error` function from step B.3. If our linear solve is correct, the residual error must be zero (to machine precision).
+Measure branch lengths on the solved coordinates, recover axial forces $s = q \cdot l$, and check equilibrium residuals using the nonlinear equation from B.3.
 
 **Add to your program:**
 
@@ -734,11 +680,19 @@ print("forces  s:", s)
 print("equilibrium error (2) on the solution:", max(np.abs(e).max() for e in equilibrium_error(x, y, z, s)))
 ```
 
-![scheme: equation (10)](images/schek_scheme_eq10.png)
+**Matrix-by-matrix breakdown:**
 
-**Reading the code:**
-- `s = l * q`: calculates branch forces (kN). Anchor branches 1–4 are around $2.4\text{ kN}$ to $2.75\text{ kN}$, while internal cables carry around $0.8\text{ kN}$ to $1.17\text{ kN}$.
-- `equilibrium_error(x, y, z, s)`: tests nodal equilibrium in 3D. The maximum error across all nodes is $\approx 4 \times 10^{-16}\text{ kN}$—effectively $0.0$, confirming the network is in exact physical equilibrium!
+- `coordinate_differences(...)`:
+  - `u, v, w`: 1-D vectors of shape `(12,)` holding coordinate differences ($\Delta x, \Delta y, \Delta z$) for each branch.
+  - `l`: 1-D vector of shape `(12,)` holding branch lengths $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$.
+- `s = l * q`: 1-D vector of shape `(12,)` holding axial forces in kN.
+  - Anchor branches (1–4): $s \approx 2.40\text{ kN}$ to $2.75\text{ kN}$.
+  - Ring branches (5–8): $s \approx 1.17\text{ kN}$.
+  - Center spokes (9–12): $s \approx 0.80\text{ kN}$ to $0.84\text{ kN}$.
+- `equilibrium_error(x, y, z, s)`:
+  - Evaluates nonlinear equilibrium equation (2): $C^t U L^{-1} s - p$.
+  - Maximum residual error across all nodes is $\approx 4 \times 10^{-16}\text{ kN}$ (machine zero).
+  - Passing this check confirms that the linear force density solve produced an exact physical equilibrium.
 
 Example output:
 
