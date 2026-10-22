@@ -156,7 +156,7 @@ each implementation block before updating this Markdown.
 open the next.
 
 <details>
-<summary><h3>Part A. The network as data</h3>A.1 Vectors, matrices and the diagonal trick · A.2 Numbering the nodes and branches · A.3 The branch-node matrix and its two column blocks · A.4 The five matrix operations the paper uses</summary>
+<summary><b>Part A. The network as data</b> &nbsp;&nbsp; A.1 Vectors, matrices and the diagonal trick · A.2 Numbering the nodes and branches · A.3 The branch-node matrix and its two column blocks · A.4 The five matrix operations the paper uses</summary>
 
 ### A.1 Vectors, matrices and the diagonal trick (section 1.4)
 
@@ -313,7 +313,7 @@ The seven zeros delete seven nodes. **One row measures one cable.**
 | **b10** (1,5) | **+1** | 0 | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | $x_1-x_5$ |
 | **b11** (2,5) | 0 | **+1** | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | $x_2-x_5$ |
 | **b12** (3,5) | 0 | 0 | **+1** | 0 | **−1** | 0 | 0 | 0 | 0 | $x_3-x_5$ |
-| | ⟵ | | $C$ | | ⟶ | ⟵ | | $C_f$ | ⟶ | |
+| **block** | $C$ | $C$ | $C$ | $C$ | $C$ | $C_f$ | $C_f$ | $C_f$ | $C_f$ | |
 
 **The cut:** columns n1–n5 are $C$ (12 × 5, free nodes); columns n6–n9 are $C_f$ (12 × 4, anchors).
 
@@ -464,7 +464,7 @@ $$D = C^t Q C$$
 </details>
 
 <details>
-<summary><h3>Part B. Equilibrium, the nonlinear form</h3>B.1 The inputs: anchors and loads · B.2 Coordinate differences and lengths, equation (1) · B.3 Equilibrium with the unknown forces, equation (2)</summary>
+<summary><b>Part B. Equilibrium, the nonlinear form</b> &nbsp;&nbsp; B.1 The inputs: anchors and loads · B.2 Coordinate differences and lengths, equation (1) · B.3 Equilibrium with the unknown forces, equation (2)</summary>
 
 ### B.1 The inputs: anchors and loads (section 2.2)
 
@@ -529,7 +529,7 @@ p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)                           
 **Do this.** Write one function that, **given** node positions, measures every branch: three coordinate differences and a length. It never moves a node.
 
 $$
-u = C x + C_f x_f, \qquad v = C y + C_f y_f, \qquad w = C z + C_f z_f
+u = C\,x + C_f\,x_f, \qquad v = C\,y + C_f\,y_f, \qquad w = C\,z + C_f\,z_f
 $$
 
 *Read it as: for every branch, subtract the coordinates of its two end nodes — the free end from one product, the anchored end from the other.*
@@ -539,7 +539,7 @@ $$
 | shape | (12 × 5) | (5,) | + | (12 × 4) | (4,) | = | (12,) |
 | meaning | cable × free | free coords | | cable × anchor | anchor coords | | one per cable |
 
-**Why two products?** A branch can have one end free and one anchored. $Cx$ collects the free part, $C_f x_f$ the anchored part, and `+` puts the two halves of one subtraction back together.
+**Why two products?** A branch can have one end free and one anchored. $C\,x$ collects the free part, $C_f\,x_f$ the anchored part, and `+` puts the two halves of one subtraction back together.
 
 $$
 l_j = \sqrt{u_j^{2} + v_j^{2} + w_j^{2}}
@@ -683,7 +683,7 @@ out of balance at the free nodes for the flat guess, z direction: [0.5   0.184 0
 </details>
 
 <details>
-<summary><h3>Part C. The force density trick: a linear system</h3>C.1 The force density, equations (4) to (6) · C.2 The matrices D and D_f, equations (7) and (8) · C.3 Solving for the free coordinates, equation (9) · C.4 Lengths, forces and the equilibrium check, equation (10)</summary>
+<summary><b>Part C. The force density trick: a linear system</b> &nbsp;&nbsp; C.1 The force density, equations (4) to (6) · C.2 The matrices D and D_f, equations (7) and (8) · C.3 Solving for the free coordinates, equation (9) · C.4 Lengths, forces and the equilibrium check, equation (10)</summary>
 
 ### C.1 The force density, equations (4) to (6)
 
@@ -751,15 +751,15 @@ That is the whole cell.
 
 **Do this.** Build the two matrices that turn the net into a linear system, then the right-hand sides.
 
-Put $u = C x + C_f x_f$ from B.2 into $C^{t} Q u = p_x$ from C.1:
+Put $u = C\,x + C_f\,x_f$ from B.2 into $C^{t} Q u = p_x$ from C.1:
 
-$$ (C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D x = p_x - D_f x_f $$
+$$ (C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D\,x = p_x - D_f\,x_f $$
 
 *Read it as: separate the terms with unknown free coordinates from the terms with known anchor coordinates, and move the known ones to the right.*
 
 The same $D$ serves all three axes — $x$ never appears in the $z$ equation:
 
-$$ D x = p_x - D_f x_f \qquad D y = p_y - D_f y_f \qquad D z = p_z - D_f z_f $$
+$$ D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f $$
 
 | Step | Symbol | Say it as | What it does | Shape of the result |
 |---|---|---|---|---|
@@ -826,7 +826,7 @@ Node 1: $2+1+1+1 = 5$. Node 5 (centre): $1+1+1+1 = 4$. **The last row of $D_f$ i
 
 The anchors cannot move, so their pull is a known number and belongs on the right. For the vertical axis, with $z_f = (0,1,0,1)$ and $p_z = -0.5$ everywhere:
 
-| node | $-D_f z_f$ | $+\,p_z$ | $= b_z$ |
+| node | $-D_f\,z_f$ | $+\,p_z$ | $= b_z$ |
 |---|---|---|---|
 | 1 | 0 | −0.5 | **−0.5** |
 | 2 | **2.0** | −0.5 | **1.5** |
@@ -887,7 +887,7 @@ right-hand sides (columns x, y, z; shape 5x3):
 
 **Do this.** Solve the three linear systems. The shape appears here — one direct step, no iteration, no initial guess.
 
-$$ D x = p_x - D_f x_f \qquad D y = p_y - D_f y_f \qquad D z = p_z - D_f z_f $$
+$$ D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f $$
 
 *Read it as: three separate problems that happen to share one matrix.*
 
@@ -1024,7 +1024,7 @@ equilibrium error (2) on the solution: 1.1102230246251565e-15
 </details>
 
 <details>
-<summary><h3>Part D. The form-finding loop</h3>D.1 The form-finding loop as one function · D.2 Using the loop: move the anchors, change the force densities</summary>
+<summary><b>Part D. The form-finding loop</b> &nbsp;&nbsp; D.1 The form-finding loop as one function · D.2 Using the loop: move the anchors, change the force densities</summary>
 
 ### D.1 The form-finding loop as one function (figure 3)
 
@@ -1075,7 +1075,7 @@ Earlier $x$, $y$, $z$ were three `(5,)` arrays. Here they are one `(5, 3)` table
 |---|---|---|---|---|
 | shape | (12 × 5) | (5 × 3) | → | (12 × 3) |
 
-Column 0 is the old $Cx$, column 1 is $Cy$, column 2 is $Cz$.
+Column 0 is the old $C\,x$, column 1 is $Cy$, column 2 is $Cz$.
 
 Nothing new happens. The same arithmetic is written once instead of three times.
 
@@ -1194,7 +1194,7 @@ centre node height: base 0.063 | anchors lifted by 1 m 1.063 | anchor branches q
 </details>
 
 <details>
-<summary><h3>Part E. What the force densities mean</h3>E.1 What the force densities mean geometrically</summary>
+<summary><b>Part E. What the force densities mean</b> &nbsp;&nbsp; E.1 What the force densities mean geometrically</summary>
 
 ### E.1 What the force densities mean geometrically (section 4)
 
@@ -1317,7 +1317,7 @@ Theorem 2: forces with q = 1 / l: [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 </details>
 
 <details>
-<summary><h3>Part F. Asking for lengths and forces</h3>F.1 Wishes beyond equilibrium · F.2 Finding the force densities with SciPy · F.3 The Jacobian: how each wish reacts to each q</summary>
+<summary><b>Part F. Asking for lengths and forces</b> &nbsp;&nbsp; F.1 Wishes beyond equilibrium · F.2 Finding the force densities with SciPy · F.3 The Jacobian: how each wish reacts to each q</summary>
 
 ### F.1 Wishes beyond equilibrium (section 3.1)
 
@@ -1581,7 +1581,7 @@ sensitivity of the four anchor lengths to all twelve q (shape (4, 12)):
 </details>
 
 <details>
-<summary><h3>Part G. The paper's examples, recomputed</h3>G.1 The network of figure 5 · G.2 Figure 6: different fixed points · G.3 Figures 7 and 8: changing the force densities · G.4 Figure 9: additional distance conditions · G.5 Figure 10: the grid-shell model of 112 identical bars</summary>
+<summary><b>Part G. The paper's examples, recomputed</b> &nbsp;&nbsp; G.1 The network of figure 5 · G.2 Figure 6: different fixed points · G.3 Figures 7 and 8: changing the force densities · G.4 Figure 9: additional distance conditions · G.5 Figure 10: the grid-shell model of 112 identical bars</summary>
 
 ### G.1 The network of figure 5 (section 5)
 

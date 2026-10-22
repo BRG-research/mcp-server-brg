@@ -92,7 +92,7 @@ def main():
                 out += ["</details>", ""]
             ids = " · ".join(subs[cid[0]])
             out += ["<details>",
-                    f"<summary><h3>{PARTS[cid[0]]}</h3>{ids}</summary>",
+                    f"<summary><b>{PARTS[cid[0]]}</b> &nbsp;&nbsp; {ids}</summary>",
                     ""]
             last_part = cid[0]
         buf = io.StringIO()

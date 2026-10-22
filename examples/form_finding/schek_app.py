@@ -159,7 +159,7 @@ The seven zeros delete seven nodes. **One row measures one cable.**
 | **b10** (1,5) | **+1** | 0 | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | $x_1-x_5$ |
 | **b11** (2,5) | 0 | **+1** | 0 | 0 | **−1** | 0 | 0 | 0 | 0 | $x_2-x_5$ |
 | **b12** (3,5) | 0 | 0 | **+1** | 0 | **−1** | 0 | 0 | 0 | 0 | $x_3-x_5$ |
-| | ⟵ | | $C$ | | ⟶ | ⟵ | | $C_f$ | ⟶ | |
+| **block** | $C$ | $C$ | $C$ | $C$ | $C$ | $C_f$ | $C_f$ | $C_f$ | $C_f$ | |
 
 **The cut:** columns n1–n5 are $C$ (12 × 5, free nodes); columns n6–n9 are $C_f$ (12 × 4, anchors).
 
@@ -347,7 +347,7 @@ r"""#### LINE BY LINE
 r"""**Do this.** Write one function that, **given** node positions, measures every branch: three coordinate differences and a length. It never moves a node.
 
 $$
-u = C x + C_f x_f, \qquad v = C y + C_f y_f, \qquad w = C z + C_f z_f
+u = C\,x + C_f\,x_f, \qquad v = C\,y + C_f\,y_f, \qquad w = C\,z + C_f\,z_f
 $$
 
 *Read it as: for every branch, subtract the coordinates of its two end nodes — the free end from one product, the anchored end from the other.*
@@ -357,7 +357,7 @@ $$
 | shape | (12 × 5) | (5,) | + | (12 × 4) | (4,) | = | (12,) |
 | meaning | cable × free | free coords | | cable × anchor | anchor coords | | one per cable |
 
-**Why two products?** A branch can have one end free and one anchored. $Cx$ collects the free part, $C_f x_f$ the anchored part, and `+` puts the two halves of one subtraction back together.
+**Why two products?** A branch can have one end free and one anchored. $C\,x$ collects the free part, $C_f\,x_f$ the anchored part, and `+` puts the two halves of one subtraction back together.
 
 $$
 l_j = \sqrt{u_j^{2} + v_j^{2} + w_j^{2}}
@@ -552,15 +552,15 @@ That is the whole cell.
 # %% [c2] C.2 The matrices D and D_f, equations (7) and (8)
 r"""**Do this.** Build the two matrices that turn the net into a linear system, then the right-hand sides.
 
-Put $u = C x + C_f x_f$ from B.2 into $C^{t} Q u = p_x$ from C.1:
+Put $u = C\,x + C_f\,x_f$ from B.2 into $C^{t} Q u = p_x$ from C.1:
 
-$$ (C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D x = p_x - D_f x_f $$
+$$ (C^t Q C)\,x + (C^t Q C_f)\,x_f = p_x \quad\Longrightarrow\quad D\,x = p_x - D_f\,x_f $$
 
 *Read it as: separate the terms with unknown free coordinates from the terms with known anchor coordinates, and move the known ones to the right.*
 
 The same $D$ serves all three axes — $x$ never appears in the $z$ equation:
 
-$$ D x = p_x - D_f x_f \qquad D y = p_y - D_f y_f \qquad D z = p_z - D_f z_f $$
+$$ D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f $$
 
 | Step | Symbol | Say it as | What it does | Shape of the result |
 |---|---|---|---|---|
@@ -627,7 +627,7 @@ Node 1: $2+1+1+1 = 5$. Node 5 (centre): $1+1+1+1 = 4$. **The last row of $D_f$ i
 
 The anchors cannot move, so their pull is a known number and belongs on the right. For the vertical axis, with $z_f = (0,1,0,1)$ and $p_z = -0.5$ everywhere:
 
-| node | $-D_f z_f$ | $+\,p_z$ | $= b_z$ |
+| node | $-D_f\,z_f$ | $+\,p_z$ | $= b_z$ |
 |---|---|---|---|
 | 1 | 0 | −0.5 | **−0.5** |
 | 2 | **2.0** | −0.5 | **1.5** |
@@ -663,7 +663,7 @@ r"""#### LINE BY LINE
 # %% [c3] C.3 Solving for the free coordinates, equation (9)
 r"""**Do this.** Solve the three linear systems. The shape appears here — one direct step, no iteration, no initial guess.
 
-$$ D x = p_x - D_f x_f \qquad D y = p_y - D_f y_f \qquad D z = p_z - D_f z_f $$
+$$ D\,x = p_x - D_f\,x_f \qquad D\,y = p_y - D_f\,y_f \qquad D\,z = p_z - D_f\,z_f $$
 
 *Read it as: three separate problems that happen to share one matrix.*
 
@@ -828,7 +828,7 @@ Earlier $x$, $y$, $z$ were three `(5,)` arrays. Here they are one `(5, 3)` table
 |---|---|---|---|---|
 | shape | (12 × 5) | (5 × 3) | → | (12 × 3) |
 
-Column 0 is the old $Cx$, column 1 is $Cy$, column 2 is $Cz$.
+Column 0 is the old $C\,x$, column 1 is $Cy$, column 2 is $Cz$.
 
 Nothing new happens. The same arithmetic is written once instead of three times."""
 def form_finding(branches, n_free, xyz_fixed, q, p):
