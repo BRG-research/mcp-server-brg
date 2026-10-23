@@ -66,7 +66,7 @@ $$
 
 SETUP = """import numpy as np
 
-np.set_printoptions(precision=3, suppress=True, linewidth=120)   # readable output, full precision kept
+np.set_printoptions(precision=3, suppress=True, linewidth=80)
 """
 
 

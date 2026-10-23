@@ -43,7 +43,10 @@ for n, c in enumerate(chunks):
     total_inline += html.count('class="js-inline-math"')
 
     # Check if any multi-row matrix inside <math-renderer> had its \\ unescaped to single \
+    # or if CommonMark unescaped \_ or \% inside text mode (\text / \texttt)
     for block in re.findall(r"<math-renderer.*?</math-renderer>", html, flags=re.S):
+        if re.search(r"\\text(?:tt|bf|rm)?\{[^}]*_[^}]*\}", block):
+            broken_rows.append((n, f"underscore in text mode: {block[:80]}"))
         for env in re.findall(
             r"\\begin\{(?:bmatrix|pmatrix|array|cases|matrix)\}(.*?)\\end\{(?:bmatrix|pmatrix|array|cases|matrix)\}",
             block,

@@ -38,8 +38,6 @@ def cells(source: str):
     parts = re.split(r"^# %% \[([a-z0-9]+)\] (.*)$", source, flags=re.M)
     for i in range(1, len(parts), 3):
         cid, title, body = parts[i], parts[i + 1].strip(), parts[i + 2]
-        if cid == "export":
-            break
         m = re.match(r'\s*r?"""(.*?)"""\s*\n', body, flags=re.S)
         prose = m.group(1).strip() if m else ""
         code = body[m.end():] if m else body
