@@ -27,7 +27,7 @@ def publish(website: Path, check: bool = False) -> None:
         slug, filename = tutorial["id"], tutorial["file"]
         if not re.fullmatch(r"[a-z][a-z0-9-]*", slug) or slug in ids:
             raise ValueError(f"Invalid or duplicate tutorial ID: {slug}")
-        if Path(filename).name != filename or not filename.endswith(".ipynb") or filename in files:
+        if not re.fullmatch(r"[a-z0-9-]+/[a-z0-9-]+\.ipynb", filename) or filename in files:
             raise ValueError(f"Invalid or duplicate notebook filename: {filename}")
         if not tutorial["title"] or not tutorial["summary"]:
             raise ValueError(f"Missing title or summary: {slug}")

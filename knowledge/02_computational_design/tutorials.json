@@ -3,105 +3,105 @@
   "tutorials": [
     {
       "id": "box",
-      "file": "01-compas-box-scene.ipynb",
+      "file": "01-basics/01-box.ipynb",
       "title": "A COMPAS box",
-      "summary": "One geometric primitive, a mesh and an interactive COMPAS scene.",
+      "summary": "One box, its mesh and an interactive COMPAS scene.",
       "minutes": 30,
       "section": "foundation"
     },
     {
       "id": "data",
-      "file": "03-data-basics.ipynb",
+      "file": "01-basics/02-data.ipynb",
       "title": "Data: values and COMPAS objects",
-      "summary": "Read and change Python values, metadata and geometric object properties.",
+      "summary": "Python values, object properties and copies.",
       "minutes": 30,
       "section": "foundation"
     },
     {
       "id": "exchange",
-      "file": "08-structural-data-exchange.ipynb",
+      "file": "01-basics/03-json.ipynb",
       "title": "Data exchange: COMPAS JSON",
-      "summary": "Save and restore a box, a point and metadata with a verified round trip.",
+      "summary": "Save and load a box, a point and units as COMPAS JSON.",
       "minutes": 45,
       "section": "foundation"
     },
     {
       "id": "vectors",
-      "file": "03-vectors-frames.ipynb",
+      "file": "02-geometry/01-vectors-frames.ipynb",
       "title": "Geometry: vectors and frames",
-      "summary": "Use dot and cross products, local frames and geometry transformations.",
+      "summary": "Dot and cross products, frames and transformations.",
       "minutes": 60,
       "section": "foundation"
     },
     {
       "id": "patterns",
-      "file": "04-parametric-patterns.ipynb",
+      "file": "02-geometry/02-brick-pattern.ipynb",
       "title": "Algorithms: grids and brick patterns",
-      "summary": "Grow a point grid into a staggered wall with loops and one row-offset rule.",
+      "summary": "A point grid and a staggered brick wall from loops.",
       "minutes": 75,
       "section": "foundation"
     },
     {
       "id": "graph",
-      "file": "09-graph-basics.ipynb",
+      "file": "03-datastructures/01-graph.ipynb",
       "title": "Data structures: a graph",
-      "summary": "Three nodes and two edges introduce connectivity, attributes and key-to-row maps.",
+      "summary": "Three nodes, two edges, attributes and an adjacency matrix.",
       "minutes": 45,
       "section": "foundation"
     },
     {
       "id": "topology",
-      "file": "05-topology-matrices.ipynb",
+      "file": "03-datastructures/02-mesh.ipynb",
       "title": "Data structures: a mesh",
-      "summary": "One quad introduces face cycles, normals and connectivity matrices.",
+      "summary": "One quad, its normal and a connectivity matrix.",
       "minutes": 60,
       "section": "foundation"
     },
     {
       "id": "model",
-      "file": "11-compas-model.ipynb",
+      "file": "04-aec/01-model.ipynb",
       "title": "A COMPAS model",
-      "summary": "Group a reusable building element and preserve a model hierarchy.",
+      "summary": "One beam in a group, saved as COMPAS JSON.",
       "minutes": 35,
       "section": "foundation"
     },
     {
       "id": "ifc",
-      "file": "12-ifc-wall.ipynb",
+      "file": "04-aec/02-ifc.ipynb",
       "title": "AEC exchange: an IFC wall",
-      "summary": "Create and round-trip one IFC4 wall with units, a storey and a representation; COMPAS previews the same parameters.",
+      "summary": "One IFC4 wall with units and a storey, previewed in COMPAS.",
       "minutes": 45,
       "section": "foundation"
     },
     {
       "id": "matrices",
-      "file": "10-matrix-decomposition.ipynb",
+      "file": "05-solvers/01-qr.ipynb",
       "title": "Solvers: matrix decomposition",
-      "summary": "Solve two geometric line constraints with QR and check the equation residual.",
+      "summary": "Intersect two lines with a QR solve.",
       "minutes": 60,
       "section": "foundation"
     },
     {
       "id": "optimization",
-      "file": "07-constrained-optimisation.ipynb",
+      "file": "05-solvers/02-optimisation.ipynb",
       "title": "Solvers: constrained optimisation",
-      "summary": "Minimise box area with volume and height constraints and checked gradients.",
+      "summary": "Minimise box area at a fixed volume and height limit.",
       "minutes": 90,
       "section": "foundation"
     },
     {
       "id": "truss",
-      "file": "06-truss-equilibrium.ipynb",
+      "file": "06-structures/01-truss.ipynb",
       "title": "Extension: truss equilibrium",
-      "summary": "Assemble joint equilibrium, solve axial forces and reactions, and verify balance.",
+      "summary": "Joint equilibrium of a three-bar truss solved with QR.",
       "minutes": 90,
       "section": "extension"
     },
     {
       "id": "cable",
-      "file": "02-cable-graph.ipynb",
+      "file": "06-structures/02-cable.ipynb",
       "title": "Extension: force-density cable",
-      "summary": "An optional bridge to form-finding with a five-node cable and COMPAS FD.",
+      "summary": "A five-node cable found with force density.",
       "minutes": 45,
       "section": "extension"
     }

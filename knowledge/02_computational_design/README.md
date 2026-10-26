@@ -9,27 +9,29 @@ structural examples. No prior Python knowledge is assumed.
 The editable sources live in [`notebooks/`](notebooks/), with order and website
 metadata in [`tutorials.json`](tutorials.json). Files served by the BRG Teaching
 website are published copies. This course does not depend on an external notebook
-repository at runtime. Historical filenames remain stable; follow manifest order,
-not filename order. Each notebook explains why its concept is needed and includes
-a runnable example, a numerical check and a predict/change/check task.
+repository at runtime. Notebooks are grouped by topic in `notebooks/<topic>/` and
+follow manifest order. Each is deliberately minimal: a title, short section
+headings and runnable code that ends in a COMPAS scene. There are no assertions,
+print statements or written exercises; cells display results as their last
+expression. Explanations and tasks are given in class.
 
 ## Sequence and purpose
 
 | Order | Notebook | Why it is needed | Guided estimate |
 | --- | --- | --- | --- |
-| 1 | [A COMPAS box](notebooks/01-compas-box-scene.ipynb) | Turn dimensions into an inspectable primitive and scene. | 30 min |
-| 2 | [Data basics](notebooks/03-data-basics.ipynb) | Distinguish Python values, metadata and object properties. | 30 min |
-| 3 | [COMPAS JSON](notebooks/08-structural-data-exchange.ipynb) | Preserve a box, point and units beyond one Python session. | 45 min |
-| 4 | [Vectors and frames](notebooks/03-vectors-frames.ipynb) | Measure alignment and place geometry in local coordinates. | 60 min |
-| 5 | [Parametric patterns](notebooks/04-parametric-patterns.ipynb) | Generate a grid and a small brick wall with loops and a rule. | 75 min |
-| 6 | [A graph](notebooks/09-graph-basics.ipynb) | Separate connectivity and attributes from node positions. | 45 min |
-| 7 | [A mesh](notebooks/05-topology-matrices.ipynb) | Add face cycles, normals and an indexed connectivity matrix. | 60 min |
-| 8 | [A COMPAS model](notebooks/11-compas-model.ipynb) | Organise one named element inside a group and save that hierarchy. | 35 min |
-| 9 | [An IFC wall](notebooks/12-ifc-wall.ipynb) | Export identity, units, storey and shape representation. | 45 min |
-| 10 | [Matrix decomposition](notebooks/10-matrix-decomposition.ipynb) | Locate a point from two constraints using QR and a residual check. | 60 min |
-| 11 | [Constrained optimisation](notebooks/07-constrained-optimisation.ipynb) | Search for dimensions satisfying volume and height requirements. | 90 min |
-| Extension | [Truss equilibrium](notebooks/06-truss-equilibrium.ipynb) | Combine a graph and QR to balance axial forces and reactions. | 90 min |
-| Extension | [Force-density cable](notebooks/02-cable-graph.ipynb) | Bridge to Chapter 4: equilibrium geometry for prescribed force density. | 45 min |
+| 1 | [A COMPAS box](notebooks/01-basics/01-box.ipynb) | Turn dimensions into an inspectable primitive and scene. | 30 min |
+| 2 | [Data basics](notebooks/01-basics/02-data.ipynb) | Distinguish Python values, metadata and object properties. | 30 min |
+| 3 | [COMPAS JSON](notebooks/01-basics/03-json.ipynb) | Preserve a box, point and units beyond one Python session. | 45 min |
+| 4 | [Vectors and frames](notebooks/02-geometry/01-vectors-frames.ipynb) | Measure alignment and place geometry in local coordinates. | 60 min |
+| 5 | [Parametric patterns](notebooks/02-geometry/02-brick-pattern.ipynb) | Generate a grid and a small brick wall with loops and a rule. | 75 min |
+| 6 | [A graph](notebooks/03-datastructures/01-graph.ipynb) | Separate connectivity and attributes from node positions. | 45 min |
+| 7 | [A mesh](notebooks/03-datastructures/02-mesh.ipynb) | Add face cycles, normals and an indexed connectivity matrix. | 60 min |
+| 8 | [A COMPAS model](notebooks/04-aec/01-model.ipynb) | Organise one named element inside a group and save that hierarchy. | 35 min |
+| 9 | [An IFC wall](notebooks/04-aec/02-ifc.ipynb) | Export identity, units, storey and shape representation. | 45 min |
+| 10 | [Matrix decomposition](notebooks/05-solvers/01-qr.ipynb) | Locate a point from two constraints using QR and a residual check. | 60 min |
+| 11 | [Constrained optimisation](notebooks/05-solvers/02-optimisation.ipynb) | Search for dimensions satisfying volume and height requirements. | 90 min |
+| Extension | [Truss equilibrium](notebooks/06-structures/01-truss.ipynb) | Combine a graph and QR to balance axial forces and reactions. | 90 min |
+| Extension | [Force-density cable](notebooks/06-structures/02-cable.ipynb) | Bridge to Chapter 4: equilibrium geometry for prescribed force density. | 45 min |
 
 The guided estimates total **9 h 35 min for foundations**, plus **2 h 15 min of
 optional extensions**. They are activities within a 30-hour course, not a claim
@@ -113,18 +115,11 @@ supplies and independently checks analytic gradients.
 
 ## Checks and reference results
 
-Each lesson was executed in a fresh desktop Python kernel with the pinned COMPAS
-packages; its numerical assertions and native viewer widget construction passed.
-All 13 also passed execution in the local BRG JupyterLite build with a clean browser
-profile: 86 code cells and 15 native interactive scenes. The checks covered the
-Submission links, tutorial order, direct routes, terminal commands, mobile layout,
-JSON/IFC files appearing in Jupyter's file browser, and session preservation.
-Browser validation used the pinned Pyodide runtime above. Repeat browser checks when
-changing runtime dependencies; desktop execution alone does not verify rendering.
-
-Assertions express geometry, connectivity, balance or feasibility rather than
-requiring every default parameter to stay unchanged. Rebuild dependent objects by
-rerunning in order. The truss is a static force solve, the cable is force-density
+The minimal rewrite (2026-10-26) was executed in a fresh desktop Python 3.13
+kernel with the pinned packages; every cell ran and the displayed values match the
+reference results below. Repeat browser checks in JupyterLite when changing runtime
+dependencies; desktop execution alone does not verify rendering. Rebuild dependent
+objects by rerunning in order. The truss is a static force solve, the cable is force-density
 form-finding, and the optimisation example is a geometric enclosure problem.
 
 Reference results: box volume **3 m³**, area **13 m²**; line intersection **(2, 1) m**;
