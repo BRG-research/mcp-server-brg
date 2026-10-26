@@ -76,16 +76,53 @@ Follow the subsections in order (`examples/form_finding/schek_app.py`). Every eq
 
 ## Part A. The network as data
 
-### A.1 Network topology: numbering the 9 nodes and 12 branches (section 2.1)
+### A.1 Network topology and initial node coordinates (section 2.1)
 
-Throughout this entire tutorial, we use one single running example: Schek's **9-node, 12-branch saddle cable net** (Fig. 2). We number the $n = 5$ **free inner nodes first** ($1 \dots 5$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$) across the $m = 12$ directed branches ($i \to k$) so the connectivity matrix splits cleanly with a single vertical cut.
+Throughout this entire tutorial, we use one single running example: Schek's **9-node, 12-branch saddle cable net** (Fig. 2). We number the $n = 5$ **free inner nodes first** ($1 \dots 5$, with initial flat coordinates $\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$, with known support coordinates $\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$) across the $m = 12$ directed branches ($i \to k$).
 
 ![Fig. 2](images/schek_fig2.png)
 
 ![Part A Topology and Matrix Operators on the Cable Net](images/fd_sec_a_topology_split.png)
 
-* **Total Nodes ($n_s = 9$):** Free inner nodes $1 \dots 5$ ($n = 5$, unknown coordinates) and fixed anchors $6 \dots 9$ ($n_f = 4$, known boundary supports).
+* **Total Nodes ($n_s = 9$):** Free inner nodes $1 \dots 5$ ($n = 5$, initial flat coordinates $\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$) and fixed anchors $6 \dots 9$ ($n_f = 4$, known boundary supports $\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$).
 * **Directed Branches ($m = 12$):** Anchor cables $b_1 \dots b_4$: $(1\to 6),\ (2\to 7),\ (3\to 8),\ (4\to 9)$; inner ring $b_5 \dots b_8$: $(1\to 4),\ (1\to 2),\ (2\to 3),\ (3\to 4)$; center spokes $b_9 \dots b_{12}$: $(4\to 5),\ (1\to 5),\ (2\to 5),\ (3\to 5)$.
+
+### Matrix Example (Initial Free-Node Coordinates $\mathbf{X} _ 0$ and Fixed Anchor Coordinates $\mathbf{X} _ f$)
+
+* **$\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$ $(5 \times 1)$:** Initial flat coordinates of the 5 free inner nodes $1 \dots 5$ ($\text{m}$).
+* **$\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ $(4 \times 1)$:** Known coordinates of the 4 fixed outer anchors $6 \dots 9$ ($\text{m}$).
+
+$$
+\begin{bmatrix} \mathbf{x} _ 0 & \mathbf{y} _ 0 & \mathbf{z} _ 0 \end{bmatrix} =
+\begin{bmatrix}
+-1 & 0 & 0 \\
+0 & -1 & 0 \\
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 0
+\end{bmatrix}\text{ m}
+\begin{matrix}
+\leftarrow \text{Free Node 1} \\
+\leftarrow \text{Free Node 2} \\
+\leftarrow \text{Free Node 3} \\
+\leftarrow \text{Free Node 4} \\
+\leftarrow \text{Free Node 5 (center)}
+\end{matrix},
+\qquad
+\begin{bmatrix} \mathbf{x} _ f & \mathbf{y} _ f & \mathbf{z} _ f \end{bmatrix} =
+\begin{bmatrix}
+-2 & 0 & 0 \\
+0 & 2 & 1 \\
+2 & 0 & 0 \\
+0 & -2 & 1
+\end{bmatrix}\text{ m}
+\begin{matrix}
+\leftarrow \text{Fixed Anchor 6 (ground)} \\
+\leftarrow \text{Fixed Anchor 7 (lifted } +1\text{ m)} \\
+\leftarrow \text{Fixed Anchor 8 (ground)} \\
+\leftarrow \text{Fixed Anchor 9 (lifted } +1\text{ m)}
+\end{matrix}
+$$
 
 **Add to your program:**
 
@@ -103,15 +140,39 @@ branches: list[tuple[int, int]] = [
 ]
 n, n_f = 5, 4                         # free nodes 1..5, fixed nodes 6..9
 m = len(branches)
+
+# Initial flat coordinates of the 5 free nodes (nodes 1..5, in m)
+x_0: FloatVector = np.array([-1.0, 0.0, 1.0, 0.0, 0.0], dtype=np.float64)
+y_0: FloatVector = np.array([0.0, -1.0, 0.0, 1.0, 0.0], dtype=np.float64)
+z_0: FloatVector = np.zeros(n, dtype=np.float64)
+
+# Known coordinates of the 4 fixed anchors (nodes 6..9, in m)
+x_f: FloatVector = np.array([-2.0, 0.0, 2.0, 0.0], dtype=np.float64)
+y_f: FloatVector = np.array([0.0, 2.0, 0.0, -2.0], dtype=np.float64)
+z_f: FloatVector = np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float64)
+
 print(f"Network counts: m={m} branches, n={n} free nodes, n_f={n_f} fixed anchors")
+print("Initial free-node coordinates [x_0, y_0, z_0] (5x3):\n", np.c_[x_0, y_0, z_0])
+print("Fixed anchor coordinates [x_f, y_f, z_f] (4x3):\n", np.c_[x_f, y_f, z_f])
 ```
 
-* `branches` stores `(start_node, end_node)` pairs using Schek's 1-based node numbers $1 \dots 9$ (subtract `1` when indexing NumPy arrays).
+* `branches` stores `(start_node, end_node)` pairs using Schek's 1-based node numbers $1 \dots 9$; `x_0, y_0, z_0` store the initial coordinates of the 5 free nodes ($1 \dots 5$) and `x_f, y_f, z_f` store the coordinates of the 4 fixed anchors ($6 \dots 9$).
 
 **Example output:**
 
 ```text
 Network counts: m=12 branches, n=5 free nodes, n_f=4 fixed anchors
+Initial free-node coordinates [x_0, y_0, z_0] (5x3):
+ [[-1.  0.  0.]
+ [ 0. -1.  0.]
+ [ 1.  0.  0.]
+ [ 0.  1.  0.]
+ [ 0.  0.  0.]]
+Fixed anchor coordinates [x_f, y_f, z_f] (4x3):
+ [[-2.  0.  0.]
+ [ 0.  2.  1.]
+ [ 2.  0.  0.]
+ [ 0. -2.  1.]]
 ```
 
 ### A.2 Vectors, diagonal matrices, and the diagonal swap (section 1.4)
@@ -526,30 +587,16 @@ D = C.T @ diag(q) @ C (5x5):
 
 ## Part B. Equilibrium, the nonlinear form
 
-### B.1 Inputs: fixed anchor coordinates and nodal loads (section 2.2)
+### B.1 Inputs: external nodal loads and initial cable tensions (section 2.2)
 
-Specify the known boundary support coordinates $(\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f)$ in $\text{m}$ ($4 \times 3$) and external free-node loads $(\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z)$ in $\text{kN}$ ($5 \times 3$, $+z$ up).
+Along with the initial free-node coordinates $(\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0)$ and fixed-anchor coordinates $(\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f)$ defined in A.1, we specify the external vertical loads $(\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z)$ at the 5 free nodes ($-0.5\text{ kN}$ each, $+z$ up) and the initial cable tension vector $\mathbf{s} _ 0$ ($1.0\text{ kN}$ in each of the 12 branches).
 
-### Matrix Example (Inputs)
+### Matrix Example (External Loads $\mathbf{P}$ and Initial Tensions $\mathbf{s} _ 0$)
 
-* **$\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ $(4 \times 1)$:** Known $x, y, z$ coordinates of the 4 fixed anchors $6 \dots 9$ ($\text{m}$).
 * **$\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z$ $(5 \times 1)$:** External nodal loads along $x, y, z$ at the 5 free nodes $1 \dots 5$ ($\text{kN}$).
+* **$\mathbf{s} _ 0$ $(12 \times 1)$:** Initial axial tension force in each of the 12 cables $b_1 \dots b_{12}$ ($\text{kN}$).
 
 $$
-\begin{bmatrix} \mathbf{x} _ f & \mathbf{y} _ f & \mathbf{z} _ f \end{bmatrix} =
-\begin{bmatrix}
--2 & 0 & 0 \\
-0 & 2 & 1 \\
-2 & 0 & 0 \\
-0 & -2 & 1
-\end{bmatrix}
-\begin{matrix}
-\leftarrow \text{Anchor 6 (ground)} \\
-\leftarrow \text{Anchor 7 (lifted } +1\text{ m)} \\
-\leftarrow \text{Anchor 8 (ground)} \\
-\leftarrow \text{Anchor 9 (lifted } +1\text{ m)}
-\end{matrix},
-\qquad
 \begin{bmatrix} \mathbf{p} _ x & \mathbf{p} _ y & \mathbf{p} _ z \end{bmatrix} =
 \begin{bmatrix}
 0 & 0 & -0.5 \\
@@ -557,60 +604,77 @@ $$
 0 & 0 & -0.5 \\
 0 & 0 & -0.5 \\
 0 & 0 & -0.5
-\end{bmatrix}
+\end{bmatrix}\text{ kN}
 \begin{matrix}
 \leftarrow \text{Node 1 (}-0.5\text{ kN)} \\
 \leftarrow \text{Node 2 (}-0.5\text{ kN)} \\
 \leftarrow \text{Node 3 (}-0.5\text{ kN)} \\
 \leftarrow \text{Node 4 (}-0.5\text{ kN)} \\
 \leftarrow \text{Node 5 (}-0.5\text{ kN)}
-\end{matrix}
+\end{matrix},
+\qquad
+\mathbf{s} _ 0 =
+\begin{bmatrix}
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1
+\end{bmatrix}\text{ kN}
 $$
 
 **Add to your program:**
 
 ```python
-x_f: FloatVector = np.array([-2.0, 0.0, 2.0, 0.0], dtype=np.float64)
-y_f: FloatVector = np.array([0.0, 2.0, 0.0, -2.0], dtype=np.float64)
-z_f: FloatVector = np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float64)
 p_x: FloatVector = np.zeros(n, dtype=np.float64)
 p_y: FloatVector = np.zeros(n, dtype=np.float64)
 p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)
-print("Fixed anchors [x_f, y_f, z_f] (4x3):\n", np.c_[x_f, y_f, z_f])
+s_0: FloatVector = np.ones(m, dtype=np.float64)   # 1.0 kN initial tension in each of the 12 cables
+print("External loads [p_x, p_y, p_z] (5x3):\n", np.c_[p_x, p_y, p_z])
+print("Initial cable tensions s_0 (12,):", s_0)
 ```
 
-* `x_f, y_f, z_f` have shape `(4,)` for anchors $6 \dots 9$; `p_x, p_y, p_z` have shape `(5,)` for free nodes $1 \dots 5$.
+* `p_x, p_y, p_z` have shape `(5,)` for free nodes $1 \dots 5$, and `s_0` has shape `(12,)` for cables $b_1 \dots b_{12}$.
 
 **Example output:**
 
 ```text
-Fixed anchors [x_f, y_f, z_f] (4x3):
- [[-2.  0.  0.]
- [ 0.  2.  1.]
- [ 2.  0.  0.]
- [ 0. -2.  1.]]
+External loads [p_x, p_y, p_z] (5x3):
+ [[ 0.   0.  -0.5]
+ [ 0.   0.  -0.5]
+ [ 0.   0.  -0.5]
+ [ 0.   0.  -0.5]
+ [ 0.   0.  -0.5]]
+Initial cable tensions s_0 (12,): [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 ```
 
 ### B.2 Coordinate differences and cable lengths, equation (1)
 
-For each branch $j\ (i \to k)$, compute the coordinate differences $(u_j, v_j, w_j) = (x_i - x_k,\ y_i - y_k,\ z_i - z_k)$ and the Euclidean cable length $l_j$.
+For each branch $j\ (i \to k)$, compute the coordinate differences $(u_j, v_j, w_j) = (x_i - x_k,\ y_i - y_k,\ z_i - z_k)$ and the Euclidean cable length $l_j$ from the initial free-node coordinates $(\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0)$ and fixed-anchor coordinates $(\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f)$ defined in A.1.
 
 ![Section B.2 Geometric Meaning of Coordinate Differences u, v, w and Cable Length l](images/fd_sec_b2_uvw_geometry.png)
 
 ### General Equations (Eq. 1)
 
 $$
-\mathbf{u} = C \mathbf{x} + C_f \mathbf{x} _ f, \qquad
-\mathbf{v} = C \mathbf{y} + C_f \mathbf{y} _ f, \qquad
-\mathbf{w} = C \mathbf{z} + C_f \mathbf{z} _ f, \qquad
+\mathbf{u} = C \mathbf{x} _ 0 + C_f \mathbf{x} _ f, \qquad
+\mathbf{v} = C \mathbf{y} _ 0 + C_f \mathbf{y} _ f, \qquad
+\mathbf{w} = C \mathbf{z} _ 0 + C_f \mathbf{z} _ f, \qquad
 l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}
 $$
 
-### Matrix Example (Flat Trial Coordinates $\mathbf{x} = [-1, 0, 1, 0, 0]^T,\ \mathbf{y} = [0, -1, 0, 1, 0]^T,\ \mathbf{z} = \mathbf{0}$)
+### Matrix Example (Initial Coordinates $\mathbf{x} _ 0 = [-1, 0, 1, 0, 0]^T,\ \mathbf{y} _ 0 = [0, -1, 0, 1, 0]^T,\ \mathbf{z} _ 0 = \mathbf{0}$)
 
-* **$\mathbf{x}, \mathbf{y}, \mathbf{z}$ $(5 \times 1)$:** Free-node coordinates of nodes $1 \dots 5$ ($\text{m}$).
-* **$\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ $(4 \times 1)$:** Fixed-anchor coordinates of nodes $6 \dots 9$ ($\text{m}$).
-* **$C$ $(12 \times 5)$ and $C_f$ $(12 \times 4)$:** Free-node and fixed-anchor connectivity matrices.
+* **$\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$ $(5 \times 1)$:** Initial coordinates of free nodes $1 \dots 5$ ($\text{m}$, from A.1).
+* **$\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ $(4 \times 1)$:** Fixed-anchor coordinates of nodes $6 \dots 9$ ($\text{m}$, from A.1).
+* **$C$ $(12 \times 5)$ and $C_f$ $(12 \times 4)$:** Free-node and fixed-anchor connectivity matrices (from A.3).
 * **$\mathbf{u}, \mathbf{v}, \mathbf{w}$ $(12 \times 1)$:** Cable coordinate differences $u_j = x_i - x_k,\ v_j = y_i - y_k,\ w_j = z_i - z_k$ ($\text{m}$).
 * **$\mathbf{l}$ $(12 \times 1)$ and $L^{-1}$ $(12 \times 12)$:** Cable lengths $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ ($\text{m}$) and diagonal inverse-length matrix $\mathrm{diag}(1/\mathbf{l})$ ($\text{m}^{-1}$).
 
@@ -643,7 +707,7 @@ $$
 0 & 1 & 0 & 0 & -1 \\
 0 & 0 & 1 & 0 & -1
 \end{bmatrix}}
-\underset{\mathbf{x}\ (5\times 1)}{\begin{bmatrix}
+\underset{\mathbf{x} _ 0\ (5\times 1)}{\begin{bmatrix}
 -1 \\
 0 \\
 1 \\
@@ -760,10 +824,10 @@ def coordinate_differences(
     return u, v, w, l
 
 
-u_flat, v_flat, w_flat, l_flat = coordinate_differences(
-    C, np.array([-1.0, 0.0, 1.0, 0.0, 0.0]), np.array([0.0, -1.0, 0.0, 1.0, 0.0]), np.zeros(n), C_f, x_f, y_f, z_f
+u_init, v_init, w_init, l_init = coordinate_differences(
+    C, x_0, y_0, z_0, C_f, x_f, y_f, z_f
 )
-print("Flat trial cable lengths l (m):", l_flat)
+print("Initial cable lengths l_init (m):", l_init)
 ```
 
 * `C @ x + C_f @ x_f` evaluates $(12, 5) \times (5,) + (12, 4) \times (4,) \to (12,)$, computing $x_{\text{start}} - x_{\text{end}}$ for all 12 branches at once.
@@ -771,7 +835,7 @@ print("Flat trial cable lengths l (m):", l_flat)
 **Example output:**
 
 ```text
-Flat trial cable lengths l (m): [1.    3.162 1.    3.162 1.414 1.414 1.414 1.414 1.    1.    1.    1.   ]
+Initial cable lengths l_init (m): [1.    3.162 1.    3.162 1.414 1.414 1.414 1.414 1.    1.    1.    1.   ]
 ```
 
 ### B.3 Nonlinear equilibrium in 4 stages, equation (2)
@@ -1214,12 +1278,8 @@ def equilibrium_error(x, y, z, s):
     )
 
 
-x_guess = np.array([-1.0, 0.0, 1.0, 0.0, 0.0])   # flat guess for free nodes
-y_guess = np.array([0.0, -1.0, 0.0, 1.0, 0.0])
-z_guess = np.zeros(n)
-s_guess = np.ones(m)                             # 1 kN in every branch
-ex, ey, ez = equilibrium_error(x_guess, y_guess, z_guess, s_guess)
-print("Flat guess out-of-balance residual e_z (kN):", ez)
+ex, ey, ez = equilibrium_error(x_0, y_0, z_0, s_0)
+print("Initial out-of-balance residual e_z at (x_0, y_0, z_0) (kN):", ez)
 ```
 
 * `L_inv = np.diag(1.0 / l)` builds the `(12, 12)` diagonal inverse-length matrix $L^{-1}$, and `C.T @ np.diag(u) @ L_inv @ s - p_x` chains Stages 1–4 right-to-left (nonlinear in $\mathbf{x}, \mathbf{y}, \mathbf{z}$ because $L^{-1}$ divides by $\sqrt{u_j^2 + v_j^2 + w_j^2}$).
@@ -1227,7 +1287,7 @@ print("Flat guess out-of-balance residual e_z (kN):", ez)
 **Example output:**
 
 ```text
-Flat guess out-of-balance residual e_z (kN): [0.5   0.184 0.5   0.184 0.5  ]
+Initial out-of-balance residual e_z at (x_0, y_0, z_0) (kN): [0.5   0.184 0.5   0.184 0.5  ]
 ```
 
 ---
