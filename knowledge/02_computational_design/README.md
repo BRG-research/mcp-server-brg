@@ -27,13 +27,15 @@ expression. Explanations and tasks are given in class.
 | 6 | [A graph](notebooks/03-datastructures/01-graph.ipynb) | Separate connectivity and attributes from node positions. | 45 min |
 | 7 | [A mesh](notebooks/03-datastructures/02-mesh.ipynb) | Add face cycles, normals and an indexed connectivity matrix. | 60 min |
 | 8 | [A COMPAS model](notebooks/04-aec/01-model.ipynb) | Organise one named element inside a group and save that hierarchy. | 35 min |
-| 9 | [An IFC wall](notebooks/04-aec/02-ifc.ipynb) | Export identity, units, storey and shape representation. | 45 min |
+| 9 | [An IFC wall](notebooks/04-aec/02-ifc.ipynb) | Create, save and load one wall in a storey with `compas_ifc`. | 45 min |
 | 10 | [Matrix decomposition](notebooks/05-solvers/01-qr.ipynb) | Locate a point from two constraints using QR and a residual check. | 60 min |
 | 11 | [Constrained optimisation](notebooks/05-solvers/02-optimisation.ipynb) | Search for dimensions satisfying volume and height requirements. | 90 min |
-| Extension | [Truss equilibrium](notebooks/06-structures/01-truss.ipynb) | Combine a graph and QR to balance axial forces and reactions. | 90 min |
-| Extension | [Force-density cable](notebooks/06-structures/02-cable.ipynb) | Bridge to Chapter 4: equilibrium geometry for prescribed force density. | 45 min |
+| Extension | [Graphic statics](notebooks/06-structures/01-ags.ipynb) | Form and force diagrams of a triangle frame with `compas_ags`. | 45 min |
+| Extension | [Force density](notebooks/06-structures/02-fd.ipynb) | A loaded cable net with `compas_fd`. | 45 min |
+| Extension | [Dynamic relaxation](notebooks/06-structures/03-dr.ipynb) | The same cable net with `compas_dr`. | 45 min |
+| Extension | [Thrust network analysis](notebooks/06-structures/04-tna.ipynb) | Form and force diagrams of a vault with `compas_tna`. | 60 min |
 
-The guided estimates total **9 h 35 min for foundations**, plus **2 h 15 min of
+The guided estimates total **9 h 35 min for foundations**, plus **3 h 15 min of
 optional extensions**. They are activities within a 30-hour course, not a claim
 that notebook code alone supplies 30 hours of instruction. A suggested five-session
 plan allocates six hours each to: (1) primitives, Python data and exchange;
@@ -48,17 +50,20 @@ class after the foundations.
 Open a notebook in the BRG browser workspace or desktop Jupyter with a Python 3
 kernel. Run cells in order with **Shift+Enter**, or choose **Run → Run All Cells**.
 Setup cells install `compas==2.15.1`, `pythreejs==2.4.2` and
-`compas_notebook==0.11.0 --no-deps`. Only the cable adds `compas_fd==0.5.4`;
-only the model adds `compas_model==0.9.3`. Desktop environments also need NumPy
+`compas_notebook==0.11.0 --no-deps`. The model adds `compas_model==0.9.3`; the
+structures notebooks add `compas_ags==1.3.3`, `compas_fd==0.5.4`, `compas_dr==0.3.1`
+or `compas_tna==0.9.0`. `compas_tna` is installed with `--no-deps` because its
+`compas_cgal` dependency has no browser build; only its envelopes need it. Desktop environments also need NumPy
 and SciPy; install with `%pip install -q numpy scipy` if absent. Lessons use
 native COMPAS objects and `viewer.scene.add(...); viewer.show()`.
 
 The BRG browser runtime pins **Pyodide 0.29.3 / Python 3.13.2**, which provides
 NumPy 2.2.5, SciPy 1.14.1 and Shapely 2.0.7. Keep the supplied browser packages
-rather than requesting recent desktop binary wheels. The IFC notebook selects
-the official IfcOpenShell 0.8.4 `cp313 / pyodide_2025_0 / wasm32` wheel in browser
-Python, and `ifcopenshell==0.8.4` on desktop. Its COMPAS picture is a separate
-preview driven by the same dimensions; it is not extracted from the IFC geometry.
+rather than requesting recent desktop binary wheels. The IFC notebook uses
+`compas_ifc==2.1.0`. In browser Python it installs the official IfcOpenShell 0.8.4
+`cp313 / pyodide_2025_0 / wasm32` wheel and `compas_ifc` without dependencies,
+because `compas_ifc` pins `ifcopenshell==0.8.4.post1`, which has no browser wheel.
+On desktop, `%pip install compas_ifc==2.1.0` resolves everything.
 
 Save with **Ctrl+S** or **⌘S**, then download your work through
 **File → Save and Export Notebook As → Notebook**. Download generated JSON and
@@ -84,8 +89,9 @@ files; deployment is handled by the Teaching repository.
 ## Pedagogic provenance
 
 These are BRG course adaptations and original exercises, not copied workshop
-bundles. The first box and five-node/four-edge/two-support cable retain the existing
-CAS starting examples. Seoul 2025 provides the closest foundation-level progression;
+bundles. The first box retains the existing CAS starting example. The structures
+notebooks follow the official `compas_ags`, `compas_fd`, `compas_dr` and
+`compas_tna` examples. Seoul 2025 provides the closest foundation-level progression;
 older Python and topology materials remain useful for beginners. The newest
 workshop is not automatically the best starting point: CGS 2026 centres on graphic
 statics and Grasshopper, which belong later in the course.
@@ -119,11 +125,9 @@ The minimal rewrite (2026-10-26) was executed in a fresh desktop Python 3.13
 kernel with the pinned packages; every cell ran and the displayed values match the
 reference results below. Repeat browser checks in JupyterLite when changing runtime
 dependencies; desktop execution alone does not verify rendering. Rebuild dependent
-objects by rerunning in order. The truss is a static force solve, the cable is force-density
-form-finding, and the optimisation example is a geometric enclosure problem.
+objects by rerunning in order. The optimisation example is a geometric enclosure problem.
 
 Reference results: box volume **3 m³**, area **13 m²**; line intersection **(2, 1) m**;
-truss forces **−7.071068, −7.071068, +5 kN**, with **5 kN** vertical reactions;
-cable free heights **−0.75, −1, −0.75 m**; optimum enclosure dimensions
-**(√3, √3, 1) m**, area **6 + 4√3 m²**. In the force-density solver, physical support
-reactions are the negatives of the fixed-node residuals.
+optimum enclosure dimensions **(√3, √3, 1) m**, area **6 + 4√3 m²**; graphic-statics
+load edge **−3**; force-density and dynamic-relaxation nets sag **2.15 m**;
+TNA vault height **3 m**.

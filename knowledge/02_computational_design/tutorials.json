@@ -69,7 +69,7 @@
       "id": "ifc",
       "file": "04-aec/02-ifc.ipynb",
       "title": "AEC exchange: an IFC wall",
-      "summary": "One IFC4 wall with units and a storey, previewed in COMPAS.",
+      "summary": "One IFC wall in a storey with compas_ifc, saved and loaded.",
       "minutes": 45,
       "section": "foundation"
     },
@@ -90,19 +90,35 @@
       "section": "foundation"
     },
     {
-      "id": "truss",
-      "file": "06-structures/01-truss.ipynb",
-      "title": "Extension: truss equilibrium",
-      "summary": "Joint equilibrium of a three-bar truss solved with QR.",
-      "minutes": 90,
+      "id": "ags",
+      "file": "06-structures/01-ags.ipynb",
+      "title": "Graphic statics: compas_ags",
+      "summary": "Form and force diagrams of a loaded triangle frame.",
+      "minutes": 45,
       "section": "extension"
     },
     {
       "id": "cable",
-      "file": "06-structures/02-cable.ipynb",
-      "title": "Extension: force-density cable",
-      "summary": "A five-node cable found with force density.",
+      "file": "06-structures/02-fd.ipynb",
+      "title": "Force density: compas_fd",
+      "summary": "A loaded cable net found with force densities.",
       "minutes": 45,
+      "section": "extension"
+    },
+    {
+      "id": "dr",
+      "file": "06-structures/03-dr.ipynb",
+      "title": "Dynamic relaxation: compas_dr",
+      "summary": "The same cable net solved with dynamic relaxation.",
+      "minutes": 45,
+      "section": "extension"
+    },
+    {
+      "id": "tna",
+      "file": "06-structures/04-tna.ipynb",
+      "title": "Thrust network analysis: compas_tna",
+      "summary": "Form and force diagrams of a compression vault.",
+      "minutes": 60,
       "section": "extension"
     }
   ]
