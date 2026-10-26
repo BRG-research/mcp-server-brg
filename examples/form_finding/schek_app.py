@@ -582,21 +582,40 @@ $$
 
 #### Stage 1 — Force Density Ratios: $\mathbf{q} = L^{-1} \mathbf{s}\ (12 \times 1)$
 
+Multiplying the $(12 \times 12)$ inverse-length matrix $L^{-1} = \mathrm{diag}(1/l_1, \dots, 1/l_{12})$ by a trial tension vector $\mathbf{s} = [1, 1, \dots, 1]^T\text{ kN}$ ($s_j = 1\text{ kN}$ in every branch) divides each cable's force $s_j$ by its length $l_j$ ($q_j = s_j / l_j$):
+
 $$
 \mathbf{q} = L^{-1} \mathbf{s} =
-\begin{bmatrix}
+\underset{L^{-1}\ (12\times 12)}{\begin{bmatrix}
+1 & & & & & \\
+ & \tfrac{1}{\sqrt{10}} & & & & \\
+ & & 1 & & & \\
+ & & & \tfrac{1}{\sqrt{10}} & & \\
+ & & & & \tfrac{1}{\sqrt{2}} & \\
+ & & & & & \ddots
+\end{bmatrix}}
+\underset{\mathbf{s}\ (12\times 1)}{\begin{bmatrix}
 1 \\
-\tfrac{1}{\sqrt{10}} \\
-1 \\
-\tfrac{1}{\sqrt{10}} \\
-\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
 1 \\
 1 \\
 1 \\
+1 \\
+\vdots \\
 1
+\end{bmatrix}\text{ kN}} =
+\begin{bmatrix}
+1 / 1 \\
+1 / \sqrt{10} \\
+1 / 1 \\
+1 / \sqrt{10} \\
+1 / \sqrt{2} \\
+1 / \sqrt{2} \\
+1 / \sqrt{2} \\
+1 / \sqrt{2} \\
+1 / 1 \\
+1 / 1 \\
+1 / 1 \\
+1 / 1
 \end{bmatrix}
 \approx
 \begin{bmatrix}
