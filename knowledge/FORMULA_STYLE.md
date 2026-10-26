@@ -36,8 +36,10 @@ Verified against GitHub's `/markdown` API (`examples/form_finding/check_math_ren
 
 4. **Never use `\,` or `\;` (backslash + punctuation) for spacing**: CommonMark treats `\` before ASCII punctuation (`,` or `;`) as a Markdown escape and strips the backslash, turning `C_f\,x_f` into `C_f,x_f` and `\;=\;` into `;=;`. Use alphabetic TeX spacing commands (`\quad`, `\qquad`, `\text{ }`), which CommonMark leaves untouched.
 5. **Never put a standalone `=` on its own line inside `$$ ... $$`**: CommonMark parses a line containing only `=` as a Setext `<h1>` heading underline, splitting the math block. Keep `=` at the end of the previous line (`\end{bmatrix} =`) or start of the next (`= \begin{bmatrix}`).
-6. **Use `\underset{...}{...}` instead of `\underbrace{...}_{...}` when multiple blocks appear in one equation**: Multiple `}_{` tokens in a single block can trigger CommonMark `_..._` emphasis parsing across the math block.
-7. **Keep `$math$` outside `*emphasis*` and separated from hyphens**: Write `positive $q$`, not `positive-$q$`.
+6. **Always space brace-adjacent subscripts (`} _ ` and ` _ {`) and use `\lt` / `\gt` instead of `<` / `>`**:
+   - In GitHub Flavored Markdown, `}_` (e.g. `\mathbf{R}_f`) opens `_..._` emphasis and `_{` (e.g. `R_{6x}`) closes it before the math filter runs. When CommonMark parses `<em>` inside `$$ ... $$`, GitHub's `<math-renderer>` serializer inserts `\n\n` (illegal `\par` in TeX) and double-escapes matrix `&` to `&amp;amp;`, causing GitHub to display **"Unable to render expression"**. Writing `} _ ` and ` _ {` makes `_` whitespace-flanked so CommonMark never parses it as emphasis, while TeX ignores spaces around `_`.
+   - Never write raw `<` or `>` inside `$ ... $` or `$$ ... $$`: GitHub double-escapes them to `&amp;lt;` and `&amp;gt;`, which decode in the browser to `&lt;` and `&gt;` and crash MathJax/KaTeX on the `&` character ("Unable to render expression"). Always use `\lt` and `\gt` (or `\le` / `\ge`).
+7. **Keep `$math$` outside `**bold**` / `*emphasis*`, separated from hyphens, and never end parenthesized inline math with `)$)`**: Write `positive $q$`, not `positive-$q$`, and avoid `($F = q(x_1 - x_2)$)` where `)` immediately precedes `$)`.
 
 ## Shape of an Explained Formula
 

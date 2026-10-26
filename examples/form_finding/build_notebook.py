@@ -33,11 +33,17 @@ A runnable version of [compas_fd.md](compas_fd.md). **Run the cells in order**: 
 
 ![Physical and geometric foundation of the Force Density Method](images/fd_linkwitz_intuition.png)
 
-* **Single-Node Equilibrium & Force Density (Linkwitz 2014, Sec. 6.2, Fig. 6.4)**: Projecting 3D cable tension $s_j$ onto the $x$-axis uses the direction cosine $\cos\alpha_j = \frac{u_j}{l_j} = \frac{x_i - x_k}{\sqrt{u_j^2+v_j^2+w_j^2}}$. Prescribing the **force density** $q_j = s_j / l_j$ ($\text{kN/m}$) cancels the nonlinear length $l_j$ out of the denominator ($F_{x,j} = s_j \frac{u_j}{l_j} = q_j u_j = q_j(x_i - x_k)$), so every free node $P_0$ settles at the **$q$-weighted average of its neighbors**:
-  $$
-  q_j = \frac{s_j}{l_j}, \qquad x_0 = \frac{p_x + q_a x_1 + q_b x_2 + q_c x_3 + q_d x_4}{q_a + q_b + q_c + q_d}
-  $$
-* **Materialization (Linkwitz Sec. 6.5, Eq. 6.37)**: Form-finding solves for geometry $\mathbf{l}$ and forces $\mathbf{s} = Q\mathbf{l}$ without material stiffness $EA$; afterwards, choosing $EA_j$ gives the unstressed workshop **cutting length** $l_{0,j} = \frac{l_j}{1 + s_j / EA_j}$.
+* **Single-Node Equilibrium & Force Density (Linkwitz 2014, Sec. 6.2, Fig. 6.4):** Projecting 3D cable tension $s_j$ onto the $x$-axis uses the direction cosine $\cos\alpha_j = u_j / l_j = (x_i - x_k) / \sqrt{u_j^2+v_j^2+w_j^2}$. Prescribing the **force density** $q_j = s_j / l_j$ ($\text{kN/m}$) cancels the nonlinear length $l_j$ out of the denominator ($F_{x,j} = q_j u_j = q_j(x_i - x_k)$), so every free node $P_0$ settles at the **$q$-weighted average of its neighbors**:
+
+$$
+q_j = \frac{s_j}{l_j}, \qquad x_0 = \frac{p_x + q_a x_1 + q_b x_2 + q_c x_3 + q_d x_4}{q_a + q_b + q_c + q_d}
+$$
+
+* **Materialization (Linkwitz Sec. 6.5, Eq. 6.37):** Form-finding solves for geometry $\mathbf{l}$ and forces $\mathbf{s} = Q\mathbf{l}$ without material stiffness $EA$; afterwards, choosing $EA_j$ gives the unstressed workshop **cutting length**:
+
+$$
+l_{0,j} = \frac{l_j}{1 + s_j / EA_j}
+$$
 
 | Milestone | What you can do |
 |---|---|
@@ -65,7 +71,7 @@ A runnable version of [compas_fd.md](compas_fd.md). **Run the cells in order**: 
 | $D = C^T Q C$ | `D` | `(5, 5)` | Free-node stiffness matrix ($D_{ii} = \sum q_j$ at node $i$, $D_{ik} = -q_j$ to neighbor $k$) |
 | $D_f = C^T Q C_f$ | `D_f` | `(5, 4)` | Fixed-anchor coupling matrix ($-D_f \mathbf{x}_f$ is the pull from fixed anchors) |
 | $\mathbf{l}_0, EA$ | `l_cutting, EA` | `(12,)` | Unstressed workshop cutting lengths $l_j / (1 + s_j/EA_j)$ ($\text{m}$) and axial stiffness ($\text{kN}$) |
-| $G^T = \partial \mathbf{g}^* / \partial \mathbf{q}$ | `G_t` | `(r, 12)` | Constraint sensitivity Jacobian ($r$ constraints $\times\ m$ branches) |
+| $G^T = \partial \mathbf{g}^{\ast} / \partial \mathbf{q}$ | `G_t` | `(r, 12)` | Constraint sensitivity Jacobian ($r$ constraints $\times\ m$ branches) |
 """
 
 SETUP = """import numpy as np

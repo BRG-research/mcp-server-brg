@@ -44,7 +44,13 @@ for n, c in enumerate(chunks):
 
     # Check if any multi-row matrix inside <math-renderer> had its \\ unescaped to single \
     # or if CommonMark unescaped \_ or \% inside text mode (\text / \texttt)
+    # or if CommonMark parsed _emphasis_ across _{ / }_ (which injects \n\n and &amp;amp;)
+    # or if raw < / > inside math became &amp;lt; / &amp;gt; (which crashes MathJax/KaTeX)
     for block in re.findall(r"<math-renderer.*?</math-renderer>", html, flags=re.S):
+        if "\n\n" in block:
+            broken_rows.append((n, f"blank line (\\par) inside math-renderer: {block[:80]}"))
+        if "&amp;amp;" in block or "&amp;gt;" in block or "&amp;lt;" in block:
+            broken_rows.append((n, f"double-escaped entity (&amp;) inside math-renderer: {block[:80]}"))
         if re.search(r"\\text(?:tt|bf|rm)?\{[^}]*_[^}]*\}", block):
             broken_rows.append((n, f"underscore in text mode: {block[:80]}"))
         for env in re.findall(
@@ -59,6 +65,8 @@ for n, c in enumerate(chunks):
             ]
             if len(lines) > 1 and "\\\\" not in env:
                 broken_rows.append((n, env[:100]))
+            if len(lines) == 1 and re.search(r"\\(?![a-zA-Z\\])", env):
+                broken_rows.append((n, f"single-line matrix with unescaped row break: {env[:80]}"))
 
     stripped = re.sub(r"<math-renderer.*?</math-renderer>", "", html, flags=re.S)
     stripped = re.sub(r"<code>.*?</code>|<pre>.*?</pre>", "", stripped, flags=re.S)

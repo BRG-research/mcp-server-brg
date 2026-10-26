@@ -34,19 +34,30 @@ PARTS_TITLES = {
 }
 
 
+def sanitize_gfm_math(text: str) -> str:
+    """Prevent GFM CommonMark from parsing _emphasis_ or HTML-escaping < > inside TeX math."""
+    def _fix(m: re.Match[str]) -> str:
+        s = m.group(0)
+        s = s.replace("}_", "} _ ").replace("_{", " _ {")
+        s = s.replace(">", r"\gt ").replace("<", r"\lt ")
+        return s
+
+    return re.sub(r"\$\$.*?\$\$|\$[^$\n]+\$", _fix, text, flags=re.S)
+
+
 def cells(source: str):
     parts = re.split(r"^# %% \[([a-z0-9]+)\] (.*)$", source, flags=re.M)
     for i in range(1, len(parts), 3):
         cid, title, body = parts[i], parts[i + 1].strip(), parts[i + 2]
         m = re.match(r'\s*r?"""(.*?)"""\s*\n', body, flags=re.S)
-        prose = m.group(1).strip() if m else ""
+        prose = sanitize_gfm_math(m.group(1).strip()) if m else ""
         code = body[m.end():] if m else body
         explain = ""
         if "# %% explain" in code:
             code, tail = code.split("# %% explain", 1)
             e = re.search(r'r?"""(.*?)"""', tail, flags=re.S)
-            explain = e.group(1).strip() if e else ""
-        yield cid, title, prose, code.strip("\n"), explain
+            explain = sanitize_gfm_math(e.group(1).strip()) if e else ""
+        yield cid, sanitize_gfm_math(title), prose, code.strip("\n"), explain
 
 
 def main():
@@ -93,7 +104,7 @@ def main():
     out += [END]
     note = NOTE.read_text()
     i, j = note.index(START), note.index(END) + len(END)
-    NOTE.write_text(note[:i] + "\n".join(out) + note[j:])
+    NOTE.write_text(sanitize_gfm_math(note[:i]) + "\n".join(out) + sanitize_gfm_math(note[j:]))
     print(f"wrote {len(all_cells)} subsections into {NOTE.name}")
 
 
