@@ -40,12 +40,12 @@ $$
 F_{x,j} = s_j \frac{x_i - x_k}{l_j} = (q_j l_j) \frac{x_i - x_k}{l_j} = q_j (x_i - x_k)
 $$
 
-* **3. Physical meaning at a node (Linkwitz 2014, Sec. 6.2):** For a free node $P_0$ connected to neighbors $P_1, P_2, P_3, P_4$ with force densities $q_a, q_b, q_c, q_d$, force balance $\sum q_j (x_0 - x_k) = p_x$ is a **linear equation** whose solution places $P_0$ at the $q$-weighted average of its neighbors (and then recovers unstressed cutting length $l_{0,j}$ from Hooke's law):
+* **3. Physical meaning at a node (Node 1 in our 9-node net):** For free Node 1 connected to Anchor 6 and Free Nodes 4, 2, 5 by branches $1, 5, 6, 10$ with force densities $q_1, q_5, q_6, q_{10}$, force balance $\sum q_j (x_1 - x_k) = p_{x,1}$ is a **linear equation** whose solution places Node 1 at the $q$-weighted average of its neighbors (and then recovers unstressed cutting length $l_{0,j}$ from Hooke's law, where $EA_j = E_j A_j$ is Young's modulus times cross-sectional area):
 
 $$
-q_a(x_0 - x_1) + q_b(x_0 - x_2) + q_c(x_0 - x_3) + q_d(x_0 - x_4) = p_x
+q_1(x_1 - x_6) + q_5(x_1 - x_4) + q_6(x_1 - x_2) + q_{10}(x_1 - x_5) = p_{x,1}
 \quad \Longrightarrow \quad
-x_0 = \frac{p_x + q_a x_1 + q_b x_2 + q_c x_3 + q_d x_4}{q_a + q_b + q_c + q_d}, \qquad
+x_1 = \frac{p_{x,1} + q_1 x_6 + q_5 x_4 + q_6 x_2 + q_{10} x_5}{q_1 + q_5 + q_6 + q_{10}}, \qquad
 l _ {0,j} = \frac{l_j}{1 + s_j / EA_j}
 $$
 

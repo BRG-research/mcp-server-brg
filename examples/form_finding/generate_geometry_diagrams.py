@@ -150,30 +150,30 @@ def fig_linkwitz_intuition():
     ax1.scatter([0], [0], [0.5], color=C_DARK, s=75, zorder=10)
     ax1.add_artist(Arrow3D([0, 0], [0, 0], [0.5, 0.88], mutation_scale=13, lw=2.2, arrowstyle="-|>", color=C_FIXED))
     ax1.add_artist(Arrow3D([0, 0], [0, 0], [0.5, 0.12], mutation_scale=13, lw=2.2, arrowstyle="-|>", color=C_FREE))
-    ax1.text(0.14, 0.10, 0.52, "$P_0$", fontsize=11.5, fontweight="bold", color=C_DARK)
-    ax1.text(0.0, 0.75, 1.06, "High anchors (pull up)", fontsize=10, fontweight="bold", color=C_FIXED, ha="center")
-    ax1.text(-0.75, 0.0, -0.18, "Low anchors (pull down)", fontsize=10, fontweight="bold", color=C_FREE, ha="center")
+    ax1.text(0.16, 0.10, 0.52, "Node 5", fontsize=11.0, fontweight="bold", color=C_DARK)
+    ax1.text(0.0, 0.75, 1.06, "High anchors 7, 9 (pull up)", fontsize=10, fontweight="bold", color=C_FIXED, ha="center")
+    ax1.text(-0.75, 0.0, -0.18, "Low anchors 6, 8 (pull down)", fontsize=10, fontweight="bold", color=C_FREE, ha="center")
     ax1.set_xlim(-1.1, 1.1); ax1.set_ylim(-1.1, 1.1); ax1.set_zlim(-0.15, 1.1)
     ax1.set_xticks([]); ax1.set_yticks([]); ax1.set_zticks([])
     ax1.view_init(elev=22, azim=-48)
-    ax1.set_title("1. Anticlastic Saddle (Linkwitz Fig. 6.2)", fontsize=11.5, fontweight="bold", color=C_DARK, pad=6)
+    ax1.set_title("1. Anticlastic Saddle (9-Node Net)", fontsize=11.5, fontweight="bold", color=C_DARK, pad=6)
 
-    # Panel 2: Single Node P0 with 4 neighbors
+    # Panel 2: Node 1 with its 4 neighbors (Anchor 6, Node 2, Node 5, Node 4)
     ax2 = fig.add_subplot(gs[1])
     ax2.set_xlim(-2.4, 2.4)
     ax2.set_ylim(-2.1, 2.2)
     ax2.set_aspect("equal")
     ax2.axis("off")
-    ax2.set_title("2. Single Node $P_0$ (Linkwitz Fig. 6.4)", fontsize=11.5, fontweight="bold", color=C_DARK, pad=6)
+    ax2.set_title("2. Node 1 Equilibrium ($q$-Weighted Average)", fontsize=11.5, fontweight="bold", color=C_DARK, pad=6)
 
     p0 = np.array([0.0, 0.0])
     neighbors = [
-        ("P_1", np.array([-1.75, 0.30]), "$q_a$", C_FREE, (-1.75, 0.72), (-0.95, 0.42)),
-        ("P_2", np.array([0.25, 1.55]), "$q_b$", C_FIXED, (0.25, 1.95), (0.48, 0.85)),
-        ("P_3", np.array([1.75, -0.10]), "$q_c$", C_FREE, (1.75, 0.32), (0.95, 0.18)),
-        ("P_4", np.array([-0.25, -1.45]), "$q_d$", C_FIXED, (-0.25, -1.90), (-0.58, -0.82)),
+        ("Anchor 6", np.array([-1.75, 0.30]), "$q_1$", C_FIXED, (-1.75, 0.72), (-0.95, 0.42), "s", C_FIXED_FILL),
+        ("Node 2", np.array([0.25, 1.55]), "$q_6$", C_FREE, (0.25, 1.95), (0.48, 0.85), "o", C_FREE_FILL),
+        ("Node 5", np.array([1.75, -0.10]), "$q_{10}$", C_FREE, (1.75, 0.32), (0.95, 0.18), "o", C_FREE_FILL),
+        ("Node 4", np.array([-0.25, -1.45]), "$q_5$", C_FREE, (-0.25, -1.90), (-0.58, -0.82), "o", C_FREE_FILL),
     ]
-    for name, pk, qlab, col, npos, bpos in neighbors:
+    for name, pk, qlab, col, npos, bpos, mkr, mfill in neighbors:
         ax2.plot([p0[0], pk[0]], [p0[1], pk[1]], color="#64748b", lw=2.2, zorder=2)
         d = pk - p0
         ax2.annotate(
@@ -181,16 +181,16 @@ def fig_linkwitz_intuition():
             arrowprops=dict(arrowstyle="-|>", color=col, lw=2.5, mutation_scale=13), zorder=4,
         )
         ax2.text(bpos[0], bpos[1], qlab, fontsize=11, color=col, fontweight="bold", ha="center")
-        ax2.scatter([pk[0]], [pk[1]], s=240, marker="s", c=C_FIXED_FILL, edgecolors=C_FIXED, linewidths=2.0, zorder=5)
-        ax2.text(npos[0], npos[1], f"${name}$", fontsize=11, fontweight="bold", color=C_DARK, ha="center")
+        ax2.scatter([pk[0]], [pk[1]], s=240, marker=mkr, c=mfill, edgecolors=col, linewidths=2.0, zorder=5)
+        ax2.text(npos[0], npos[1], name, fontsize=10.5, fontweight="bold", color=C_DARK, ha="center")
 
     ax2.annotate(
         "", xy=(0.35, -0.85), xytext=p0,
         arrowprops=dict(arrowstyle="-|>", color=C_LOAD, lw=2.6, mutation_scale=13), zorder=4,
     )
-    ax2.text(0.75, -0.78, "Load $p$", fontsize=10.5, fontweight="bold", color=C_LOAD)
+    ax2.text(0.80, -0.78, "Load $p_1$", fontsize=10.5, fontweight="bold", color=C_LOAD)
     ax2.scatter([p0[0]], [p0[1]], s=300, c=C_FREE_FILL, edgecolors=C_FREE, linewidths=2.4, zorder=6)
-    ax2.text(-0.42, 0.25, "$P_0$", fontsize=11.5, fontweight="bold", color=C_FREE)
+    ax2.text(-0.55, 0.25, "Node 1", fontsize=11.0, fontweight="bold", color=C_FREE)
 
     # Panel 3: Materialization (Cutting Length l_0 vs Stressed Length l)
     ax3 = fig.add_subplot(gs[2])

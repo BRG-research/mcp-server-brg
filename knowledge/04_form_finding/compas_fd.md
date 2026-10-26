@@ -36,12 +36,12 @@ $$
 F_{x,j} = s_j \frac{x_i - x_k}{l_j} = (q_j l_j) \frac{x_i - x_k}{l_j} = q_j (x_i - x_k)
 $$
 
-* **3. Physical meaning at a node (Linkwitz 2014, Sec. 6.2):** For a free node $P_0$ connected to neighbors $P_1, P_2, P_3, P_4$ with force densities $q_a, q_b, q_c, q_d$, force balance $\sum q_j (x_0 - x_k) = p_x$ is a **linear equation** whose solution places $P_0$ at the $q$-weighted average of its neighbors (and then recovers unstressed cutting length $l_{0,j}$ from Hooke's law):
+* **3. Physical meaning at a node (Node 1 in our 9-node net):** For free Node 1 connected to Anchor 6 and Free Nodes 4, 2, 5 by branches $1, 5, 6, 10$ with force densities $q_1, q_5, q_6, q_{10}$, force balance $\sum q_j (x_1 - x_k) = p_{x,1}$ is a **linear equation** whose solution places Node 1 at the $q$-weighted average of its neighbors (and then recovers unstressed cutting length $l_{0,j}$ from Hooke's law, where $EA_j = E_j A_j$ is Young's modulus times cross-sectional area):
 
 $$
-q_a(x_0 - x_1) + q_b(x_0 - x_2) + q_c(x_0 - x_3) + q_d(x_0 - x_4) = p_x
+q_1(x_1 - x_6) + q_5(x_1 - x_4) + q_6(x_1 - x_2) + q_{10}(x_1 - x_5) = p_{x,1}
 \quad \Longrightarrow \quad
-x_0 = \frac{p_x + q_a x_1 + q_b x_2 + q_c x_3 + q_d x_4}{q_a + q_b + q_c + q_d}, \qquad
+x_1 = \frac{p_{x,1} + q_1 x_6 + q_5 x_4 + q_6 x_2 + q_{10} x_5}{q_1 + q_5 + q_6 + q_{10}}, \qquad
 l_{0,j} = \frac{l_j}{1 + s_j / EA_j}
 $$
 
@@ -61,118 +61,24 @@ $$
 
 ## Build the force density method step by step
 
-Follow the subsections in order (`examples/form_finding/schek_app.py`). Every equation is paired immediately with an explicit numerical matrix example.
+Follow the subsections in order (`examples/form_finding/schek_app.py`). Every equation is paired immediately with an explicit numerical matrix example on the same **9-node, 12-branch saddle cable net** (`n = 5` free nodes, `n_f = 4` fixed anchors, `m = 12` branches).
 
 | Milestone | What you can do |
 |---|---|
-| **A.1–A.4** | Represent a network as a branch-node matrix and trace $C^T Q C$ step by step. |
-| **B.1–B.3** | Compute branch coordinate differences, lengths, and the 4-stage nonlinear equilibrium residual. |
-| **C.1–C.4** | Apply the force-density substitution $q_j = s_j / l_j$, assemble $D$ and $D_f$, solve coordinates, and recover forces. |
-| **D.1–D.2** | Package the 3D linear solver and support reactions into a single function. |
-| **E.1** | Interpret $q_j$ geometrically as a weight minimizing $\sum q_j l_j^2$. |
-| **F.1–F.3** | Enforce target branch lengths and forces via constrained least-squares and the sensitivity Jacobian $G^T$. |
-| **G.1–G.5** | Apply the same solver to Schek's 67-node pointed tent and 112-bar grid-shell benchmarks. |
+| **A.1–A.4** | Define the 9-node, 12-branch cable net, diagonal matrices $U, Q$, connectivity $C_s = [C \mid C_f]$, and $D = C^T Q C$. |
+| **B.1–B.3** | Compute branch coordinate differences, lengths, and the 4-stage nonlinear equilibrium residual on the 9-node net. |
+| **C.1–C.4** | Apply $q_j = s_j / l_j$, assemble $D$ and $D_f$, solve the 5 free-node coordinates, and recover all 12 cable forces and cutting lengths. |
+| **D.1–D.2** | Package the 3D linear solver and 4-anchor support reactions into a single function and compare 4 load/prestress cases. |
+| **E.1** | Interpret $q_j$ geometrically as a weight minimizing $\sum_{j=1}^{12} q_j l_j^2$ on the unloaded 9-node saddle. |
+| **F.1–F.3** | Enforce target branch lengths and forces on the 9-node net via constrained least-squares and the sensitivity Jacobian $G^T$. |
 
 ---
 
 ## Part A. The network as data
 
-### A.1 Vectors, matrices, and the diagonal trick (section 1.4)
+### A.1 Network topology: numbering the 9 nodes and 12 branches (section 2.1)
 
-Lowercase bold letters ($\mathbf{u}, \mathbf{q}, \mathbf{l}$) denote $(m \times 1)$ branch column vectors; uppercase letters ($U, Q, L$) denote the $(m \times m)$ diagonal matrices formed by placing those vectors on the main diagonal.
-
-### General Equation
-
-$$
-U = \mathrm{diag}(\mathbf{u}), \qquad Q = \mathrm{diag}(\mathbf{q}), \qquad U \mathbf{q} = Q \mathbf{u}
-$$
-
-### Matrix Example
-
-Turning a 3-branch vector $\mathbf{u}$ into a $(3 \times 3)$ diagonal matrix $U = \mathrm{diag}(\mathbf{u})$:
-
-$$
-\mathbf{u} = \begin{bmatrix}
-2 \\
--1 \\
-3
-\end{bmatrix}
-\qquad \longrightarrow \qquad
-U = \mathrm{diag}(\mathbf{u}) = \begin{bmatrix}
-2 & 0 & 0 \\
-0 & -1 & 0 \\
-0 & 0 & 3
-\end{bmatrix}
-\begin{matrix}
-\leftarrow \text{scales branch 1 by } 2 \\
-\leftarrow \text{scales branch 2 by } -1 \\
-\leftarrow \text{scales branch 3 by } 3
-\end{matrix}
-$$
-
-Multiplying a diagonal matrix by a vector scales each row independently without mixing entries, so the factors commute ($U \mathbf{q} = Q \mathbf{u}$):
-
-$$
-\underset{U\ (3\times 3)}{\begin{bmatrix}
-2 & 0 & 0 \\
-0 & -1 & 0 \\
-0 & 0 & 3
-\end{bmatrix}}
-\underset{\mathbf{q}\ (3\times 1)}{\begin{bmatrix}
-4 \\
-5 \\
-6
-\end{bmatrix}} =
-\underset{Q\ (3\times 3)}{\begin{bmatrix}
-4 & 0 & 0 \\
-0 & 5 & 0 \\
-0 & 0 & 6
-\end{bmatrix}}
-\underset{\mathbf{u}\ (3\times 1)}{\begin{bmatrix}
-2 \\
--1 \\
-3
-\end{bmatrix}} =
-\begin{bmatrix}
-8 \\
--5 \\
-18
-\end{bmatrix}
-\begin{matrix}
-\leftarrow 2 \times 4 \\
-\leftarrow -1 \times 5 \\
-\leftarrow 3 \times 6
-\end{matrix}
-$$
-
-**Add to your program:**
-
-```python
-import numpy as np
-from typing import TypeAlias
-
-FloatMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
-FloatVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
-
-u_example = np.array([2.0, -1.0, 3.0])
-U_example = np.diag(u_example)
-print("U_example = diag(u_example):\n", U_example)
-```
-
-* `np.diag(u_example)` places the `(3,)` vector on the main diagonal of the `(3, 3)` matrix `U_example`; `np.diag(u) @ q`, `np.diag(q) @ u`, and `u * q` all produce $[8, -5, 18]^T$.
-
-**Example output:**
-
-```text
-U_example = diag(u_example):
- [[ 2.  0.  0.]
- [ 0. -1.  0.]
- [ 0.  0.  3.]]
-```
-
-### A.2 Network topology: numbering nodes and branches (section 2.1)
-
-Number the $n = 5$ **free inner nodes first** ($1 \dots 5$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$) across the $m = 12$ directed branches ($i \to k$) so the connectivity matrix splits with a single vertical cut.
+Throughout this entire tutorial, we use one single running example: Schek's **9-node, 12-branch saddle cable net** (Fig. 2). We number the $n = 5$ **free inner nodes first** ($1 \dots 5$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$) across the $m = 12$ directed branches ($i \to k$) so the connectivity matrix splits cleanly with a single vertical cut.
 
 ![Fig. 2](images/schek_fig2.png)
 
@@ -184,6 +90,12 @@ Number the $n = 5$ **free inner nodes first** ($1 \dots 5$) and the $n_f = 4$ **
 **Add to your program:**
 
 ```python
+import numpy as np
+from typing import TypeAlias
+
+FloatMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+FloatVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
+
 branches: list[tuple[int, int]] = [
     (1, 6), (2, 7), (3, 8), (4, 9),   # 1-4: free corners to fixed anchors
     (1, 4), (1, 2), (2, 3), (3, 4),   # 5-8: inner ring
@@ -202,9 +114,127 @@ print(f"Network counts: m={m} branches, n={n} free nodes, n_f={n_f} fixed anchor
 Network counts: m=12 branches, n=5 free nodes, n_f=4 fixed anchors
 ```
 
+### A.2 Vectors, diagonal matrices, and the diagonal swap (section 1.4)
+
+On our 9-node, 12-branch network, lowercase bold letters ($\mathbf{u}, \mathbf{q}, \mathbf{l}$) denote $(12 \times 1)$ branch column vectors, while uppercase letters ($U, Q, L$) denote the $(12 \times 12)$ diagonal matrices formed by placing those 12 branch values on the main diagonal.
+
+### General Equation
+
+$$
+U = \mathrm{diag}(\mathbf{u}), \qquad Q = \mathrm{diag}(\mathbf{q}), \qquad U \mathbf{q} = Q \mathbf{u}
+$$
+
+### Matrix Example (12 Branches of the 9-Node Net)
+
+Placing the 12-branch coordinate-difference vector $\mathbf{u}$ and force-density vector $\mathbf{q}$ of our 9-node net onto $(12 \times 12)$ diagonals scales each branch row independently, so the factors commute ($U \mathbf{q} = Q \mathbf{u}$):
+
+$$
+\underset{U\ (12\times 12)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}}
+\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+2 \\
+2 \\
+2 \\
+2 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1
+\end{bmatrix}} =
+\underset{Q\ (12\times 12)}{\begin{bmatrix}
+2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}}
+\underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
+1 \\
+0 \\
+-1 \\
+0 \\
+-1 \\
+-1 \\
+-1 \\
+1 \\
+0 \\
+-1 \\
+0 \\
+1
+\end{bmatrix}} =
+\begin{bmatrix}
+2 \\
+0 \\
+-2 \\
+0 \\
+-1 \\
+-1 \\
+-1 \\
+1 \\
+0 \\
+-1 \\
+0 \\
+1
+\end{bmatrix}
+\begin{matrix}
+\leftarrow u_1 q_1 = 1 \times 2 \\
+\leftarrow u_2 q_2 = 0 \times 2 \\
+\leftarrow u_3 q_3 = -1 \times 2 \\
+\leftarrow u_4 q_4 = 0 \times 2 \\
+\leftarrow u_5 q_5 = -1 \times 1 \\
+\leftarrow u_6 q_6 = -1 \times 1 \\
+\leftarrow u_7 q_7 = -1 \times 1 \\
+\leftarrow u_8 q_8 = 1 \times 1 \\
+\leftarrow u_9 q_9 = 0 \times 1 \\
+\leftarrow u_{10} q_{10} = -1 \times 1 \\
+\leftarrow u_{11} q_{11} = 0 \times 1 \\
+\leftarrow u_{12} q_{12} = 1 \times 1
+\end{matrix}
+$$
+
+**Add to your program:**
+
+```python
+u_12 = np.array([1.0, 0.0, -1.0, 0.0, -1.0, -1.0, -1.0, 1.0, 0.0, -1.0, 0.0, 1.0])
+q_12 = np.array([2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+U_12, Q_12 = np.diag(u_12), np.diag(q_12)
+print("U @ q == Q @ u (12 branches):", (U_12 @ q_12).astype(int))
+```
+
+* `np.diag(u_12)` and `np.diag(q_12)` place the `(12,)` branch vectors on the main diagonal of `(12, 12)` matrices; `U_12 @ q_12`, `Q_12 @ u_12`, and `u_12 * q_12` all produce the exact same `(12,)` vector.
+
+**Example output:**
+
+```text
+U @ q == Q @ u (12 branches): [ 2  0 -2  0 -1 -1 -1  1  0 -1  0  1]
+```
+
 ### A.3 Branch-node connectivity matrix and partitioning (section 2.1)
 
-Encode the directed graph as an $(m \times n_s)$ branch-node incidence matrix $C_s$ ($+1$ at start node $i$, $-1$ at end node $k$), partitioned into free-node columns $C$ $(12 \times 5)$ and fixed-anchor columns $C_f$ $(12 \times 4)$.
+Encode the 9-node, 12-branch directed graph as a $(12 \times 9)$ branch-node incidence matrix $C_s$ ($+1$ at start node $i$, $-1$ at end node $k$), partitioned into free-node columns $C$ $(12 \times 5)$ and fixed-anchor columns $C_f$ $(12 \times 4)$.
 
 ### General Equation
 
@@ -289,129 +319,166 @@ C_s (12x9):
  [ 0  0  1  0 -1  0  0  0  0]]
 ```
 
-### A.4 Step-by-step matrix multiplication for $C^T Q C$
+### A.4 Step-by-step matrix multiplication for $D = C^T Q C$ on the 9-node network
 
-Trace how $D = C^T (Q C)$ assembles nodal equilibrium on a **5-branch, 3-free-node mini-network** (free nodes $1, 2, 3$; fixed supports $4, 5$) with force densities $\mathbf{q} = [2, 3, 4, 5, 6]^T$.
+Trace how $D = C^T (Q C)$ assembles the $(5 \times 5)$ nodal equilibrium matrix directly on our **9-node, 12-branch network** with force densities $\mathbf{q} = [2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1]^T$.
 
-### 1. Free Connectivity $C\ (5 \times 3)$ and Transpose $C^T\ (3 \times 5)$
+### 1. Free Connectivity $C\ (12 \times 5)$ and Transpose $C^T\ (5 \times 12)$
 
 $$
 C = \begin{bmatrix}
-1 & 0 & 0 \\
-0 & 1 & 0 \\
-1 & -1 & 0 \\
--1 & 0 & 1 \\
-0 & 1 & -1
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+1 & 0 & 0 & -1 & 0 \\
+1 & -1 & 0 & 0 & 0 \\
+0 & 1 & -1 & 0 & 0 \\
+0 & 0 & 1 & -1 & 0 \\
+0 & 0 & 0 & 1 & -1 \\
+1 & 0 & 0 & 0 & -1 \\
+0 & 1 & 0 & 0 & -1 \\
+0 & 0 & 1 & 0 & -1
 \end{bmatrix}
 \begin{matrix}
-\leftarrow b_1\ (4\to 1) \\
-\leftarrow b_2\ (5\to 2) \\
-\leftarrow b_3\ (2\to 1) \\
-\leftarrow b_4\ (3\to 1) \\
-\leftarrow b_5\ (3\to 2)
+\leftarrow b_1\ (1\to 6) \\
+\leftarrow b_2\ (2\to 7) \\
+\leftarrow b_3\ (3\to 8) \\
+\leftarrow b_4\ (4\to 9) \\
+\leftarrow b_5\ (1\to 4) \\
+\leftarrow b_6\ (1\to 2) \\
+\leftarrow b_7\ (2\to 3) \\
+\leftarrow b_8\ (3\to 4) \\
+\leftarrow b_9\ (4\to 5) \\
+\leftarrow b_{10}\ (1\to 5) \\
+\leftarrow b_{11}\ (2\to 5) \\
+\leftarrow b_{12}\ (3\to 5)
 \end{matrix}
-\qquad \overset{\text{transpose}}{\longrightarrow} \qquad
+\quad \overset{\text{transpose}}{\longrightarrow} \quad
 C^T = \begin{bmatrix}
-1 & 0 & 1 & -1 & 0 \\
-0 & 1 & -1 & 0 & 1 \\
-0 & 0 & 0 & 1 & -1
+1 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
 \end{bmatrix}
 \begin{matrix}
 \leftarrow \text{Node 1} \\
 \leftarrow \text{Node 2} \\
-\leftarrow \text{Node 3}
+\leftarrow \text{Node 3} \\
+\leftarrow \text{Node 4} \\
+\leftarrow \text{Node 5}
 \end{matrix}
 $$
 
-### 2. Step 1 — Compute $Q C$ (Force Density per Cable, $5 \times 3$)
+### 2. Step 1 — Compute $Q C$ (Force Density per Cable, $12 \times 5$)
 
 $$
 Q C =
-\underset{Q\ (5\times 5)}{\begin{bmatrix}
-2 & 0 & 0 & 0 & 0 \\
-0 & 3 & 0 & 0 & 0 \\
-0 & 0 & 4 & 0 & 0 \\
-0 & 0 & 0 & 5 & 0 \\
-0 & 0 & 0 & 0 & 6
+\underset{Q\ (12\times 12)}{\begin{bmatrix}
+2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
-\underset{C\ (5\times 3)}{\begin{bmatrix}
-1 & 0 & 0 \\
-0 & 1 & 0 \\
-1 & -1 & 0 \\
--1 & 0 & 1 \\
-0 & 1 & -1
+\underset{C\ (12\times 5)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+1 & 0 & 0 & -1 & 0 \\
+1 & -1 & 0 & 0 & 0 \\
+0 & 1 & -1 & 0 & 0 \\
+0 & 0 & 1 & -1 & 0 \\
+0 & 0 & 0 & 1 & -1 \\
+1 & 0 & 0 & 0 & -1 \\
+0 & 1 & 0 & 0 & -1 \\
+0 & 0 & 1 & 0 & -1
 \end{bmatrix}} =
-\underset{Q C\ (5\times 3)}{\begin{bmatrix}
-2 & 0 & 0 \\
-0 & 3 & 0 \\
-4 & -4 & 0 \\
--5 & 0 & 5 \\
-0 & 6 & -6
+\underset{Q C\ (12\times 5)}{\begin{bmatrix}
+2 & 0 & 0 & 0 & 0 \\
+0 & 2 & 0 & 0 & 0 \\
+0 & 0 & 2 & 0 & 0 \\
+0 & 0 & 0 & 2 & 0 \\
+1 & 0 & 0 & -1 & 0 \\
+1 & -1 & 0 & 0 & 0 \\
+0 & 1 & -1 & 0 & 0 \\
+0 & 0 & 1 & -1 & 0 \\
+0 & 0 & 0 & 1 & -1 \\
+1 & 0 & 0 & 0 & -1 \\
+0 & 1 & 0 & 0 & -1 \\
+0 & 0 & 1 & 0 & -1
 \end{bmatrix}}
 \begin{matrix}
 \leftarrow q_1 = 2 \\
-\leftarrow q_2 = 3 \\
-\leftarrow q_3 = 4 \\
-\leftarrow q_4 = 5 \\
-\leftarrow q_5 = 6
+\leftarrow q_2 = 2 \\
+\leftarrow q_3 = 2 \\
+\leftarrow q_4 = 2 \\
+\leftarrow q_5 = 1 \\
+\leftarrow q_6 = 1 \\
+\leftarrow q_7 = 1 \\
+\leftarrow q_8 = 1 \\
+\leftarrow q_9 = 1 \\
+\leftarrow q_{10} = 1 \\
+\leftarrow q_{11} = 1 \\
+\leftarrow q_{12} = 1
 \end{matrix}
 $$
 
-### 3. Step 2 — Compute $D = C^T (Q C)$ (Sum at Nodes, $3 \times 3$)
+### 3. Step 2 — Compute $D = C^T (Q C)$ (Sum at the 5 Free Nodes, $5 \times 5$)
 
 $$
-D =
-\underset{C^T\ (3\times 5)}{\begin{bmatrix}
-1 & 0 & 1 & -1 & 0 \\
-0 & 1 & -1 & 0 & 1 \\
-0 & 0 & 0 & 1 & -1
-\end{bmatrix}}
-\underset{Q C\ (5\times 3)}{\begin{bmatrix}
-2 & 0 & 0 \\
-0 & 3 & 0 \\
-4 & -4 & 0 \\
--5 & 0 & 5 \\
-0 & 6 & -6
-\end{bmatrix}} =
+D = C^T (Q C) =
 \begin{bmatrix}
-q_1+q_3+q_4 & -q_3 & -q_4 \\
--q_3 & q_2+q_3+q_5 & -q_5 \\
--q_4 & -q_5 & q_4+q_5
+q_1+q_5+q_6+q_{10} & -q_6 & 0 & -q_5 & -q_{10} \\
+-q_6 & q_2+q_6+q_7+q_{11} & -q_7 & 0 & -q_{11} \\
+0 & -q_7 & q_3+q_7+q_8+q_{12} & -q_8 & -q_{12} \\
+-q_5 & 0 & -q_8 & q_4+q_5+q_8+q_9 & -q_9 \\
+-q_{10} & -q_{11} & -q_{12} & -q_9 & q_9+q_{10}+q_{11}+q_{12}
 \end{bmatrix} =
 \begin{bmatrix}
-11 & -4 & -5 \\
--4 & 13 & -6 \\
--5 & -6 & 11
+5 & -1 & 0 & -1 & -1 \\
+-1 & 5 & -1 & 0 & -1 \\
+0 & -1 & 5 & -1 & -1 \\
+-1 & 0 & -1 & 5 & -1 \\
+-1 & -1 & -1 & -1 & 4
 \end{bmatrix}
 \begin{matrix}
-\leftarrow \text{Node 1: } 2+4+5=11 \\
-\leftarrow \text{Node 2: } 3+4+6=13 \\
-\leftarrow \text{Node 3: } 5+6=11
+\leftarrow \text{Node 1: } 2+1+1+1=5 \\
+\leftarrow \text{Node 2: } 2+1+1+1=5 \\
+\leftarrow \text{Node 3: } 2+1+1+1=5 \\
+\leftarrow \text{Node 4: } 2+1+1+1=5 \\
+\leftarrow \text{Node 5: } 1+1+1+1=4
 \end{matrix}
 $$
 
 **Add to your program:**
 
 ```python
-C_mini = np.array(
-    [[1, 0, 0], [0, 1, 0], [1, -1, 0], [-1, 0, 1], [0, 1, -1]],
-    dtype=float,
-)
-q_mini = np.array([2.0, 3.0, 4.0, 5.0, 6.0])
-QC_mini = np.diag(q_mini) @ C_mini
-D_mini = C_mini.T @ QC_mini
-print("D_mini = C_mini.T @ diag(q_mini) @ C_mini:\n", D_mini.astype(int))
+QC = Q_12 @ C
+D_preview = C.T @ QC
+print("D = C.T @ diag(q) @ C (5x5):\n", D_preview.astype(int))
 ```
 
-* `np.diag(q_mini) @ C_mini` weights each branch row by $q_j$, and `C_mini.T @ QC_mini` sums those weighted rows at each free node ($D_{ii} = \sum q_j$, $D_{ik} = -q_j$).
+* `Q_12 @ C` weights each of the 12 branch rows by $q_j$, and `C.T @ QC` sums those weighted rows at each of the 5 free nodes ($D_{ii} = \sum q_j$ of branches touching node $i$; $D_{ik} = -q_j$ of the branch joining free nodes $i$ and $k$).
 
 **Example output:**
 
 ```text
-D_mini = C_mini.T @ diag(q_mini) @ C_mini:
- [[11 -4 -5]
- [-4 13 -6]
- [-5 -6 11]]
+D = C.T @ diag(q) @ C (5x5):
+ [[ 5 -1  0 -1 -1]
+ [-1  5 -1  0 -1]
+ [ 0 -1  5 -1 -1]
+ [-1  0 -1  5 -1]
+ [-1 -1 -1 -1  4]]
 ```
 
 ---
@@ -1813,404 +1880,6 @@ Jacobian block G_t[:, :4] (4x4):
  [ 0.002  0.044  0.002 -0.358]]
 ```
 
----
-
-## Part G. The paper's examples, recomputed
-
-### G.1 Larger network: the 67-node, 110-branch pointed tent (section 5, figure 5)
-
-Apply the exact same `form_finding` function without modification to Schek's larger pointed-tent network ($n = 61$ free nodes, $n_f = 6$ fixed supports including high apex node 67, $m = 110$ branches).
-
-![Fig. 5](images/schek_fig5.png)
-
-### Problem Dimensions & Prescribed Force Densities
-
-| Matrix / Vector | Fig. 2 Net (Parts A–F) | Fig. 5 Tent (Part G) |
-|---|---|---|
-| Connectivity $C_s = [C \mid C_f]$ | $(12 \times 5)\ \big\|\ (12 \times 4)$ | $(110 \times 61)\ \big\|\ (110 \times 6)$ |
-| Diagonal Force Density $Q$ | $(12 \times 12)$ | $(110 \times 110)$ |
-| Free System Matrix $D = C^T Q C$ | $(5 \times 5)$ | $(61 \times 61)$ |
-
-$$
-q_j = \begin{cases}
-100.0 & \text{29 border cables (stiff edge)} \\
-0.5 & \text{10 radial apex cables (long)} \\
-1.0 & \text{71 interior field cables}
-\end{cases}
-$$
-
-**Add to your program:**
-
-```python
-FIG5_PX = {   # plan positions read off the printed figure (pixels, y down)
-    1: (162, 368), 2: (150, 591), 3: (182, 345), 4: (165, 618),
-    5: (247, 230), 6: (190, 666), 7: (217, 611), 8: (315, 405),
-    9: (360, 305), 10: (265, 198), 11: (430, 95), 12: (452, 105),
-    13: (537, 132), 14: (445, 368), 15: (413, 448), 16: (357, 593),
-    17: (250, 773), 18: (412, 703), 19: (282, 836), 20: (445, 951),
-    21: (527, 921), 22: (567, 909), 23: (595, 801), 24: (472, 678),
-    25: (455, 581), 26: (480, 477), 27: (519, 420), 28: (662, 172),
-    29: (664, 346), 30: (665, 445), 31: (639, 451), 32: (599, 476),
-    33: (588, 492), 34: (571, 515), 35: (562, 536), 36: (559, 568),
-    37: (561, 596), 38: (573, 632), 39: (592, 661), 40: (624, 683),
-    41: (652, 696), 42: (694, 703), 43: (732, 821), 44: (737, 851),
-    45: (837, 230), 46: (787, 365), 47: (719, 448), 48: (749, 463),
-    49: (793, 506), 50: (807, 546), 51: (809, 596), 52: (804, 628),
-    53: (752, 686), 54: (864, 239), 55: (964, 385), 56: (919, 526),
-    57: (977, 514), 58: (919, 643), 59: (989, 653), 60: (992, 676),
-    61: (857, 811), 62: (97, 494), 63: (362, 981), 64: (999, 763),
-    65: (954, 270), 66: (340, 68), 67: (685, 571),
-}
-BORDER = [
-    62, 2, 4, 6, 17, 19, 63, 20, 21, 22, 44, 61, 64, 60, 59,
-    57, 55, 65, 54, 45, 28, 13, 12, 11, 66, 10, 5, 3, 1,
-]
-INNER_RING = [
-    31, 30, 47, 48, 49, 50, 51, 52, 53, 42,
-    41, 40, 39, 38, 37, 36, 35, 34, 33, 32,
-]
-MIDDLE_RING = [27, 29, 46, 56, 58, 43, 23, 24, 25, 26]
-SPOKES = [31, 33, 35, 37, 39, 41, 53, 51, 49, 47]
-OTHER = [
-    (30, 29), (32, 27), (34, 26), (36, 25), (38, 24), (40, 23),
-    (42, 43), (52, 58), (50, 56), (48, 46), (27, 14), (29, 28),
-    (46, 45), (56, 57), (58, 59), (43, 44), (23, 22), (24, 18),
-    (25, 16), (26, 15), (1, 2), (4, 7), (6, 7), (7, 8), (3, 8),
-    (8, 9), (5, 9), (9, 12), (9, 14), (13, 14), (10, 11), (8, 15),
-    (14, 15), (15, 16), (7, 16), (16, 18), (17, 18), (18, 21),
-    (19, 20), (61, 60), (59, 58), (57, 56), (46, 45), (28, 29),
-    (54, 55),
-]
-ring = lambda nodes: [
-    (nodes[i], nodes[(i + 1) % len(nodes)]) for i in range(len(nodes))
-]
-seen, branches5 = set(), []
-all_edges5 = (
-    ring(BORDER) + ring(INNER_RING) + ring(MIDDLE_RING)
-    + [(k, 67) for k in SPOKES] + OTHER
-)
-for e in all_edges5:
-    if tuple(sorted(e)) not in seen:
-        seen.add(tuple(sorted(e)))
-        branches5.append(e)
-border5 = {tuple(sorted(e)) for e in ring(BORDER)}
-xy = np.array([FIG5_PX[k] for k in range(1, 68)], dtype=float)
-xy = xy * np.array([0.04, -0.04])
-xy -= xy[66]                                  # apex at the plan origin
-free5, fixed5 = 61, [62, 63, 64, 65, 66, 67]
-q5 = np.array([
-    100.0 if tuple(sorted(e)) in border5 else 0.5 if 67 in e else 1.0
-    for e in branches5
-])
-p5 = np.zeros((free5, 3))
-p5[:, 2] = -0.4
-is_spoke = np.array([67 in e for e in branches5])
-is_border = np.array([tuple(sorted(e)) in border5 for e in branches5])
-touches_border = np.array([any(k in BORDER for k in e) for e in branches5])
-
-
-def anchors5(apex_dx=0.0, apex_dy=0.0, apex_h=16.0):
-    A = np.c_[xy[61:67], np.zeros(6)]
-    A[5] += [apex_dx, apex_dy, apex_h]
-    return A
-
-
-shapes = {}
-
-
-def keep(name, brs, xyz_free_nodes, xyz_fixed_nodes, fixed_nodes):
-    shapes[name] = {
-        "branches": [list(e) for e in brs],
-        "xyz": np.vstack([xyz_free_nodes, xyz_fixed_nodes]).tolist(),
-        "fixed": list(fixed_nodes),
-    }
-
-
-print(f"Fig. 5 tent: {free5} free nodes, {len(fixed5)} fixed supports, {len(branches5)} branches")
-print(f"Branch counts: {int(is_border.sum())} border, {int(is_spoke.sum())} radial spokes, {int((~is_border & ~is_spoke).sum())} interior")
-```
-
-* Boolean masks `is_spoke`, `is_border`, and `touches_border` (`shape (110,)`) classify each branch so we can selectively modify $q$ or slice lengths `l[is_spoke]`.
-* A $200\times$ ratio between border cables ($q = 100$) and radial cables ($q = 0.5$) keeps the boundary scallops taut while letting the radial cables drape steeply to the $16\text{ m}$ apex.
-
-**Example output:**
-
-```text
-Fig. 5 tent: 61 free nodes, 6 fixed supports, 110 branches
-Branch counts: 29 border, 10 radial spokes, 71 interior
-```
-
-### G.2 Figure 6: shifting fixed support coordinates
-
-Translate the high apex support (node 67) horizontally in plan by $(\Delta x, \Delta y) = (0, 0),\ (6, 2),\ (12, 4)\text{ m}$. Because $\mathbf{q}$ is unchanged, $D\ (61 \times 61)$ is invariant and only the right-hand side $\mathbf{P} - D_f \mathbf{X} _ f$ updates.
-
-![Fig. 1](images/schek_fig1.png)
-
-![Fig. 6](images/schek_fig6_persp.png)
-![Fig. 6, plan](images/schek_fig6_plan.png)
-
-### Apex Shift Summary
-
-| Run | Apex Shift $(\Delta x, \Delta y)$ | Radial Length Range | Vertical Apex Reaction $R_{67, z}$ |
-|---|---|---|---|
-| `fig6_1` | $(0, 0)\text{ m}$ | $8.1\text{ to }9.0\text{ m}$ | $38.9\text{ kN}$ |
-| `fig6_2` | $(6, 2)\text{ m}$ | $8.0\text{ to }9.3\text{ m}$ | $38.9\text{ kN}$ |
-| `fig6_3` | $(12, 4)\text{ m}$ | $8.4\text{ to }10.9\text{ m}$ | $38.9\text{ kN}$ |
-
-**Add to your program:**
-
-```python
-fig6_shifts = [("fig6_1", (0, 0)), ("fig6_2", (6, 2)), ("fig6_3", (12, 4))]
-for name, (dx, dy) in fig6_shifts:
-    xyz_6, l_6, s_6, R_6 = form_finding(
-        branches5, free5, anchors5(dx, dy), q5, p5
-    )
-    keep(name, branches5, xyz_6, anchors5(dx, dy), fixed5)
-    print(f"{name}: radial l in [{l_6[is_spoke].min():.1f}, {l_6[is_spoke].max():.1f}] m, apex R_z = {R_6[5, 2]:.1f} kN")
-
-xyz_fig1, *_ = form_finding(branches5, free5, anchors5(), q5, p5)
-keep("fig1", branches5, xyz_fig1, anchors5(), fixed5)
-```
-
-* Shifting the apex horizontally changes only the $x$ and $y$ right-hand sides; the $z$ system $D \mathbf{z} = \mathbf{p} _ z - D_f \mathbf{z} _ f$ is completely untouched, so the vertical apex reaction stays constant at $38.9\text{ kN}$.
-
-**Example output:**
-
-```text
-fig6_1: radial l in [8.1, 9.0] m, apex R_z = 38.9 kN
-fig6_2: radial l in [8.0, 9.3] m, apex R_z = 38.9 kN
-fig6_3: radial l in [8.4, 10.9] m, apex R_z = 38.9 kN
-```
-
-### G.3 Figures 7 and 8: varying radial and border force densities
-
-Vary the radial force density $q_{\text{spoke}} \in \{1.0, 0.7, 0.3\}$ (Fig. 7) and border force density $q_{\text{border}} \in \{10, 5, 1\}$ (Fig. 8), rebuilding $D = C^T Q C$ each time.
-
-![Fig. 7](images/schek_fig7_persp.png)
-![Fig. 7, plan](images/schek_fig7_plan.png)
-
-![Fig. 8](images/schek_fig8_persp.png)
-![Fig. 8, plan](images/schek_fig8_plan.png)
-
-### Parameter Study Results
-
-| Fig. 7 Run | $q_{\text{spoke}}$ | Radial Lengths | Fig. 8 Run | $q_{\text{border}}$ | Border Lengths |
-|---|---|---|---|---|---|
-| `fig7_1` | $1.0$ | $5.0\text{ to }5.9\text{ m}$ | `fig8_1` | $10.0$ | $3.4\text{ to }4.8\text{ m}$ |
-| `fig7_2` | $0.7$ | $6.5\text{ to }7.4\text{ m}$ | `fig8_2` | $5.0$ | $3.5\text{ to }4.9\text{ m}$ |
-| `fig7_3` | $0.3$ | $10.6\text{ to }11.6\text{ m}$ | `fig8_3` | $1.0$ | $2.9\text{ to }6.5\text{ m}$ |
-
-**Add to your program:**
-
-```python
-for name, qs in zip(["fig7_1", "fig7_2", "fig7_3"], [1.0, 0.7, 0.3]):
-    q_spoke_run = np.where(is_spoke, qs, q5)
-    xyz_7, l_7, *_ = form_finding(
-        branches5, free5, anchors5(), q_spoke_run, p5
-    )
-    keep(name, branches5, xyz_7, anchors5(), fixed5)
-    print(f"{name} (q_spoke={qs}): radial l in [{l_7[is_spoke].min():.1f}, {l_7[is_spoke].max():.1f}] m")
-
-for name, qb in zip(["fig8_1", "fig8_2", "fig8_3"], [10.0, 5.0, 1.0]):
-    q_border_run = np.where(is_border, qb, q5)
-    xyz_8, l_8, *_ = form_finding(
-        branches5, free5, anchors5(), q_border_run, p5
-    )
-    keep(name, branches5, xyz_8, anchors5(), fixed5)
-    print(f"{name} (q_border={qb}): border l in [{l_8[is_border].min():.1f}, {l_8[is_border].max():.1f}] m")
-```
-
-* `np.where(is_spoke, qs, q5)` replaces $q$ only on the 10 radial spokes (`is_spoke == True`) and keeps `q5` elsewhere.
-* Reducing $q_{\text{spoke}}$ from $1.0 \to 0.3$ doubles the radial cable lengths ($5.5\text{ m} \to 11.1\text{ m}$), making the tent steeper and more pointed.
-
-**Example output:**
-
-```text
-fig7_1 (q_spoke=1.0): radial l in [5.0, 5.9] m
-fig7_2 (q_spoke=0.7): radial l in [6.5, 7.4] m
-fig7_3 (q_spoke=0.3): radial l in [10.6, 11.6] m
-fig8_1 (q_border=10.0): border l in [3.4, 4.8] m
-fig8_2 (q_border=5.0): border l in [3.5, 4.9] m
-fig8_3 (q_border=1.0): border l in [2.9, 6.5] m
-```
-
-### G.4 Figure 9: prescribed length constraints on 62 interior branches
-
-Constrain all $r = 62$ interior branches not touching the boundary ($10$ radial cables set to $l_{\text{radial}}$, $52$ ring/field cables scaled by `ring_factor`) across $m = 110$ force densities.
-
-### Constrained Runs (62 Equations in 110 Unknowns)
-
-| Run | Target $l_{\text{radial}}$ | Ring Scale Factor | Evaluations | $\max \|\mathbf{g}^*(\mathbf{q})\|$ |
-|---|---|---|---|---|
-| `fig9_1` | $6.0\text{ m}$ | $1.25 \times \mathbf{l} _ {\text{base}}$ | $35$ | $3.8 \times 10^{-9}\text{ m}$ |
-| `fig9_2` | $6.0\text{ m}$ | $0.85 \times \mathbf{l} _ {\text{base}}$ | $38$ | $6.3 \times 10^{-12}\text{ m}$ |
-| `fig9_3` | $4.5\text{ m}$ | $0.70 \times \mathbf{l} _ {\text{base}}$ | $47$ | $9.1 \times 10^{-10}\text{ m}$ |
-
-**Add to your program:**
-
-```python
-base_l = form_finding(branches5, free5, anchors5(), q5, p5)[1]
-inner = [j for j in range(len(branches5)) if not touches_border[j]]
-fig9_runs = [
-    ("fig9_1", (6.0, 1.25)),
-    ("fig9_2", (6.0, 0.85)),
-    ("fig9_3", (4.5, 0.70)),
-]
-for name, (l_radial, ring_factor) in fig9_runs:
-    l_v = [
-        l_radial if is_spoke[j] else base_l[j] * ring_factor
-        for j in inner
-    ]
-    q_k, xyz_9, l_9, s_9, tries_9, err_9 = fit_force_densities(
-        branches5, free5, anchors5(), q5, p5,
-        length_rows=inner, l_v=l_v,
-    )
-    keep(name, branches5, xyz_9, anchors5(), fixed5)
-    print(f"{name}: {tries_9} evals, max length residual = {err_9:.2e} m")
-```
-
-* Bounded trust-region least squares satisfies all 62 length constraints to $\sim 10^{-9}\text{ m}$ on all three cases.
-
-**Example output:**
-
-```text
-fig9_1: 42 evals, max length residual = 1.19e-09 m
-fig9_2: 35 evals, max length residual = 1.07e-09 m
-fig9_3: 58 evals, max length residual = 7.49e-10 m
-```
-
-### G.5 Figure 10: 8x8 grid-shell of 112 bars
-
-Generate an $8 \times 8$ orthogonal grid ($n = 60$ free nodes, $n_f = 4$ corner supports, $m = 112$ bars) and solve three benchmark problems: (10.1) hanging net of 112 equal-length $1.0\text{ m}$ bars under self-weight, (10.2) prestressed saddle with raised corners, and (10.3) mixed equal-length and equal-force constraints.
-
-### Summary of the Three 112-Bar Cases
-
-| Case | Corner Supports | Load $\mathbf{P}$ | Constraints | Result |
-|---|---|---|---|---|
-| `fig10_1` | 4 corners at 80% span | bar weight | $l_j = 1.0\text{ m}\ (\forall j=1..112)$ | $\|\mathbf{e} _ l\| \le 7.6\times 10^{-10}\text{ m},\ s \in [0.12, 2.77]\text{ kN}$ |
-| `fig10_2` | 2 corners lifted to $3\text{ m}$ | $\mathbf{0}$ | linear ($q_{\text{border}}=10, q_{\text{in}}=1$) | $l_{\text{in}} \in [0.65, 0.81]\text{ m}$ |
-| `fig10_3` | 2 corners lifted to $3\text{ m}$ | $\mathbf{0}$ | equal inner $l$ + equal link $s$ | $\|\mathbf{g}^*\| \le 1.6\times 10^{-8}$ |
-
-**Add to your program:**
-
-```python
-g = 8
-gid = {(i, k): i * g + k + 1 for i in range(g) for k in range(g)}
-grid_h = [(gid[i, k], gid[i, k + 1]) for i in range(g) for k in range(g - 1)]
-grid_v = [(gid[i, k], gid[i + 1, k]) for i in range(g - 1) for k in range(g)]
-grid = grid_h + grid_v
-corners = [gid[0, 0], gid[0, g - 1], gid[g - 1, g - 1], gid[g - 1, 0]]
-order = [
-    v for v in range(1, g * g + 1) if v not in corners
-] + corners
-renum = {old: new + 1 for new, old in enumerate(order)}
-grid = [(renum[a_], renum[b_]) for a_, b_ in grid]
-flat = np.array(
-    [[(v - 1) % g, (v - 1) // g, 0.0] for v in order], dtype=float
-)
-on_edge = lambda v: (
-    (order[v - 1] - 1) // g in (0, g - 1),
-    (order[v - 1] - 1) % g in (0, g - 1),
-)
-grid_border = np.array([
-    (on_edge(a_)[0] and on_edge(b_)[0])
-    or (on_edge(a_)[1] and on_edge(b_)[1])
-    for a_, b_ in grid
-])
-grid_touch = np.array([
-    any(on_edge(v)[0] or on_edge(v)[1] for v in e) for e in grid
-])
-weight = 0.15                                       # kN per bar
-degree = np.bincount(np.array(grid).ravel())[1:]
-p10 = np.zeros((g * g - 4, 3))
-p10[:, 2] = -0.5 * weight * degree[: g * g - 4]
-anchors10 = flat[-4:].copy()
-anchors10[:, :2] = (anchors10[:, :2] - 3.5) * 0.8 + 3.5
-
-# Case 10.1: 112 equal-length 1.0 m bars under self-weight
-q_10_1, xyz_10_1, l_10_1, s_10_1, tries_10_1, err_10_1 = (
-    fit_force_densities(
-        grid, g * g - 4, anchors10, np.ones(112), p10,
-        length_rows=range(112), l_v=[1.0] * 112,
-    )
-)
-keep("fig10_1", grid, xyz_10_1, anchors10, [renum[c] for c in corners])
-
-# Case 10.2: two corners lifted to 3 m, linear solve
-anchors10b = anchors10.copy()
-anchors10b[[0, 2], 2] = 3.0
-q10 = np.where(grid_border, 10.0, 1.0)
-xyz_10_2, l_10_2, s_10_2, R_10_2 = form_finding(
-    grid, g * g - 4, anchors10b, q10, np.zeros_like(p10)
-)
-keep("fig10_2", grid, xyz_10_2, anchors10b, [renum[c] for c in corners])
-
-# Case 10.3: equal inner lengths and equal link forces near border
-inner10 = [
-    j for j in range(112) if not grid_border[j] and not grid_touch[j]
-]
-link10 = [
-    j for j in range(112) if not grid_border[j] and grid_touch[j]
-]
-q_10_3, xyz_10_3, l_10_3, s_10_3, tries_10_3, err_10_3 = (
-    fit_force_densities(
-        grid, g * g - 4, anchors10b, q10, np.zeros_like(p10),
-        length_rows=inner10, l_v=[l_10_2[inner10].mean()] * len(inner10),
-        force_rows=link10, s_v=[s_10_2[link10].mean()] * len(link10),
-    )
-)
-keep("fig10_3", grid, xyz_10_3, anchors10b, [renum[c] for c in corners])
-print(f"fig10_1: err={err_10_1:.2e} m, forces in [{s_10_1.min():.2f}, {s_10_1.max():.2f}] kN")
-print(f"fig10_2: inner lengths in [{l_10_2[inner10].min():.2f}, {l_10_2[inner10].max():.2f}] m")
-print(f"fig10_3: err={err_10_3:.2e}, uniform inner l={l_10_3[inner10].mean():.3f} m, link s={s_10_3[link10].mean():.3f} kN")
-```
-
-* `order` renumbers the $8 \times 8$ grid so the $60$ free nodes come first (`1..60`) and the $4$ corner supports come last (`61..64`), matching our `[C | C_f]` partition rule from A.2.
-* `degree = np.bincount(np.array(grid).ravel())[1:]` counts how many bars meet at each node so each bar's weight ($0.15\text{ kN}$) is lumped half-and-half onto its two endpoints.
-* **Key Takeaway (`fig10_1`):** Even when all 112 bars have identical length $l_j = 1.000\text{ m}$, their forces span a $23\times$ range ($0.12\text{ to } 2.77\text{ kN}$)—uniform geometry does not imply uniform force.
-
-**Example output:**
-
-```text
-fig10_1: err=7.48e-10 m, forces in [0.12, 2.77] kN
-fig10_2: inner lengths in [0.69, 0.81] m
-fig10_3: err=1.33e-08, uniform inner l=0.752 m, link s=0.708 kN
-```
-
-### G.6 Export computed shapes for figure generation
-
-Write all computed 3D shapes (`fig1`, `fig5_plan`, `fig6_1`..`fig10_3`) to `shapes.json` so `schek_1974_figures.py` can plot them.
-
-**Add to your program:**
-
-```python
-import json
-from pathlib import Path
-
-keep(
-    "fig5_plan",
-    branches5,
-    np.c_[xy[:61], np.zeros(61)],
-    np.c_[xy[61:], np.zeros(6)],
-    fixed5,
-)
-base_dir = (
-    Path(__file__).resolve().parent if "__file__" in dir() else Path(".")
-)
-out = base_dir / "viewer_scenes/json/shapes.json"
-out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text(json.dumps(shapes))
-print(f"Saved {len(shapes)} shapes ({list(shapes.keys())}) to {out.name}")
-```
-
-* `shapes` maps each figure name to its branch list, its $(n_s \times 3)$ coordinate table, and fixed node indices; `json.dumps` serializes the dictionary to `shapes.json`.
-
-**Example output:**
-
-```text
-Saved 17 shapes (['fig6_1', 'fig6_2', 'fig6_3', 'fig1', 'fig7_1', 'fig7_2', 'fig7_3', 'fig8_1', 'fig8_2', 'fig8_3', 'fig9_1', 'fig9_2', 'fig9_3', 'fig10_1', 'fig10_2', 'fig10_3', 'fig5_plan']) to shapes.json
-```
-
 <!-- schek-app:end -->
 
 ## Implementation in compas_fd 0.5.4
@@ -2223,40 +1892,50 @@ constraints between linear solves. The iterative solver in [compas_dr](compas_dr
 reaches prescribed forces and lengths through its `fpre` / `lpre` terms.
 
 
-### Linear solver
+### Linear solver (on the 9-node, 12-branch net)
 
 ```python
 from compas_fd.solvers import fd_numpy
 
+# Exact same 9-node, 12-branch network (nodes 0..4 free, nodes 5..8 fixed anchors)
+vertices = [
+    [-1.0,  0.0, 0.0], [ 0.0,  1.0, 0.0], [ 1.0,  0.0, 0.0], [ 0.0, -1.0, 0.0], [0.0, 0.0, 0.0],
+    [-2.0,  0.0, 0.0], [ 0.0,  2.0, 1.0], [ 2.0,  0.0, 0.0], [ 0.0, -2.0, 1.0],
+]
+fixed = [5, 6, 7, 8]
+edges = [(i - 1, k - 1) for i, k in branches]
+q = [2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+loads = [[0.0, 0.0, -0.5]] * 5 + [[0.0, 0.0, 0.0]] * 4
+
 result = fd_numpy(
-    vertices=vertices,    # (n_s, 3) all node coordinates (free and fixed)
-    fixed=fixed,          # indices of fixed anchor nodes
-    edges=edges,          # list of (i, k) index pairs; i -> +1, k -> -1 in C
-    forcedensities=q,     # one float per edge
-    loads=loads,          # (n_s, 3) nodal loads, optional (defaults to zero)
+    vertices=vertices,    # (9, 3) all node coordinates (5 free + 4 fixed)
+    fixed=fixed,          # [5, 6, 7, 8] indices of the 4 fixed anchors
+    edges=edges,          # 12 (i, k) index pairs; i -> +1, k -> -1 in C_s
+    forcedensities=q,     # 12 branch force densities (kN/m)
+    loads=loads,          # (9, 3) nodal loads (kN)
 )
-result.vertices           # (n_s, 3) equilibrium coordinates
-result.residuals          # (n_s, 3) p - C^T Q C x (zero at free nodes)
-result.forces             # (m, 1)   q * l
-result.lengths            # (m, 1)   strained lengths
+result.vertices           # (9, 3) equilibrium coordinates matching D.1
+result.residuals          # (9, 3) 0 at free nodes 0..4; support reactions at 5..8
+result.forces             # (12, 1) s = q * l
+result.lengths            # (12, 1) equilibrium cable lengths l
 ```
 
 Internally (`solvers/fd_numerical_data.py`, `solvers/fd_numpy.py`):
 
-| symbol in Schek | name in code | construction |
+| symbol in Schek (9-node net) | name in code | construction |
 |---|---|---|
-| $C_s$ | `C` | `connectivity_matrix(edges, "csr")` |
-| $C$ (free columns) | `Ci` | `C[:, free]` |
-| $C_f$ | `Cf` | `C[:, fixed]` |
-| $Q$ | `Q` | `diags([q.flatten()], [0])` |
-| $D$ | `Ai` | `Ci.T @ Q @ Ci` |
-| $D_f$ | `Af` | `Ci.T @ Q @ Cf` |
-| full $C_s^{t} Q C_s$ | `A` | `C.T @ Q @ C` (used only for residuals) |
-| right-hand side of (8) | `b` | `p[free] - Af @ xyz[fixed]` |
-| (9) | — | `xyz[free] = spsolve(Ai, b)` |
-| $l$ | `lengths` | `normrow(C @ xyz)` |
-| (10) | `forces` | `q * lengths` |
-| residual | `residuals` | `p - A @ xyz` |
+| $C_s\ (12 \times 9)$ | `C` | `connectivity_matrix(edges, "csr")` |
+| $C\ (12 \times 5)$ (free columns) | `Ci` | `C[:, free]` |
+| $C_f\ (12 \times 4)$ (fixed columns) | `Cf` | `C[:, fixed]` |
+| $Q\ (12 \times 12)$ | `Q` | `diags([q.flatten()], [0])` |
+| $D\ (5 \times 5)$ | `Ai` | `Ci.T @ Q @ Ci` |
+| $D_f\ (5 \times 4)$ | `Af` | `Ci.T @ Q @ Cf` |
+| full $C_s^{t} Q C_s\ (9 \times 9)$ | `A` | `C.T @ Q @ C` (used only for residuals) |
+| right-hand side of (8) $(5 \times 3)$ | `b` | `p[free] - Af @ xyz[fixed]` |
+| (9) $(5 \times 3)$ | — | `xyz[free] = spsolve(Ai, b)` |
+| $\mathbf{l}\ (12 \times 1)$ | `lengths` | `normrow(C @ xyz)` |
+| (10) $\mathbf{s}\ (12 \times 1)$ | `forces` | `q * lengths` |
+| residual $(9 \times 3)$ | `residuals` | `p - A @ xyz` |
 
 The compas-FoFin GitBook shows the same lines verbatim as the "matrix formulation".
 Node ordering is free: the code selects columns by index, so fixed nodes need not
@@ -2264,16 +1943,16 @@ be last as Schek advises. Vertex and edge ordering of the outputs equals the inp
 ordering. `Result` is a `NamedTuple`; `vertices` is a new array built from the input
 list, not the input list itself.
 
-### Constrained solver
+### Constrained solver (sliding Anchor 7 of the 9-node net)
 
 ```python
 from compas.geometry import Line
 from compas_fd.constraints import Constraint
 from compas_fd.solvers import fd_constrained_numpy
 
-constraints = [None] * len(vertices)
-# allow vertex k to slide along a line
-constraints[k] = Constraint(Line([0, 0, 0], [1, 0, 0]))
+constraints = [None] * 9
+# allow fixed anchor 7 (0-based index 6) to slide along a horizontal line at z = 1 m
+constraints[6] = Constraint(Line([-1.0, 2.0, 1.0], [1.0, 2.0, 1.0]))
 
 result = fd_constrained_numpy(
     vertices=vertices,
@@ -2281,12 +1960,12 @@ result = fd_constrained_numpy(
     edges=edges,
     forcedensities=q,
     loads=loads,
-    constraints=constraints,  # aligned with vertices; None = unconstrained
+    constraints=constraints,  # aligned with the 9 vertices; None = unconstrained
     kmax=100,
     tol_res=1e-3,
     tol_disp=1e-3,
     damping=0.1,
-    selfweight=None,          # optional callable xyz -> (n_s, 1) weights
+    selfweight=None,          # optional callable xyz -> (9, 1) weights
 )
 ```
 
@@ -2322,25 +2001,19 @@ adjacent face, from the current coordinates) by thickness × density.
 - `requirements.txt` lists only `compas`; `numpy` and `scipy` arrive through
   `compas`. Tested here with compas 2.15.1, numpy 2.4.6, scipy 1.17.1.
 
-## Verification
+## Verification on the 9-node, 12-branch network
 
-**Benchmark from the chapter README.** Four fixed nodes at $(\pm 1, \pm 1, 0)$, one
-free node at the origin connected to all four, $q = 1$ N/m on every edge, load
-$(0, 0, -1)$ N on the free node. Vertical equilibrium gives
-$4 \cdot q \cdot (0 - z) = 1$, so $z = -0.25$ m independent of the cable lengths
-(that is the whole point of equation 8).
+Running `compas_fd` 0.5.4 (`fd_numpy`) on our **9-node, 12-branch saddle cable net** (sections A.1–D.1) reproduces our NumPy derivation to machine precision:
 
-Run with `compas_fd` 0.5.4 (`fd_numpy`):
-
-| quantity | value |
+| Quantity (9-node, 12-branch net) | Value from `fd_numpy` & `schek_app.py` |
 |---|---|
-| free node | $(0, 0, -0.25)$; error below $10^{-12}$ m |
-| residual at free node | $(0, 0, 0)$ |
-| edge length | 1.436140662 m $= \sqrt{1 + 1 + 0.0625}$ |
-| edge force | 1.436140662 N $= q\ l$ |
-| residual at support $(-1, -1, 0)$ | $(1, 1, -0.25)$ N, the force the cable exerts on the support |
-
-The support residuals sum to $(0, 0, -1)$, i.e. the applied load, as they must.
+| Free nodes 1, 3 (`vertices[0]`, `vertices[2]`) | $(\mp 0.800,\ 0.000,\ 0.045)\text{ m}$; difference $\lt  10^{-15}\text{ m}$ |
+| Free nodes 2, 4 (`vertices[1]`, `vertices[3]`) | $(0.000,\ \pm 0.800,\ 0.330)\text{ m}$; difference $\lt  10^{-15}\text{ m}$ |
+| Center free node 5 (`vertices[4]`) | $(0.000,\ 0.000,\ 0.063)\text{ m}$; difference $\lt  10^{-15}\text{ m}$ |
+| Residuals at free nodes 1–5 | $(0,\ 0,\ 0)\text{ kN}$ ($\lt  10^{-15}\text{ kN}$) |
+| Anchor lengths $l_{1,3}$ / $l_{2,4}$ | $1.201\text{ m}$ / $1.374\text{ m}$ |
+| Anchor forces $s_{1,3}$ / $s_{2,4}$ | $2.402\text{ kN}$ / $2.749\text{ kN}$ ($= q_j l_j$) |
+| Support reactions $\sum_{i=6}^9 R_{i,z}$ | $-0.089 + 1.339 - 0.089 + 1.339 = +2.500\text{ kN}$ — balances $5 \times (-0.5)\text{ kN}$ |
 
 **Structure of D (Schek figure 4).** Building $C_s$ for the 9-node, 12-branch graph
 of figure 2 and setting $q_j = j$ gives
