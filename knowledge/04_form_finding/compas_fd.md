@@ -156,8 +156,6 @@ print("Initial free-node coordinates [x_0, y_0, z_0] (5x3):\n", np.c_[x_0, y_0, 
 print("Fixed anchor coordinates [x_f, y_f, z_f] (4x3):\n", np.c_[x_f, y_f, z_f])
 ```
 
-* `branches` stores `(start_node, end_node)` pairs using Schek's 1-based node numbers $1 \dots 9$; `x_0, y_0, z_0` store the initial coordinates of the 5 free nodes ($1 \dots 5$) and `x_f, y_f, z_f` store the coordinates of the 4 fixed anchors ($6 \dots 9$).
-
 **Example output:**
 
 ```text
@@ -288,11 +286,9 @@ $$
 ```python
 u_12 = np.array([1.0, 0.0, -1.0, 0.0, -1.0, -1.0, -1.0, 1.0, 0.0, -1.0, 0.0, 1.0])
 q_12 = np.array([2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-U_12, Q_12 = np.diag(u_12), np.diag(q_12)
+U_12, Q_12 = np.diag(u_12), np.diag(q_12)         # (12, 12) diagonal matrices from (12,) vectors
 print("U @ q == Q @ u (12 branches):", (U_12 @ q_12).astype(int))
 ```
-
-* `np.diag(u_12)` and `np.diag(q_12)` place the `(12,)` branch vectors on the main diagonal of `(12, 12)` matrices; `U_12 @ q_12`, `Q_12 @ u_12`, and `u_12 * q_12` all produce the exact same `(12,)` vector.
 
 **Example output:**
 
@@ -366,12 +362,10 @@ C_s: FloatMatrix = np.zeros((m, n + n_f))
 for j, (i, k) in enumerate(branches):
     C_s[j, i - 1] = +1.0              # start node i(j): +1 (0-based index)
     C_s[j, k - 1] = -1.0              # end node k(j): -1
-C: FloatMatrix = C_s[:, :n]           # (m, n)   free-node columns
-C_f: FloatMatrix = C_s[:, n:]         # (m, n_f) fixed-anchor columns
+C: FloatMatrix = C_s[:, :n]           # (12, 5) first 5 columns -> free nodes 1..5
+C_f: FloatMatrix = C_s[:, n:]         # (12, 4) last 4 columns  -> fixed anchors 6..9
 print("C_s (12x9):\n", C_s.astype(int))
 ```
-
-* `C = C_s[:, :n]` slices the first `5` columns (free nodes, `(12, 5)`); `C_f = C_s[:, n:]` slices the last `4` columns (fixed anchors, `(12, 4)`).
 
 **Example output:**
 
@@ -565,12 +559,10 @@ $$
 **Add to your program:**
 
 ```python
-QC = Q_12 @ C
-D_preview = C.T @ QC
+QC = Q_12 @ C                         # (12, 5) weight each branch row j by q_j
+D_preview = C.T @ QC                  # (5, 5)  sum weighted branch rows at each free node
 print("D = C.T @ diag(q) @ C (5x5):\n", D_preview.astype(int))
 ```
-
-* `Q_12 @ C` weights each of the 12 branch rows by $q_j$, and `C.T @ QC` sums those weighted rows at each of the 5 free nodes ($D_{ii} = \sum q_j$ of branches touching node $i$; $D_{ik} = -q_j$ of the branch joining free nodes $i$ and $k$).
 
 **Example output:**
 
@@ -633,15 +625,13 @@ $$
 **Add to your program:**
 
 ```python
-p_x: FloatVector = np.zeros(n, dtype=np.float64)
-p_y: FloatVector = np.zeros(n, dtype=np.float64)
-p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)
-s_0: FloatVector = np.ones(m, dtype=np.float64)   # 1.0 kN initial tension in each of the 12 cables
+p_x: FloatVector = np.zeros(n, dtype=np.float64)  # (5,) x-loads at free nodes 1..5 (kN)
+p_y: FloatVector = np.zeros(n, dtype=np.float64)  # (5,) y-loads at free nodes 1..5 (kN)
+p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)  # (5,) z-loads at free nodes 1..5 (-0.5 kN)
+s_0: FloatVector = np.ones(m, dtype=np.float64)   # (12,) initial 1.0 kN tension in cables 1..12
 print("External loads [p_x, p_y, p_z] (5x3):\n", np.c_[p_x, p_y, p_z])
 print("Initial cable tensions s_0 (12,):", s_0)
 ```
-
-* `p_x, p_y, p_z` have shape `(5,)` for free nodes $1 \dots 5$, and `s_0` has shape `(12,)` for cables $b_1 \dots b_{12}$.
 
 **Example output:**
 
@@ -817,10 +807,10 @@ def coordinate_differences(
     z_f: FloatVector,
 ) -> tuple[FloatVector, FloatVector, FloatVector, FloatVector]:
     """Branch differences (u, v, w) and lengths l of shape (m,)."""
-    u = C @ x + C_f @ x_f
-    v = C @ y + C_f @ y_f
-    w = C @ z + C_f @ z_f
-    l = np.sqrt(u**2 + v**2 + w**2)
+    u = C @ x + C_f @ x_f             # (12,) x_start - x_end for all 12 cables
+    v = C @ y + C_f @ y_f             # (12,) y_start - y_end for all 12 cables
+    w = C @ z + C_f @ z_f             # (12,) z_start - z_end for all 12 cables
+    l = np.sqrt(u**2 + v**2 + w**2)   # (12,) Euclidean length of each cable
     return u, v, w, l
 
 
@@ -829,8 +819,6 @@ u_init, v_init, w_init, l_init = coordinate_differences(
 )
 print("Initial cable lengths l_init (m):", l_init)
 ```
-
-* `C @ x + C_f @ x_f` evaluates $(12, 5) \times (5,) + (12, 4) \times (4,) \to (12,)$, computing $x_{\text{start}} - x_{\text{end}}$ for all 12 branches at once.
 
 **Example output:**
 
@@ -1270,19 +1258,17 @@ $$
 def equilibrium_error(x, y, z, s):
     """Eq. (2): C^T U L^-1 s - p along (x, y, z). Zero means equilibrium."""
     u, v, w, l = coordinate_differences(C, x, y, z, C_f, x_f, y_f, z_f)
-    L_inv = np.diag(1.0 / l)
+    L_inv = np.diag(1.0 / l)          # (12, 12) diagonal inverse-length matrix L^-1
     return (
-        C.T @ np.diag(u) @ L_inv @ s - p_x,
-        C.T @ np.diag(v) @ L_inv @ s - p_y,
-        C.T @ np.diag(w) @ L_inv @ s - p_z,
+        C.T @ np.diag(u) @ L_inv @ s - p_x,   # chain Stages 1-4 right-to-left along x
+        C.T @ np.diag(v) @ L_inv @ s - p_y,   # chain Stages 1-4 right-to-left along y
+        C.T @ np.diag(w) @ L_inv @ s - p_z,   # chain Stages 1-4 right-to-left along z
     )
 
 
 ex, ey, ez = equilibrium_error(x_0, y_0, z_0, s_0)
 print("Initial out-of-balance residual e_z at (x_0, y_0, z_0) (kN):", ez)
 ```
-
-* `L_inv = np.diag(1.0 / l)` builds the `(12, 12)` diagonal inverse-length matrix $L^{-1}$, and `C.T @ np.diag(u) @ L_inv @ s - p_x` chains Stages 1–4 right-to-left (nonlinear in $\mathbf{x}, \mathbf{y}, \mathbf{z}$ because $L^{-1}$ divides by $\sqrt{u_j^2 + v_j^2 + w_j^2}$).
 
 **Example output:**
 
@@ -1400,11 +1386,10 @@ $$
 **Add to your program:**
 
 ```python
+# 2 kN/m on the 4 outer anchor cables (0..3), 1 kN/m on the 8 inner cables (4..11)
 q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
 print("Prescribed force densities q (kN/m):", q)
 ```
-
-* `q` assigns $2\text{ kN/m}$ to the 4 outer anchor branches (`0..3`) and $1\text{ kN/m}$ to the 8 inner branches (`4..11`).
 
 **Example output:**
 
@@ -1544,16 +1529,14 @@ $$
 **Add to your program:**
 
 ```python
-Q = np.diag(q)
-D = C.T @ Q @ C                                 # (n, n)   eq. (8)
-D_f = C.T @ Q @ C_f                             # (n, n_f)
-rhs = np.c_[p_x - D_f @ x_f, p_y - D_f @ y_f, p_z - D_f @ z_f]
+Q = np.diag(q)                                  # (12, 12) diagonal force-density matrix
+D = C.T @ Q @ C                                 # (5, 5)   free-node stiffness matrix, eq. (8)
+D_f = C.T @ Q @ C_f                             # (5, 4)   fixed-anchor coupling matrix, eq. (8)
+rhs = np.c_[p_x - D_f @ x_f, p_y - D_f @ y_f, p_z - D_f @ z_f]  # (5, 3) right-hand sides [b_x, b_y, b_z]
 print("D (5x5):\n", D)
 print("D_f (5x4):\n", D_f)
 print("RHS [b_x, b_y, b_z] (5x3):\n", rhs)
 ```
-
-* `D = C.T @ Q @ C` is `(5, 5)`, `D_f = C.T @ Q @ C_f` is `(5, 4)`, and `rhs` stacks the three `(5,)` right-hand side vectors into `(5, 3)`.
 
 **Example output:**
 
@@ -1650,13 +1633,11 @@ $$
 **Add to your program:**
 
 ```python
-x: FloatVector = np.linalg.solve(D, p_x - D_f @ x_f)    # eq. (9)
-y: FloatVector = np.linalg.solve(D, p_y - D_f @ y_f)
-z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)
+x: FloatVector = np.linalg.solve(D, p_x - D_f @ x_f)    # (5,) solve D x = b_x, eq. (9)
+y: FloatVector = np.linalg.solve(D, p_y - D_f @ y_f)    # (5,) solve D y = b_y, eq. (9)
+z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)    # (5,) solve D z = b_z, eq. (9)
 print("Solved free-node coordinates [x, y, z] (5x3):\n", np.c_[x, y, z])
 ```
-
-* `np.linalg.solve(D, b)` solves each `(5, 5)` linear system directly using the shared stiffness matrix `D`.
 
 **Example output:**
 
@@ -1781,8 +1762,6 @@ print("Cutting l_0 (m):    ", l_cutting)
 print("Max equilibrium err:", f"{max_eq_error:.2e}")
 ```
 
-* `s = l * q` recovers axial tensions (longer branches with the same $q$ carry higher force), `l_cutting` gives unstressed cutting lengths, and `max_eq_error` is `4.44e-16`.
-
 **Example output:**
 
 ```text
@@ -1858,11 +1837,9 @@ def form_finding(branches, n_free, xyz_fixed, q, p):
     uvw = C @ xyz + C_f @ xyz_fixed                            # eq. (1)
     l = np.linalg.norm(uvw, axis=1)
     s = l * q                                                  # eq. (10)
-    reactions = C_f.T @ Q @ uvw                                # eq. (5)
+    reactions = C_f.T @ Q @ uvw                                # (4, 3) support reactions, eq. (5)
     return xyz, l, s, reactions
 ```
-
-* `reactions = C_f.T @ Q @ uvw` computes the `(4, 3)` support reactions; vertical reactions sum to $+2.500\text{ kN}$, balancing the $-2.500\text{ kN}$ total load.
 
 ### D.2 Parameter study: moving anchors, changing force densities, and scale invariance
 
@@ -1929,8 +1906,6 @@ print("Vertical reaction sum (kN):", R1[:, 2].sum())
 print("Center z_5 across Cases 1..4 (m):", np.round(z_center_cases, 3))
 print("Scale invariance max |xyz4 - xyz1|:", scale_invariance_xyz_diff)
 ```
-
-* Raising $q_{1..4}$ from $2 \to 10\text{ kN/m}$ pulls center node 5 from $z_5 = 0.063 \to 0.313\text{ m}$, while doubling both `q` and `p` gives `scale_invariance_xyz_diff == 0.0`.
 
 **Example output:**
 
@@ -2001,8 +1976,6 @@ print("Theorem 1 max |dPhi/dX|:", f"{max_grad_unloaded:.2e}")
 print("Theorem 2 uniform forces s (kN):", s_uniform)
 ```
 
-* `max_grad_unloaded` is `8.88e-16` ($\approx 0$), and setting `q_const = 1.0 / l0` gives uniform tensions `s_uniform = [1, 1, ..., 1]` kN.
-
 **Example output:**
 
 ```text
@@ -2070,8 +2043,6 @@ g_lengths = l[length_rows] - target_lengths   # constraint residual vector
 print("Initial anchor lengths (m):", l[length_rows])
 print("Length residual g*(q) (m): ", g_lengths)
 ```
-
-* `g_lengths` measures how far the 4 anchor branches deviate from $1.200\text{ m}$ at the initial $\mathbf{q}$.
 
 **Example output:**
 
@@ -2173,8 +2144,6 @@ print(f"Optimized q*_[1..4]: {q_c[:4]} -> lengths l*_[1..4]: {l_c[:4]} (err={err
 print(f"Mixed target spokes l*_[9..12]: {l_m[8:]} m, anchor forces s*_[1..4]: {s_m[:4]} kN (err={err_m:.1e})")
 ```
 
-* `least_squares(residual, q_start, bounds=(1e-9, np.inf))` adjusts `q > 0` until all prescribed length and force residuals reach zero.
-
 **Example output:**
 
 ```text
@@ -2249,11 +2218,9 @@ def sensitivity(q_vec, rows, step=1e-6):
     return G_t
 
 
-G_t = sensitivity(q, [0, 1, 2, 3])
+G_t = sensitivity(q, [0, 1, 2, 3])               # (4, 12) finite-difference Jacobian d(l_1..4)/dq
 print("Jacobian block G_t[:, :4] (4x4):\n", G_t[:, :4])
 ```
-
-* Nudging each `q[j]` by `1e-6` and dividing the length change by `step` matches Schek's analytic Jacobian (Eqs. 31–35) to 3 decimal places.
 
 **Example output:**
 
