@@ -71,6 +71,7 @@ Follow the subsections in order (`examples/form_finding/schek_app.py`). Every eq
 | **D.1–D.2** | Package the 3D linear solver and 4-anchor support reactions into a single function and compare 4 load/prestress cases. |
 | **E.1** | Interpret $q_j$ geometrically as a weight minimizing $\sum_{j=1}^{12} q_j l_j^2$ on the unloaded 9-node saddle. |
 | **F.1–F.3** | Enforce target branch lengths and forces on the 9-node net via constrained least-squares and the sensitivity Jacobian $G^T$. |
+| **G.1–G.6** | Recompute and visualize the paper's form-found geometries (Figs. 1 and 5–10): the 67-node pointed tent and the 112-bar grid-shell. |
 
 ---
 
@@ -2230,6 +2231,396 @@ Jacobian block G_t[:, :4] (4x4):
  [ 0.002 -0.358  0.002  0.044]
  [ 0.073  0.002 -0.313  0.002]
  [ 0.002  0.044  0.002 -0.358]]
+```
+
+---
+
+## Part G. The paper's examples, recomputed
+
+### G.1 Larger network: the 67-node, 110-branch pointed tent (section 5, figure 5)
+
+Apply the exact same `form_finding` function without modification to Schek's larger pointed-tent network ($n = 61$ free nodes, $n_f = 6$ fixed supports including high apex node 67, $m = 110$ branches).
+
+![Fig. 5](images/schek_fig5.png)
+
+### Problem Dimensions & Prescribed Force Densities
+
+| Matrix / Vector | Fig. 2 Net (Parts A–F) | Fig. 5 Tent (Part G) |
+|---|---|---|
+| Connectivity $C_s = [C \mid C_f]$ | $(12 \times 5)\ \big\|\ (12 \times 4)$ | $(110 \times 61)\ \big\|\ (110 \times 6)$ |
+| Diagonal Force Density $Q$ | $(12 \times 12)$ | $(110 \times 110)$ |
+| Free System Matrix $D = C^T Q C$ | $(5 \times 5)$ | $(61 \times 61)$ |
+
+$$
+q_j = \begin{cases}
+100.0 & \text{29 border cables (stiff edge)} \\
+0.5 & \text{10 radial apex cables (long)} \\
+1.0 & \text{71 interior field cables}
+\end{cases}
+$$
+
+**Add to your program:**
+
+```python
+FIG5_PX = {   # plan positions read off the printed figure (pixels, y down)
+    1: (162, 368), 2: (150, 591), 3: (182, 345), 4: (165, 618),
+    5: (247, 230), 6: (190, 666), 7: (217, 611), 8: (315, 405),
+    9: (360, 305), 10: (265, 198), 11: (430, 95), 12: (452, 105),
+    13: (537, 132), 14: (445, 368), 15: (413, 448), 16: (357, 593),
+    17: (250, 773), 18: (412, 703), 19: (282, 836), 20: (445, 951),
+    21: (527, 921), 22: (567, 909), 23: (595, 801), 24: (472, 678),
+    25: (455, 581), 26: (480, 477), 27: (519, 420), 28: (662, 172),
+    29: (664, 346), 30: (665, 445), 31: (639, 451), 32: (599, 476),
+    33: (588, 492), 34: (571, 515), 35: (562, 536), 36: (559, 568),
+    37: (561, 596), 38: (573, 632), 39: (592, 661), 40: (624, 683),
+    41: (652, 696), 42: (694, 703), 43: (732, 821), 44: (737, 851),
+    45: (837, 230), 46: (787, 365), 47: (719, 448), 48: (749, 463),
+    49: (793, 506), 50: (807, 546), 51: (809, 596), 52: (804, 628),
+    53: (752, 686), 54: (864, 239), 55: (964, 385), 56: (919, 526),
+    57: (977, 514), 58: (919, 643), 59: (989, 653), 60: (992, 676),
+    61: (857, 811), 62: (97, 494), 63: (362, 981), 64: (999, 763),
+    65: (954, 270), 66: (340, 68), 67: (685, 571),
+}
+BORDER = [
+    62, 2, 4, 6, 17, 19, 63, 20, 21, 22, 44, 61, 64, 60, 59,
+    57, 55, 65, 54, 45, 28, 13, 12, 11, 66, 10, 5, 3, 1,
+]
+INNER_RING = [
+    31, 30, 47, 48, 49, 50, 51, 52, 53, 42,
+    41, 40, 39, 38, 37, 36, 35, 34, 33, 32,
+]
+MIDDLE_RING = [27, 29, 46, 56, 58, 43, 23, 24, 25, 26]
+SPOKES = [31, 33, 35, 37, 39, 41, 53, 51, 49, 47]
+OTHER = [
+    (30, 29), (32, 27), (34, 26), (36, 25), (38, 24), (40, 23),
+    (42, 43), (52, 58), (50, 56), (48, 46), (27, 14), (29, 28),
+    (46, 45), (56, 57), (58, 59), (43, 44), (23, 22), (24, 18),
+    (25, 16), (26, 15), (1, 2), (4, 7), (6, 7), (7, 8), (3, 8),
+    (8, 9), (5, 9), (9, 12), (9, 14), (13, 14), (10, 11), (8, 15),
+    (14, 15), (15, 16), (7, 16), (16, 18), (17, 18), (18, 21),
+    (19, 20), (61, 60), (59, 58), (57, 56), (46, 45), (28, 29),
+    (54, 55),
+]
+ring = lambda nodes: [
+    (nodes[i], nodes[(i + 1) % len(nodes)]) for i in range(len(nodes))
+]
+seen, branches5 = set(), []
+all_edges5 = (
+    ring(BORDER) + ring(INNER_RING) + ring(MIDDLE_RING)
+    + [(k, 67) for k in SPOKES] + OTHER
+)
+for e in all_edges5:
+    if tuple(sorted(e)) not in seen:
+        seen.add(tuple(sorted(e)))
+        branches5.append(e)
+border5 = {tuple(sorted(e)) for e in ring(BORDER)}
+xy = np.array([FIG5_PX[k] for k in range(1, 68)], dtype=float)
+xy = xy * np.array([0.04, -0.04])
+xy -= xy[66]                                  # apex at the plan origin
+free5, fixed5 = 61, [62, 63, 64, 65, 66, 67]  # 61 free nodes (1..61), 6 fixed anchors (62..67)
+q5 = np.array([
+    100.0 if tuple(sorted(e)) in border5 else 0.5 if 67 in e else 1.0
+    for e in branches5
+])                                            # (110,) force densities: 100 border, 0.5 spoke, 1.0 field
+p5 = np.zeros((free5, 3))
+p5[:, 2] = -0.4                               # -0.4 kN vertical load at each free node
+is_spoke = np.array([67 in e for e in branches5])
+is_border = np.array([tuple(sorted(e)) in border5 for e in branches5])
+touches_border = np.array([any(k in BORDER for k in e) for e in branches5])
+
+
+def anchors5(apex_dx=0.0, apex_dy=0.0, apex_h=16.0):
+    A = np.c_[xy[61:67], np.zeros(6)]
+    A[5] += [apex_dx, apex_dy, apex_h]        # node 67 lifted to apex_h = 16 m
+    return A
+
+
+shapes = {}
+
+
+def keep(name, brs, xyz_free_nodes, xyz_fixed_nodes, fixed_nodes):
+    shapes[name] = {
+        "branches": [list(e) for e in brs],
+        "xyz": np.vstack([xyz_free_nodes, xyz_fixed_nodes]).tolist(),
+        "fixed": list(fixed_nodes),
+    }
+
+
+print(f"Fig. 5 tent: {free5} free nodes, {len(fixed5)} fixed supports, {len(branches5)} branches")
+print(f"Branch counts: {int(is_border.sum())} border, {int(is_spoke.sum())} radial spokes, {int((~is_border & ~is_spoke).sum())} interior")
+```
+
+**Example output:**
+
+```text
+Fig. 5 tent: 61 free nodes, 6 fixed supports, 110 branches
+Branch counts: 29 border, 10 radial spokes, 71 interior
+```
+
+### G.2 Figure 6: shifting fixed support coordinates
+
+Translate the high apex support (node 67) horizontally in plan by $(\Delta x, \Delta y) = (0, 0),\ (6, 2),\ (12, 4)\text{ m}$. Because $\mathbf{q}$ is unchanged, $D\ (61 \times 61)$ is invariant and only the right-hand side $\mathbf{P} - D_f \mathbf{X} _ f$ updates.
+
+![Fig. 1](images/schek_fig1.png)
+
+![Fig. 6](images/schek_fig6_persp.png)
+![Fig. 6, plan](images/schek_fig6_plan.png)
+
+### Apex Shift Summary
+
+| Run | Apex Shift $(\Delta x, \Delta y)$ | Radial Length Range | Vertical Apex Reaction $R_{67, z}$ |
+|---|---|---|---|
+| `fig6_1` | $(0, 0)\text{ m}$ | $8.1\text{ to }9.0\text{ m}$ | $38.9\text{ kN}$ |
+| `fig6_2` | $(6, 2)\text{ m}$ | $8.0\text{ to }9.3\text{ m}$ | $38.9\text{ kN}$ |
+| `fig6_3` | $(12, 4)\text{ m}$ | $8.4\text{ to }10.9\text{ m}$ | $38.9\text{ kN}$ |
+
+**Add to your program:**
+
+```python
+fig6_shifts = [("fig6_1", (0, 0)), ("fig6_2", (6, 2)), ("fig6_3", (12, 4))]
+for name, (dx, dy) in fig6_shifts:
+    # Shifting the apex horizontally only updates the x, y RHS; D and the z-system stay unchanged
+    xyz_6, l_6, s_6, R_6 = form_finding(
+        branches5, free5, anchors5(dx, dy), q5, p5
+    )
+    keep(name, branches5, xyz_6, anchors5(dx, dy), fixed5)
+    print(f"{name}: radial l in [{l_6[is_spoke].min():.1f}, {l_6[is_spoke].max():.1f}] m, apex R_z = {R_6[5, 2]:.1f} kN")
+
+xyz_fig1, *_ = form_finding(branches5, free5, anchors5(), q5, p5)
+keep("fig1", branches5, xyz_fig1, anchors5(), fixed5)
+```
+
+**Example output:**
+
+```text
+fig6_1: radial l in [8.1, 9.0] m, apex R_z = 38.9 kN
+fig6_2: radial l in [8.0, 9.3] m, apex R_z = 38.9 kN
+fig6_3: radial l in [8.4, 10.9] m, apex R_z = 38.9 kN
+```
+
+### G.3 Figures 7 and 8: varying radial and border force densities
+
+Vary the radial force density $q_{\text{spoke}} \in \{1.0, 0.7, 0.3\}$ (Fig. 7) and border force density $q_{\text{border}} \in \{10, 5, 1\}$ (Fig. 8), rebuilding $D = C^T Q C$ each time.
+
+![Fig. 7](images/schek_fig7_persp.png)
+![Fig. 7, plan](images/schek_fig7_plan.png)
+
+![Fig. 8](images/schek_fig8_persp.png)
+![Fig. 8, plan](images/schek_fig8_plan.png)
+
+### Parameter Study Results
+
+| Fig. 7 Run | $q_{\text{spoke}}$ | Radial Lengths | Fig. 8 Run | $q_{\text{border}}$ | Border Lengths |
+|---|---|---|---|---|---|
+| `fig7_1` | $1.0$ | $5.0\text{ to }5.9\text{ m}$ | `fig8_1` | $10.0$ | $3.4\text{ to }4.8\text{ m}$ |
+| `fig7_2` | $0.7$ | $6.5\text{ to }7.4\text{ m}$ | `fig8_2` | $5.0$ | $3.5\text{ to }4.9\text{ m}$ |
+| `fig7_3` | $0.3$ | $10.6\text{ to }11.6\text{ m}$ | `fig8_3` | $1.0$ | $2.9\text{ to }6.5\text{ m}$ |
+
+**Add to your program:**
+
+```python
+for name, qs in zip(["fig7_1", "fig7_2", "fig7_3"], [1.0, 0.7, 0.3]):
+    q_spoke_run = np.where(is_spoke, qs, q5)  # replace q on the 10 radial spokes
+    xyz_7, l_7, *_ = form_finding(
+        branches5, free5, anchors5(), q_spoke_run, p5
+    )
+    keep(name, branches5, xyz_7, anchors5(), fixed5)
+    print(f"{name} (q_spoke={qs}): radial l in [{l_7[is_spoke].min():.1f}, {l_7[is_spoke].max():.1f}] m")
+
+for name, qb in zip(["fig8_1", "fig8_2", "fig8_3"], [10.0, 5.0, 1.0]):
+    q_border_run = np.where(is_border, qb, q5)  # replace q on the 29 border cables
+    xyz_8, l_8, *_ = form_finding(
+        branches5, free5, anchors5(), q_border_run, p5
+    )
+    keep(name, branches5, xyz_8, anchors5(), fixed5)
+    print(f"{name} (q_border={qb}): border l in [{l_8[is_border].min():.1f}, {l_8[is_border].max():.1f}] m")
+```
+
+**Example output:**
+
+```text
+fig7_1 (q_spoke=1.0): radial l in [5.0, 5.9] m
+fig7_2 (q_spoke=0.7): radial l in [6.5, 7.4] m
+fig7_3 (q_spoke=0.3): radial l in [10.6, 11.6] m
+fig8_1 (q_border=10.0): border l in [3.4, 4.8] m
+fig8_2 (q_border=5.0): border l in [3.5, 4.9] m
+fig8_3 (q_border=1.0): border l in [2.9, 6.5] m
+```
+
+### G.4 Figure 9: prescribed length constraints on 62 interior branches
+
+Constrain all $r = 62$ interior branches not touching the boundary ($10$ radial cables set to $l_{\text{radial}}$, $52$ ring/field cables scaled by `ring_factor`) across $m = 110$ force densities.
+
+![Fig. 9](images/schek_fig9_persp.png)
+![Fig. 9, plan](images/schek_fig9_plan.png)
+
+### Constrained Runs (62 Equations in 110 Unknowns)
+
+| Run | Target $l_{\text{radial}}$ | Ring Scale Factor | Evaluations | $\max \|\mathbf{g}^{\ast}(\mathbf{q})\|$ |
+|---|---|---|---|---|
+| `fig9_1` | $6.0\text{ m}$ | $1.25 \times \mathbf{l} _ {\text{base}}$ | $35$ | $3.8 \times 10^{-9}\text{ m}$ |
+| `fig9_2` | $6.0\text{ m}$ | $0.85 \times \mathbf{l} _ {\text{base}}$ | $38$ | $6.3 \times 10^{-12}\text{ m}$ |
+| `fig9_3` | $4.5\text{ m}$ | $0.70 \times \mathbf{l} _ {\text{base}}$ | $47$ | $9.1 \times 10^{-10}\text{ m}$ |
+
+**Add to your program:**
+
+```python
+base_l = form_finding(branches5, free5, anchors5(), q5, p5)[1]
+inner = [j for j in range(len(branches5)) if not touches_border[j]]  # 62 interior branches
+fig9_runs = [
+    ("fig9_1", (6.0, 1.25)),
+    ("fig9_2", (6.0, 0.85)),
+    ("fig9_3", (4.5, 0.70)),
+]
+for name, (l_radial, ring_factor) in fig9_runs:
+    l_v = [
+        l_radial if is_spoke[j] else base_l[j] * ring_factor
+        for j in inner
+    ]
+    q_k, xyz_9, l_9, s_9, tries_9, err_9 = fit_force_densities(
+        branches5, free5, anchors5(), q5, p5,
+        length_rows=inner, l_v=l_v,
+    )
+    keep(name, branches5, xyz_9, anchors5(), fixed5)
+    print(f"{name}: {tries_9} evals, max length residual = {err_9:.2e} m")
+```
+
+**Example output:**
+
+```text
+fig9_1: 42 evals, max length residual = 1.19e-09 m
+fig9_2: 35 evals, max length residual = 1.07e-09 m
+fig9_3: 58 evals, max length residual = 7.49e-10 m
+```
+
+### G.5 Figure 10: 8x8 grid-shell of 112 bars
+
+Generate an $8 \times 8$ orthogonal grid ($n = 60$ free nodes, $n_f = 4$ corner supports, $m = 112$ bars) and solve three benchmark problems: (10.1) hanging net of 112 equal-length $1.0\text{ m}$ bars under self-weight, (10.2) prestressed saddle with raised corners, and (10.3) mixed equal-length and equal-force constraints.
+
+![Fig. 10](images/schek_fig10_persp.png)
+![Fig. 10, plan](images/schek_fig10_plan.png)
+
+### Summary of the Three 112-Bar Cases
+
+| Case | Corner Supports | Load $\mathbf{P}$ | Constraints | Result |
+|---|---|---|---|---|
+| `fig10_1` | 4 corners at 80% span | bar weight | $l_j = 1.0\text{ m}\ (\forall j=1..112)$ | $\|\mathbf{e} _ l\| \le 7.6\times 10^{-10}\text{ m},\ s \in [0.12, 2.77]\text{ kN}$ |
+| `fig10_2` | 2 corners lifted to $3\text{ m}$ | $\mathbf{0}$ | linear ($q_{\text{border}}=10, q_{\text{in}}=1$) | $l_{\text{in}} \in [0.65, 0.81]\text{ m}$ |
+| `fig10_3` | 2 corners lifted to $3\text{ m}$ | $\mathbf{0}$ | equal inner $l$ + equal link $s$ | $\|\mathbf{g}^{\ast}\| \le 1.6\times 10^{-8}$ |
+
+**Add to your program:**
+
+```python
+g = 8
+gid = {(i, k): i * g + k + 1 for i in range(g) for k in range(g)}
+grid_h = [(gid[i, k], gid[i, k + 1]) for i in range(g) for k in range(g - 1)]
+grid_v = [(gid[i, k], gid[i + 1, k]) for i in range(g - 1) for k in range(g)]
+grid = grid_h + grid_v
+corners = [gid[0, 0], gid[0, g - 1], gid[g - 1, g - 1], gid[g - 1, 0]]
+# Renumber the 8x8 grid so the 60 free nodes come first (1..60) and the 4 corners come last (61..64)
+order = [
+    v for v in range(1, g * g + 1) if v not in corners
+] + corners
+renum = {old: new + 1 for new, old in enumerate(order)}
+grid = [(renum[a_], renum[b_]) for a_, b_ in grid]
+flat = np.array(
+    [[(v - 1) % g, (v - 1) // g, 0.0] for v in order], dtype=float
+)
+on_edge = lambda v: (
+    (order[v - 1] - 1) // g in (0, g - 1),
+    (order[v - 1] - 1) % g in (0, g - 1),
+)
+grid_border = np.array([
+    (on_edge(a_)[0] and on_edge(b_)[0])
+    or (on_edge(a_)[1] and on_edge(b_)[1])
+    for a_, b_ in grid
+])
+grid_touch = np.array([
+    any(on_edge(v)[0] or on_edge(v)[1] for v in e) for e in grid
+])
+weight = 0.15                                       # kN per bar
+degree = np.bincount(np.array(grid).ravel())[1:]    # number of bars meeting at each node
+p10 = np.zeros((g * g - 4, 3))
+p10[:, 2] = -0.5 * weight * degree[: g * g - 4]     # lump half of each bar's weight onto its two endpoints
+anchors10 = flat[-4:].copy()
+anchors10[:, :2] = (anchors10[:, :2] - 3.5) * 0.8 + 3.5
+
+# Case 10.1: 112 equal-length 1.0 m bars under self-weight
+q_10_1, xyz_10_1, l_10_1, s_10_1, tries_10_1, err_10_1 = (
+    fit_force_densities(
+        grid, g * g - 4, anchors10, np.ones(112), p10,
+        length_rows=range(112), l_v=[1.0] * 112,
+    )
+)
+keep("fig10_1", grid, xyz_10_1, anchors10, [renum[c] for c in corners])
+
+# Case 10.2: two corners lifted to 3 m, linear solve
+anchors10b = anchors10.copy()
+anchors10b[[0, 2], 2] = 3.0
+q10 = np.where(grid_border, 10.0, 1.0)
+xyz_10_2, l_10_2, s_10_2, R_10_2 = form_finding(
+    grid, g * g - 4, anchors10b, q10, np.zeros_like(p10)
+)
+keep("fig10_2", grid, xyz_10_2, anchors10b, [renum[c] for c in corners])
+
+# Case 10.3: equal inner lengths and equal link forces near border
+inner10 = [
+    j for j in range(112) if not grid_border[j] and not grid_touch[j]
+]
+link10 = [
+    j for j in range(112) if not grid_border[j] and grid_touch[j]
+]
+q_10_3, xyz_10_3, l_10_3, s_10_3, tries_10_3, err_10_3 = (
+    fit_force_densities(
+        grid, g * g - 4, anchors10b, q10, np.zeros_like(p10),
+        length_rows=inner10, l_v=[l_10_2[inner10].mean()] * len(inner10),
+        force_rows=link10, s_v=[s_10_2[link10].mean()] * len(link10),
+    )
+)
+keep("fig10_3", grid, xyz_10_3, anchors10b, [renum[c] for c in corners])
+print(f"fig10_1: err={err_10_1:.2e} m, forces in [{s_10_1.min():.2f}, {s_10_1.max():.2f}] kN")
+print(f"fig10_2: inner lengths in [{l_10_2[inner10].min():.2f}, {l_10_2[inner10].max():.2f}] m")
+print(f"fig10_3: err={err_10_3:.2e}, uniform inner l={l_10_3[inner10].mean():.3f} m, link s={s_10_3[link10].mean():.3f} kN")
+```
+
+**Example output:**
+
+```text
+fig10_1: err=7.48e-10 m, forces in [0.12, 2.77] kN
+fig10_2: inner lengths in [0.69, 0.81] m
+fig10_3: err=1.33e-08, uniform inner l=0.752 m, link s=0.708 kN
+```
+
+### G.6 Export computed shapes for figure generation
+
+Write all computed 3D shapes (`fig1`, `fig5_plan`, `fig6_1`..`fig10_3`) to `shapes.json` so `schek_1974_figures.py` can plot them.
+
+**Add to your program:**
+
+```python
+import json
+from pathlib import Path
+
+keep(
+    "fig5_plan",
+    branches5,
+    np.c_[xy[:61], np.zeros(61)],
+    np.c_[xy[61:], np.zeros(6)],
+    fixed5,
+)
+base_dir = (
+    Path(__file__).resolve().parent if "__file__" in dir() else Path(".")
+)
+out = base_dir / "viewer_scenes/json/shapes.json"
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(json.dumps(shapes))                 # serialize all form-found 3D geometries to JSON
+print(f"Saved {len(shapes)} shapes ({list(shapes.keys())}) to {out.name}")
+```
+
+**Example output:**
+
+```text
+Saved 17 shapes (['fig6_1', 'fig6_2', 'fig6_3', 'fig1', 'fig7_1', 'fig7_2', 'fig7_3', 'fig8_1', 'fig8_2', 'fig8_3', 'fig9_1', 'fig9_2', 'fig9_3', 'fig10_1', 'fig10_2', 'fig10_3', 'fig5_plan']) to shapes.json
 ```
 
 <!-- schek-app:end -->

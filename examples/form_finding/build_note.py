@@ -80,6 +80,7 @@ def main():
         "| **D.1–D.2** | Package the 3D linear solver and 4-anchor support reactions into a single function and compare 4 load/prestress cases. |",
         "| **E.1** | Interpret $q_j$ geometrically as a weight minimizing $\\sum_{j=1}^{12} q_j l_j^2$ on the unloaded 9-node saddle. |",
         "| **F.1–F.3** | Enforce target branch lengths and forces on the 9-node net via constrained least-squares and the sensitivity Jacobian $G^T$. |",
+        "| **G.1–G.6** | Recompute and visualize the paper's form-found geometries (Figs. 1 and 5–10): the 67-node pointed tent and the 112-bar grid-shell. |",
         "",
     ]
     last_part = None
