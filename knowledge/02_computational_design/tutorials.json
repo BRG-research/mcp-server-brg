@@ -26,6 +26,14 @@
       "section": "foundation"
     },
     {
+      "id": "colors",
+      "file": "01-basics/04-colors.ipynb",
+      "title": "Data: colour by value",
+      "summary": "Colour a roof mesh by face height with a colour map.",
+      "minutes": 20,
+      "section": "foundation"
+    },
+    {
       "id": "primitives",
       "file": "02-geometry/01-primitives.ipynb",
       "title": "Geometry: primitives",
@@ -98,6 +106,30 @@
       "section": "foundation"
     },
     {
+      "id": "delaunay",
+      "file": "02-geometry/10-delaunay-hull.ipynb",
+      "title": "Geometry: Delaunay and convex hull",
+      "summary": "Triangulate site points and outline their hull.",
+      "minutes": 20,
+      "section": "foundation"
+    },
+    {
+      "id": "closest-points",
+      "file": "02-geometry/11-closest-points.ipynb",
+      "title": "Geometry: closest points",
+      "summary": "Ten nearest points to a target with a KD-tree.",
+      "minutes": 20,
+      "section": "foundation"
+    },
+    {
+      "id": "ribs",
+      "file": "02-geometry/12-vault-ribs.ipynb",
+      "title": "Geometry: slice a vault into ribs",
+      "summary": "Cut a vault mesh with parallel planes into rib lines.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
       "id": "graph",
       "file": "03-datastructures/01-graph.ipynb",
       "title": "Data structures: a graph",
@@ -111,6 +143,22 @@
       "title": "Data structures: a mesh",
       "summary": "One quad, its normal and a connectivity matrix.",
       "minutes": 60,
+      "section": "foundation"
+    },
+    {
+      "id": "edge-loops",
+      "file": "03-datastructures/03-edge-loops.ipynb",
+      "title": "Data structures: edge loops and strips",
+      "summary": "Select a row of edges and a strip of faces on a quad mesh.",
+      "minutes": 20,
+      "section": "foundation"
+    },
+    {
+      "id": "shortest-path",
+      "file": "03-datastructures/04-shortest-path.ipynb",
+      "title": "Data structures: shortest path",
+      "summary": "Connect points to their neighbours and find a route.",
+      "minutes": 30,
       "section": "foundation"
     },
     {
@@ -130,6 +178,14 @@
       "section": "foundation"
     },
     {
+      "id": "columns-slab",
+      "file": "04-aec/03-columns-slab.ipynb",
+      "title": "AEC: columns, slab and contacts",
+      "summary": "Four columns and a slab, their contacts, a load takedown and a carbon estimate.",
+      "minutes": 45,
+      "section": "foundation"
+    },
+    {
       "id": "matrices",
       "file": "05-solvers/01-qr.ipynb",
       "title": "Solvers: matrix decomposition",
@@ -143,6 +199,22 @@
       "title": "Solvers: constrained optimisation",
       "summary": "Minimise box area at a fixed volume and height limit.",
       "minutes": 90,
+      "section": "foundation"
+    },
+    {
+      "id": "node-equilibrium",
+      "file": "05-solvers/03-node-equilibrium.ipynb",
+      "title": "Solvers: node equilibrium by iteration",
+      "summary": "Move a node by its residual force until it balances.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "fdm-numpy",
+      "file": "05-solvers/04-force-density-numpy.ipynb",
+      "title": "Solvers: force density with NumPy",
+      "summary": "Assemble and solve the force density equations by hand.",
+      "minutes": 45,
       "section": "foundation"
     },
     {
@@ -174,6 +246,30 @@
       "file": "06-structures/04-tna.ipynb",
       "title": "Thrust network analysis: compas_tna",
       "summary": "Form and force diagrams of a compression vault.",
+      "minutes": 60,
+      "section": "extension"
+    },
+    {
+      "id": "funicular",
+      "file": "06-structures/05-funicular-arch.ipynb",
+      "title": "Graphic statics: funicular arch",
+      "summary": "Build an arch from a load line, a pole and its rays.",
+      "minutes": 45,
+      "section": "extension"
+    },
+    {
+      "id": "masonry-arch",
+      "file": "06-structures/06-masonry-arch.ipynb",
+      "title": "Masonry arch: blocks and interfaces",
+      "summary": "Generate arch blocks and their contact interfaces.",
+      "minutes": 30,
+      "section": "extension"
+    },
+    {
+      "id": "arch-stability",
+      "file": "06-structures/07-arch-stability.ipynb",
+      "title": "Masonry arch: stability",
+      "summary": "Rigid-block equilibrium with friction solved as a linear program.",
       "minutes": 60,
       "section": "extension"
     }
