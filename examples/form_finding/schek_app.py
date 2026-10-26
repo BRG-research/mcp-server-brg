@@ -332,7 +332,32 @@ $$
 ### 3. Step 2 — Compute $D = C^T (Q C)$ (Sum at the 5 Free Nodes, $5 \times 5$)
 
 $$
-D = C^T (Q C) =
+D =
+\underset{C^T\ (5\times 12)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
+\end{bmatrix}}
+\underset{Q C\ (12\times 5)}{\begin{bmatrix}
+2 & 0 & 0 & 0 & 0 \\
+0 & 2 & 0 & 0 & 0 \\
+0 & 0 & 2 & 0 & 0 \\
+0 & 0 & 0 & 2 & 0 \\
+1 & 0 & 0 & -1 & 0 \\
+1 & -1 & 0 & 0 & 0 \\
+0 & 1 & -1 & 0 & 0 \\
+0 & 0 & 1 & -1 & 0 \\
+0 & 0 & 0 & 1 & -1 \\
+1 & 0 & 0 & 0 & -1 \\
+0 & 1 & 0 & 0 & -1 \\
+0 & 0 & 1 & 0 & -1
+\end{bmatrix}}
+$$
+
+$$
+D =
 \begin{bmatrix}
 q_1+q_5+q_6+q_{10} & -q_6 & 0 & -q_5 & -q_{10} \\
 -q_6 & q_2+q_6+q_7+q_{11} & -q_7 & 0 & -q_{11} \\
@@ -537,7 +562,21 @@ $$
 $$
 
 $$
-L^{-1} = \mathrm{diag}(1 / \mathbf{l}) = \mathrm{diag}\left(1,\ \tfrac{1}{\sqrt{10}},\ 1,\ \tfrac{1}{\sqrt{10}},\ \tfrac{1}{\sqrt{2}},\ \dots,\ 1\right)
+L^{-1} = \mathrm{diag}(1 / \mathbf{l}) =
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}\text{ m}^{-1}
 $$"""
 def coordinate_differences(
     C: FloatMatrix,
@@ -708,21 +747,34 @@ Similarly along $y$ ($\mathbf{F}_y = V \mathbf{q}$) and $z$ ($\mathbf{F}_z = W \
 
 $$
 \mathbf{F}_y = V \mathbf{q} =
-\begin{bmatrix}
-0 \\
--\tfrac{3}{\sqrt{10}} \\
-0 \\
-\tfrac{3}{\sqrt{10}} \\
--\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
--\tfrac{1}{\sqrt{2}} \\
--\tfrac{1}{\sqrt{2}} \\
-1 \\
-0 \\
--1 \\
-0
-\end{bmatrix}
-\approx
+\underset{V\ (12\times 12)}{\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & -3 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 3 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
+\end{bmatrix}}
+\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+1.000 \\
+0.316 \\
+1.000 \\
+0.316 \\
+0.707 \\
+0.707 \\
+0.707 \\
+0.707 \\
+1.000 \\
+1.000 \\
+1.000 \\
+1.000
+\end{bmatrix}} =
 \begin{bmatrix}
 0 \\
 -0.949 \\
@@ -736,24 +788,39 @@ $$
 0 \\
 -1.000 \\
 0
-\end{bmatrix}\text{ kN},
-\qquad
+\end{bmatrix}\text{ kN}
+$$
+
+$$
 \mathbf{F}_z = W \mathbf{q} =
-\begin{bmatrix}
-0 \\
--\tfrac{1}{\sqrt{10}} \\
-0 \\
--\tfrac{1}{\sqrt{10}} \\
-0 \\
-0 \\
-0 \\
-0 \\
-0 \\
-0 \\
-0 \\
-0
-\end{bmatrix}
-\approx
+\underset{W\ (12\times 12)}{\begin{bmatrix}
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
+\end{bmatrix}}
+\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+1.000 \\
+0.316 \\
+1.000 \\
+0.316 \\
+0.707 \\
+0.707 \\
+0.707 \\
+0.707 \\
+1.000 \\
+1.000 \\
+1.000 \\
+1.000
+\end{bmatrix}} =
 \begin{bmatrix}
 0 \\
 -0.316 \\
@@ -770,7 +837,7 @@ $$
 \end{bmatrix}\text{ kN}
 $$
 
-#### Stage 3 — Sum Cable Forces at Free Nodes: $C^T \mathbf{F}_x\ (5 \times 1)$
+#### Stage 3 — Sum Cable Forces at Free Nodes: $C^T \mathbf{F}_x,\ C^T \mathbf{F}_y,\ C^T \mathbf{F}_z\ (5 \times 1)$
 
 $$
 C^T \mathbf{F}_x =
@@ -782,18 +849,18 @@ C^T \mathbf{F}_x =
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
 \end{bmatrix}}
 \underset{\mathbf{F}_x\ (12\times 1)}{\begin{bmatrix}
-1 \\
+1.000 \\
 0 \\
--1 \\
+-1.000 \\
 0 \\
 -0.707 \\
 -0.707 \\
 -0.707 \\
 0.707 \\
 0 \\
--1 \\
+-1.000 \\
 0 \\
-1
+1.000
 \end{bmatrix}} =
 \begin{bmatrix}
 -1.414 \\
@@ -801,18 +868,55 @@ C^T \mathbf{F}_x =
 1.414 \\
 0 \\
 0
-\end{bmatrix}
+\end{bmatrix}\text{ kN}
 \begin{matrix}
-\leftarrow \text{Node 1} \\
-\leftarrow \text{Node 2} \\
-\leftarrow \text{Node 3} \\
-\leftarrow \text{Node 4} \\
-\leftarrow \text{Node 5}
+\leftarrow \text{Node 1: } 1 - 0.707 - 0.707 - 1 = -1.414 \\
+\leftarrow \text{Node 2: } 0 - (-0.707) - 0.707 + 0 = 0 \\
+\leftarrow \text{Node 3: } -1 - (-0.707) + 0.707 + 1 = 1.414 \\
+\leftarrow \text{Node 4: } 0 - (-0.707) - 0.707 + 0 = 0 \\
+\leftarrow \text{Node 5: } 0 - (-1) - 0 - 1 = 0
 \end{matrix}
 $$
 
 $$
-(C^T \mathbf{F}_x)_1 = F_{x,1} + F_{x,5} + F_{x,6} + F_{x,10} = 1 - 0.707 - 0.707 - 1 = -1.414\text{ kN}
+C^T \mathbf{F}_y =
+\underset{C^T\ (5\times 12)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
+\end{bmatrix}}
+\underset{\mathbf{F}_y\ (12\times 1)}{\begin{bmatrix}
+0 \\
+-0.949 \\
+0 \\
+0.949 \\
+-0.707 \\
+0.707 \\
+-0.707 \\
+-0.707 \\
+1.000 \\
+0 \\
+-1.000 \\
+0
+\end{bmatrix}} =
+\begin{bmatrix}
+0 \\
+-3.363 \\
+0 \\
+3.363 \\
+0
+\end{bmatrix}\text{ kN},
+\qquad
+C^T \mathbf{F}_z =
+\begin{bmatrix}
+0 \\
+-0.316 \\
+0 \\
+-0.316 \\
+0
+\end{bmatrix}\text{ kN}
 $$
 
 #### Stage 4 — Subtract Applied Loads to Check Equilibrium: $\mathbf{e} = C^T \mathbf{F} - \mathbf{p}\ (5 \times 1)$
@@ -941,58 +1045,80 @@ $$
 * **$u_j$, $\mathbf{u}$ $(12 \times 1)$, and $U = \mathrm{diag}(\mathbf{u})$ $(12 \times 12)$:** $u_j = x_i - x_k$ is the $x$-coordinate difference ($\text{m}$) between start node $i$ and end node $k$ of branch $j$ (similarly $v_j = y_i - y_k$ in $V$, $w_j = z_i - z_k$ in $W$).
 * **Why we swap $U \mathbf{q} = Q \mathbf{u}$:** moves the **unknown** coordinate vector $\mathbf{u}$ to the right of the **known** diagonal force-density matrix $Q = \mathrm{diag}(\mathbf{q})$.
 
-### Matrix Example ($\mathbf{F}_x = U \mathbf{q} = Q \mathbf{u}$ with Prescribed Force Densities)
+### Matrix Example ($\mathbf{F}_x = U \mathbf{q} = Q \mathbf{u}$ on All 12 Branches)
 
 $$
 \mathbf{F}_x =
 \underset{U\ (12\times 12)}{\begin{bmatrix}
-u_1 & & & & & \\
- & \ddots & & & & \\
- & & u_4 & & & \\
- & & & u_5 & & \\
- & & & & \ddots & \\
- & & & & & u_{12}
+u_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & u_2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & u_3 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & u_4 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & u_5 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & u_6 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & u_7 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & u_8 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & u_9 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & u_{10} & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & u_{11} & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & u_{12}
 \end{bmatrix}}
 \underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
 2 \\
-\vdots \\
+2 \\
+2 \\
 2 \\
 1 \\
-\vdots \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
 1
 \end{bmatrix}} =
 \underset{Q\ (12\times 12)}{\begin{bmatrix}
-2 & & & & & \\
- & \ddots & & & & \\
- & & 2 & & & \\
- & & & 1 & & \\
- & & & & \ddots & \\
- & & & & & 1
+2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
 \underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
 u_1 \\
-\vdots \\
+u_2 \\
+u_3 \\
 u_4 \\
 u_5 \\
-\vdots \\
+u_6 \\
+u_7 \\
+u_8 \\
+u_9 \\
+u_{10} \\
+u_{11} \\
 u_{12}
 \end{bmatrix}} =
 \begin{bmatrix}
 2(x_1 - x_6) \\
-\vdots \\
+2(x_2 - x_7) \\
+2(x_3 - x_8) \\
 2(x_4 - x_9) \\
 1(x_1 - x_4) \\
-\vdots \\
+1(x_1 - x_2) \\
+1(x_2 - x_3) \\
+1(x_3 - x_4) \\
+1(x_4 - x_5) \\
+1(x_1 - x_5) \\
+1(x_2 - x_5) \\
 1(x_3 - x_5)
 \end{bmatrix}
-\begin{matrix}
-\leftarrow \text{Anchor cable 1 } (q_1 = 2\text{ kN/m}) \\
-\vdots \\
-\leftarrow \text{Anchor cable 4 } (q_4 = 2\text{ kN/m}) \\
-\leftarrow \text{Ring cable 5 } (q_5 = 1\text{ kN/m}) \\
-\vdots \\
-\leftarrow \text{Spoke cable 12 } (q_{12} = 1\text{ kN/m})
-\end{matrix}
 $$"""
 q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
 print("Prescribed force densities q (kN/m):", q)
