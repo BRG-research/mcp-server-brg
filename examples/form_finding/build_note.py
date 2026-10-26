@@ -35,9 +35,30 @@ PARTS_TITLES = {
 
 
 def sanitize_gfm_math(text: str) -> str:
-    """Prevent GFM CommonMark from parsing _emphasis_ or HTML-escaping < > inside TeX math."""
+    """Prevent GFM CommonMark from breaking TeX math and stay well under GitHub's 2000-brace page limit."""
+    # Unwrap pure unit inline math ($\text{m}$ -> m) and pure shape inline math ($(12 \times 1)$ -> (12×1))
+    text = re.sub(r"\$\\text\{(m|kN|kN/m|mm)\}\$", r"\1", text)
+    text = text.replace(r"$\text{m}^{-1}$", "m⁻¹")
+    text = re.sub(r"\$\((\d+)\s*\\times\s*(\d+)\)\$", r"(\1×\2)", text)
+    # Unwrap pure number/range + unit inline math ($8.1\text{ to }9.0\text{ m}$ -> 8.1 to 9.0 m)
+    text = re.sub(
+        r"\$([+-]?\d+(?:\.\d+)?)\s*\\text\{\s*to\s*\}\s*([+-]?\d+(?:\.\d+)?)\s*\\text\{\s*(m|kN|kN/m|mm)\}\$",
+        r"\1 to \2 \3",
+        text,
+    )
+    text = re.sub(r"\$([+-]?\d+(?:\.\d+)?)\s*\\text\{\s*(m|kN|kN/m|mm)\}\$", r"\1 \2", text)
+    # Move trailing unit outside inline math ($EA = 500\text{ kN}$ -> $EA = 500$ kN)
+    text = re.sub(r"\$([^$\n]+?)\\text\{\s*(m|kN|kN/m|mm)\}\$(?!\$)", r"$\1$ \2", text)
+
     def _fix(m: re.Match[str]) -> str:
         s = m.group(0)
+        s = re.sub(r"\\tfrac\{1\}\{\\sqrt\{(\d+)\}\}", r"1/\\sqrt{\1}", s)
+        s = re.sub(r"\\mathbf\{([a-zA-Z0-9])\}(?![a-zA-Z0-9])", r"\\mathbf \1", s)
+        s = re.sub(r"\\mathbf\{([a-zA-Z0-9])\}(?=[a-zA-Z0-9])", r"\\mathbf \1 ", s)
+        s = re.sub(r"\\tfrac\{([0-9])\}\{([0-9])\}", r"\\tfrac\1\2", s)
+        s = re.sub(r"\\frac\{([0-9])\}\{([0-9])\}", r"\\frac\1\2", s)
+        s = re.sub(r"_\{([a-zA-Z0-9])\}", r"_\1", s)
+        s = re.sub(r"\^\{([a-zA-Z0-9])\}", r"^\1", s)
         s = re.sub(r"([})\]])_", r"\1 _ ", s)
         s = s.replace(">", r"\gt ").replace("<", r"\lt ")
         return s

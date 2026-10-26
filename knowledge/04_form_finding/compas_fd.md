@@ -29,8 +29,8 @@ iteration on force densities for prescribed branch lengths or forces.
 
 ![Physical and geometric foundation of the Force Density Method](images/fd_linkwitz_intuition.png)
 
-* **1. Why cable equilibrium is nonlinear:** A cable $j$ between node $i$ and node $k$ has length $l_j = \sqrt{(x_i - x_k)^2 + (y_i - y_k)^2 + (z_i - z_k)^2}$ and tension $s_j$ ($\text{kN}$). By similar triangles, its $x$-force component is $F_{x,j} = s_j \frac{x_i - x_k}{l_j}$. Because the unknown coordinates $(x, y, z)$ sit inside the square root $l_j$ in the denominator, solving for node positions directly from forces $s_j$ is **nonlinear**.
-* **2. How force density ($q_j = s_j / l_j$) makes it linear:** Prescribe the **force-to-length ratio** $q_j = s_j / l_j$ ($\text{kN/m}$), so $s_j = q_j l_j$. Substituting $s_j = q_j l_j$ into $F_{x,j}$ cancels the unknown length $l_j$ in the numerator and denominator:
+* **1. Why cable equilibrium is nonlinear:** A cable $j$ between node $i$ and node $k$ has length $l_j = \sqrt{(x_i - x_k)^2 + (y_i - y_k)^2 + (z_i - z_k)^2}$ and tension $s_j$ (kN). By similar triangles, its $x$-force component is $F_{x,j} = s_j \frac{x_i - x_k}{l_j}$. Because the unknown coordinates $(x, y, z)$ sit inside the square root $l_j$ in the denominator, solving for node positions directly from forces $s_j$ is **nonlinear**.
+* **2. How force density ($q_j = s_j / l_j$) makes it linear:** Prescribe the **force-to-length ratio** $q_j = s_j / l_j$ (kN/m), so $s_j = q_j l_j$. Substituting $s_j = q_j l_j$ into $F_{x,j}$ cancels the unknown length $l_j$ in the numerator and denominator:
 
 $$
 F_{x,j} = s_j \frac{x_i - x_k}{l_j} = (q_j l_j) \frac{x_i - x_k}{l_j} = q_j (x_i - x_k)
@@ -50,12 +50,12 @@ $$
 | Symbol | Code | Shape | Meaning |
 |---|---|---|---|
 | $C_s = [C \mid C_f]$ | `C_s`, `C`, `C_f` | `(12, 9)` = `(12, 5)` \| `(12, 4)` | Branch-node connectivity ($+1$ at start node $i$, $-1$ at end node $k$) |
-| $\mathbf{x}, \mathbf{y}, \mathbf{z}$ / $\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ | `x, y, z` / `x_f, y_f, z_f` | `(5,)` / `(4,)` | Free-node (unknown) and fixed-anchor (known) coordinates ($\text{m}$) |
-| $\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z$ | `p_x, p_y, p_z` | `(5,)` | External nodal loads at the 5 free nodes ($\text{kN}$) |
-| $\mathbf{u}, \mathbf{v}, \mathbf{w}$ / $U, V, W$ | `u` / `np.diag(u)` | `(12,)` / `(12, 12)` | Branch coordinate differences $x_i - x_k,\ y_i - y_k,\ z_i - z_k$ ($\text{m}$) |
-| $\mathbf{l}, \mathbf{s}, \mathbf{q}$ / $L, Q$ | `l, s, q` | `(12,)` / `(12, 12)` | Branch lengths $l_j$ ($\text{m}$), forces $s_j = q_j l_j$ ($\text{kN}$), force densities $q_j = s_j / l_j$ ($\text{kN/m}$) |
+| $\mathbf x, \mathbf y, \mathbf z$ / $\mathbf x _ f, \mathbf y _ f, \mathbf z _ f$ | `x, y, z` / `x_f, y_f, z_f` | `(5,)` / `(4,)` | Free-node (unknown) and fixed-anchor (known) coordinates (m) |
+| $\mathbf p _ x, \mathbf p _ y, \mathbf p _ z$ | `p_x, p_y, p_z` | `(5,)` | External nodal loads at the 5 free nodes (kN) |
+| $\mathbf u, \mathbf v, \mathbf w$ / $U, V, W$ | `u` / `np.diag(u)` | `(12,)` / `(12, 12)` | Branch coordinate differences $x_i - x_k,\ y_i - y_k,\ z_i - z_k$ (m) |
+| $\mathbf l, \mathbf s, \mathbf q$ / $L, Q$ | `l, s, q` | `(12,)` / `(12, 12)` | Branch lengths $l_j$ (m), forces $s_j = q_j l_j$ (kN), force densities $q_j = s_j / l_j$ (kN/m) |
 | $D = C^T Q C$, $D_f = C^T Q C_f$ | `D`, `D_f` | `(5, 5)`, `(5, 4)` | Free-node stiffness matrix and fixed-anchor coupling matrix |
-| $\mathbf{l} _ 0, EA$ | `l_cutting, EA` | `(12,)` | Unstressed cutting lengths $l_j / (1 + s_j/EA_j)$ ($\text{m}$) and axial stiffness ($\text{kN}$) |
+| $\mathbf l _ 0, EA$ | `l_cutting, EA` | `(12,)` | Unstressed cutting lengths $l_j / (1 + s_j/EA_j)$ (m) and axial stiffness (kN) |
 
 <!-- schek-app:start -->
 
@@ -79,22 +79,22 @@ Follow the subsections in order (`examples/form_finding/schek_app.py`). Every eq
 
 ### A.1 Network topology and initial node coordinates (section 2.1)
 
-Throughout this entire tutorial, we use one single running example: Schek's **9-node, 12-branch saddle cable net** (Fig. 2). We number the $n = 5$ **free inner nodes first** ($1 \dots 5$, with initial flat coordinates $\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$, with known support coordinates $\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$) across the $m = 12$ directed branches ($i \to k$).
+Throughout this entire tutorial, we use one single running example: Schek's **9-node, 12-branch saddle cable net** (Fig. 2). We number the $n = 5$ **free inner nodes first** ($1 \dots 5$, with initial flat coordinates $\mathbf x_0, \mathbf y_0, \mathbf z_0$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$, with known support coordinates $\mathbf x_f, \mathbf y_f, \mathbf z_f$) across the $m = 12$ directed branches ($i \to k$).
 
 ![Fig. 2](images/schek_fig2.png)
 
 ![Part A Topology and Matrix Operators on the Cable Net](images/fd_sec_a_topology_split.png)
 
-* **Total Nodes ($n_s = 9$):** Free inner nodes $1 \dots 5$ ($n = 5$, initial flat coordinates $\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$) and fixed anchors $6 \dots 9$ ($n_f = 4$, known boundary supports $\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$).
+* **Total Nodes ($n_s = 9$):** Free inner nodes $1 \dots 5$ ($n = 5$, initial flat coordinates $\mathbf x_0, \mathbf y_0, \mathbf z_0$) and fixed anchors $6 \dots 9$ ($n_f = 4$, known boundary supports $\mathbf x_f, \mathbf y_f, \mathbf z_f$).
 * **Directed Branches ($m = 12$):** Anchor cables $b_1 \dots b_4$: $(1\to 6),\ (2\to 7),\ (3\to 8),\ (4\to 9)$; inner ring $b_5 \dots b_8$: $(1\to 4),\ (1\to 2),\ (2\to 3),\ (3\to 4)$; center spokes $b_9 \dots b_{12}$: $(4\to 5),\ (1\to 5),\ (2\to 5),\ (3\to 5)$.
 
-### Matrix Example (Initial Free-Node Coordinates $\mathbf{X} _ 0$ and Fixed Anchor Coordinates $\mathbf{X} _ f$)
+### Matrix Example (Initial Free-Node Coordinates $\mathbf X_0$ and Fixed Anchor Coordinates $\mathbf X_f$)
 
-* **$\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$ $(5 \times 1)$:** Initial flat coordinates of the 5 free inner nodes $1 \dots 5$ ($\text{m}$).
-* **$\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ $(4 \times 1)$:** Known coordinates of the 4 fixed outer anchors $6 \dots 9$ ($\text{m}$).
+* **$\mathbf x_0, \mathbf y_0, \mathbf z_0$ (5×1):** Initial flat coordinates of the 5 free inner nodes $1 \dots 5$ (m).
+* **$\mathbf x_f, \mathbf y_f, \mathbf z_f$ (4×1):** Known coordinates of the 4 fixed outer anchors $6 \dots 9$ (m).
 
 $$
-\begin{bmatrix} \mathbf{x} _ 0 & \mathbf{y} _ 0 & \mathbf{z} _ 0 \end{bmatrix} =
+\begin{bmatrix} \mathbf x_0 & \mathbf y_0 & \mathbf z_0 \end{bmatrix} =
 \begin{bmatrix}
 -1 & 0 & 0 \\
 0 & -1 & 0 \\
@@ -110,7 +110,7 @@ $$
 \leftarrow \text{Free Node 5 (center)}
 \end{matrix},
 \qquad
-\begin{bmatrix} \mathbf{x} _ f & \mathbf{y} _ f & \mathbf{z} _ f \end{bmatrix} =
+\begin{bmatrix} \mathbf x_f & \mathbf y_f & \mathbf z_f \end{bmatrix} =
 \begin{bmatrix}
 -2 & 0 & 0 \\
 0 & 2 & 1 \\
@@ -176,12 +176,12 @@ Fixed anchor coordinates [x_f, y_f, z_f] (4x3):
 
 ### A.2 Vectors, diagonal matrices, and the diagonal swap (section 1.4)
 
-In standard matrix algebra, you cannot multiply two $(12 \times 1)$ column vectors $\mathbf{u}$ and $\mathbf{q}$ element-by-element because their dimensions $(12 \times 1) \times (12 \times 1)$ do not match. To write element-by-element branch multiplication ($u_j q_j$ for each cable $j = 1 \dots 12$) as a valid matrix product, Schek places the 12 entries of $\mathbf{u}$ and $\mathbf{q}$ on the main diagonal of $(12 \times 12)$ diagonal matrices $U = \mathrm{diag}(\mathbf{u})$ and $Q = \mathrm{diag}(\mathbf{q})$.
+In standard matrix algebra, you cannot multiply two (12×1) column vectors $\mathbf u$ and $\mathbf q$ element-by-element because their dimensions $(12 \times 1) \times (12 \times 1)$ do not match. To write element-by-element branch multiplication ($u_j q_j$ for each cable $j = 1 \dots 12$) as a valid matrix product, Schek places the 12 entries of $\mathbf u$ and $\mathbf q$ on the main diagonal of (12×12) diagonal matrices $U = \mathrm{diag}(\mathbf u)$ and $Q = \mathrm{diag}(\mathbf q)$.
 
 ### General Equation
 
 $$
-U = \mathrm{diag}(\mathbf{u}), \qquad Q = \mathrm{diag}(\mathbf{q}), \qquad U \mathbf{q} = Q \mathbf{u} =
+U = \mathrm{diag}(\mathbf u), \qquad Q = \mathrm{diag}(\mathbf q), \qquad U \mathbf q = Q \mathbf u =
 \begin{bmatrix}
 u_1 q_1 \\
 \vdots \\
@@ -191,9 +191,9 @@ $$
 
 ### Matrix Example (12 Branches of the 9-Node Net)
 
-* **$\mathbf{u}$ $(12 \times 1)$ and $U = \mathrm{diag}(\mathbf{u})$ $(12 \times 12)$:** Cable $x$-coordinate differences $u_j = x_i - x_k$ ($\text{m}$) between start node $i$ and end node $k$ of each cable ($\mathbf{x}$ and $\mathbf{x} _ f$ are the node $x$-coordinates; $\mathbf{u} = C\mathbf{x} + C_f\mathbf{x} _ f$ is their difference per cable).
-* **$\mathbf{q}$ $(12 \times 1)$ and $Q = \mathrm{diag}(\mathbf{q})$ $(12 \times 12)$:** Cable force densities $q_j = s_j / l_j$ ($\text{kN/m}$), placed as a column vector $\mathbf{q}$ or on the main diagonal of $Q$.
-* **$U\mathbf{q} = Q\mathbf{u}$ $(12 \times 1)$:** Horizontal cable force components $F_{x,j} = u_j q_j$ ($\text{kN}$).
+* **$\mathbf u$ (12×1) and $U = \mathrm{diag}(\mathbf u)$ (12×12):** Cable $x$-coordinate differences $u_j = x_i - x_k$ (m) between start node $i$ and end node $k$ of each cable ($\mathbf x$ and $\mathbf x_f$ are the node $x$-coordinates; $\mathbf u = C\mathbf x + C_f\mathbf x_f$ is their difference per cable).
+* **$\mathbf q$ (12×1) and $Q = \mathrm{diag}(\mathbf q)$ (12×12):** Cable force densities $q_j = s_j / l_j$ (kN/m), placed as a column vector $\mathbf q$ or on the main diagonal of $Q$.
+* **$U\mathbf q = Q\mathbf u$ (12×1):** Horizontal cable force components $F_{x,j} = u_j q_j$ (kN).
 
 $$
 \underset{U\ (12\times 12)}{\begin{bmatrix}
@@ -210,7 +210,7 @@ $$
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
-\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf q\ (12\times 1)}{\begin{bmatrix}
 2 \\
 2 \\
 2 \\
@@ -238,7 +238,7 @@ $$
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
-\underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf u\ (12\times 1)}{\begin{bmatrix}
 1 \\
 0 \\
 -1 \\
@@ -299,7 +299,7 @@ U @ q == Q @ u (12 branches): [ 2  0 -2  0 -1 -1 -1  1  0 -1  0  1]
 
 ### A.3 Branch-node connectivity matrix and partitioning (section 2.1)
 
-Encode the 9-node, 12-branch directed graph as a $(12 \times 9)$ branch-node incidence matrix $C_s$ ($+1$ at start node $i$, $-1$ at end node $k$), partitioned into free-node columns $C$ $(12 \times 5)$ and fixed-anchor columns $C_f$ $(12 \times 4)$.
+Encode the 9-node, 12-branch directed graph as a (12×9) branch-node incidence matrix $C_s$ ($+1$ at start node $i$, $-1$ at end node $k$), partitioned into free-node columns $C$ (12×5) and fixed-anchor columns $C_f$ (12×4).
 
 ### General Equation
 
@@ -315,9 +315,9 @@ $$
 
 ### Matrix Example ($12 \text{ cables} \times 9 \text{ nodes}$)
 
-* **$C_s$ $(12 \times 9)$:** Full branch-node connectivity matrix (12 rows $b_1 \dots b_{12}$ for cables; 9 columns $n_1 \dots n_9$ for nodes; $+1$ at start node $i$, $-1$ at end node $k$).
-* **$C$ $(12 \times 5)$:** Left block of $C_s$ (columns $n_1 \dots n_5$ for the 5 free inner nodes).
-* **$C_f$ $(12 \times 4)$:** Right block of $C_s$ (columns $n_6 \dots n_9$ for the 4 fixed anchors).
+* **$C_s$ (12×9):** Full branch-node connectivity matrix (12 rows $b_1 \dots b_{12}$ for cables; 9 columns $n_1 \dots n_9$ for nodes; $+1$ at start node $i$, $-1$ at end node $k$).
+* **$C$ (12×5):** Left block of $C_s$ (columns $n_1 \dots n_5$ for the 5 free inner nodes).
+* **$C_f$ (12×4):** Right block of $C_s$ (columns $n_6 \dots n_9$ for the 4 fixed anchors).
 
 $$
 C_s =
@@ -388,14 +388,14 @@ C_s (12x9):
 
 ### A.4 Step-by-step matrix multiplication for $D = C^T Q C$ on the 9-node network
 
-Trace how $D = C^T (Q C)$ assembles the $(5 \times 5)$ nodal equilibrium matrix directly on our **9-node, 12-branch network** with force densities $\mathbf{q} = [2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1]^T$.
+Trace how $D = C^T (Q C)$ assembles the (5×5) nodal equilibrium matrix directly on our **9-node, 12-branch network** with force densities $\mathbf q = [2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1]^T$.
 
 ### 1. Free Connectivity $C\ (12 \times 5)$ and Transpose $C^T\ (5 \times 12)$
 
-* **$C$ $(12 \times 5)$:** Free-node connectivity matrix (maps 5 free-node coordinates to 12 cables).
-* **$C^T$ $(5 \times 12)$:** Transpose of $C$ (sums 12 cable forces at each of the 5 free nodes).
-* **$Q$ $(12 \times 12)$:** Diagonal force-density matrix $\mathrm{diag}(q_1, \dots, q_{12})$ ($\text{kN/m}$).
-* **$D = C^T Q C$ $(5 \times 5)$:** Free-node stiffness matrix ($D_{ii} = \sum q_j$ at node $i$; $D_{ik} = -q_j$ between nodes $i, k$).
+* **$C$ (12×5):** Free-node connectivity matrix (maps 5 free-node coordinates to 12 cables).
+* **$C^T$ (5×12):** Transpose of $C$ (sums 12 cable forces at each of the 5 free nodes).
+* **$Q$ (12×12):** Diagonal force-density matrix $\mathrm{diag}(q_1, \dots, q_{12})$ (kN/m).
+* **$D = C^T Q C$ (5×5):** Free-node stiffness matrix ($D_{ii} = \sum q_j$ at node $i$; $D_{ik} = -q_j$ between nodes $i, k$).
 
 $$
 C = \begin{bmatrix}
@@ -582,15 +582,15 @@ D = C.T @ diag(q) @ C (5x5):
 
 ### B.1 Inputs: external nodal loads and initial cable tensions (section 2.2)
 
-Along with the initial free-node coordinates $(\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0)$ and fixed-anchor coordinates $(\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f)$ defined in A.1, we specify the external vertical loads $(\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z)$ at the 5 free nodes ($-0.5\text{ kN}$ each, $+z$ up) and the initial cable tension vector $\mathbf{s} _ 0$ ($1.0\text{ kN}$ in each of the 12 branches).
+Along with the initial free-node coordinates $(\mathbf x_0, \mathbf y_0, \mathbf z_0)$ and fixed-anchor coordinates $(\mathbf x_f, \mathbf y_f, \mathbf z_f)$ defined in A.1, we specify the external vertical loads $(\mathbf p_x, \mathbf p_y, \mathbf p_z)$ at the 5 free nodes (-0.5 kN each, $+z$ up) and the initial cable tension vector $\mathbf s_0$ (1.0 kN in each of the 12 branches).
 
-### Matrix Example (External Loads $\mathbf{P}$ and Initial Tensions $\mathbf{s} _ 0$)
+### Matrix Example (External Loads $\mathbf P$ and Initial Tensions $\mathbf s_0$)
 
-* **$\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z$ $(5 \times 1)$:** External nodal loads along $x, y, z$ at the 5 free nodes $1 \dots 5$ ($\text{kN}$).
-* **$\mathbf{s} _ 0$ $(12 \times 1)$:** Initial axial tension force in each of the 12 cables $b_1 \dots b_{12}$ ($\text{kN}$).
+* **$\mathbf p_x, \mathbf p_y, \mathbf p_z$ (5×1):** External nodal loads along $x, y, z$ at the 5 free nodes $1 \dots 5$ (kN).
+* **$\mathbf s_0$ (12×1):** Initial axial tension force in each of the 12 cables $b_1 \dots b_{12}$ (kN).
 
 $$
-\begin{bmatrix} \mathbf{p} _ x & \mathbf{p} _ y & \mathbf{p} _ z \end{bmatrix} =
+\begin{bmatrix} \mathbf p_x & \mathbf p_y & \mathbf p_z \end{bmatrix} =
 \begin{bmatrix}
 0 & 0 & -0.5 \\
 0 & 0 & -0.5 \\
@@ -606,7 +606,7 @@ $$
 \leftarrow \text{Node 5 (}-0.5\text{ kN)}
 \end{matrix},
 \qquad
-\mathbf{s} _ 0 =
+\mathbf s_0 =
 \begin{bmatrix}
 1 \\
 1 \\
@@ -648,29 +648,29 @@ Initial cable tensions s_0 (12,): [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 
 ### B.2 Coordinate differences and cable lengths, equation (1)
 
-For each branch $j\ (i \to k)$, compute the coordinate differences $(u_j, v_j, w_j) = (x_i - x_k,\ y_i - y_k,\ z_i - z_k)$ and the Euclidean cable length $l_j$ from the initial free-node coordinates $(\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0)$ and fixed-anchor coordinates $(\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f)$ defined in A.1.
+For each branch $j\ (i \to k)$, compute the coordinate differences $(u_j, v_j, w_j) = (x_i - x_k,\ y_i - y_k,\ z_i - z_k)$ and the Euclidean cable length $l_j$ from the initial free-node coordinates $(\mathbf x_0, \mathbf y_0, \mathbf z_0)$ and fixed-anchor coordinates $(\mathbf x_f, \mathbf y_f, \mathbf z_f)$ defined in A.1.
 
 ![Section B.2 Geometric Meaning of Coordinate Differences u, v, w and Cable Length l](images/fd_sec_b2_uvw_geometry.png)
 
 ### General Equations (Eq. 1)
 
 $$
-\mathbf{u} = C \mathbf{x} _ 0 + C_f \mathbf{x} _ f, \qquad
-\mathbf{v} = C \mathbf{y} _ 0 + C_f \mathbf{y} _ f, \qquad
-\mathbf{w} = C \mathbf{z} _ 0 + C_f \mathbf{z} _ f, \qquad
+\mathbf u = C \mathbf x_0 + C_f \mathbf x_f, \qquad
+\mathbf v = C \mathbf y_0 + C_f \mathbf y_f, \qquad
+\mathbf w = C \mathbf z_0 + C_f \mathbf z_f, \qquad
 l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}
 $$
 
-### Matrix Example (Initial Coordinates $\mathbf{x} _ 0 = [-1, 0, 1, 0, 0]^T,\ \mathbf{y} _ 0 = [0, -1, 0, 1, 0]^T,\ \mathbf{z} _ 0 = \mathbf{0}$)
+### Matrix Example (Initial Coordinates $\mathbf x_0 = [-1, 0, 1, 0, 0]^T,\ \mathbf y_0 = [0, -1, 0, 1, 0]^T,\ \mathbf z_0 = \mathbf 0$)
 
-* **$\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0$ $(5 \times 1)$:** Initial coordinates of free nodes $1 \dots 5$ ($\text{m}$, from A.1).
-* **$\mathbf{x} _ f, \mathbf{y} _ f, \mathbf{z} _ f$ $(4 \times 1)$:** Fixed-anchor coordinates of nodes $6 \dots 9$ ($\text{m}$, from A.1).
-* **$C$ $(12 \times 5)$ and $C_f$ $(12 \times 4)$:** Free-node and fixed-anchor connectivity matrices (from A.3).
-* **$\mathbf{u}, \mathbf{v}, \mathbf{w}$ $(12 \times 1)$:** Cable coordinate differences $u_j = x_i - x_k,\ v_j = y_i - y_k,\ w_j = z_i - z_k$ ($\text{m}$).
-* **$\mathbf{l}$ $(12 \times 1)$ and $L^{-1}$ $(12 \times 12)$:** Cable lengths $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ ($\text{m}$) and diagonal inverse-length matrix $\mathrm{diag}(1/\mathbf{l})$ ($\text{m}^{-1}$).
+* **$\mathbf x_0, \mathbf y_0, \mathbf z_0$ (5×1):** Initial coordinates of free nodes $1 \dots 5$ (m, from A.1).
+* **$\mathbf x_f, \mathbf y_f, \mathbf z_f$ (4×1):** Fixed-anchor coordinates of nodes $6 \dots 9$ (m, from A.1).
+* **$C$ (12×5) and $C_f$ (12×4):** Free-node and fixed-anchor connectivity matrices (from A.3).
+* **$\mathbf u, \mathbf v, \mathbf w$ (12×1):** Cable coordinate differences $u_j = x_i - x_k,\ v_j = y_i - y_k,\ w_j = z_i - z_k$ (m).
+* **$\mathbf l$ (12×1) and $L^{-1}$ (12×12):** Cable lengths $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ (m) and diagonal inverse-length matrix $\mathrm{diag}(1/\mathbf l)$ (m⁻¹).
 
 $$
-\underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf u\ (12\times 1)}{\begin{bmatrix}
 1 \\
 0 \\
 -1 \\
@@ -698,7 +698,7 @@ $$
 0 & 1 & 0 & 0 & -1 \\
 0 & 0 & 1 & 0 & -1
 \end{bmatrix}}
-\underset{\mathbf{x} _ 0\ (5\times 1)}{\begin{bmatrix}
+\underset{\mathbf x_0\ (5\times 1)}{\begin{bmatrix}
 -1 \\
 0 \\
 1 \\
@@ -719,7 +719,7 @@ $$
 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0
 \end{bmatrix}}
-\underset{\mathbf{x} _ f\ (4\times 1)}{\begin{bmatrix}
+\underset{\mathbf x_f\ (4\times 1)}{\begin{bmatrix}
 -2 \\
 0 \\
 2 \\
@@ -728,7 +728,7 @@ $$
 $$
 
 $$
-\begin{bmatrix} \mathbf{u} & \mathbf{v} & \mathbf{w} \end{bmatrix} =
+\begin{bmatrix} \mathbf u & \mathbf v & \mathbf w \end{bmatrix} =
 \begin{bmatrix}
 1 & 0 & 0 \\
 0 & -3 & -1 \\
@@ -744,7 +744,7 @@ $$
 1 & 0 & 0
 \end{bmatrix}\text{ m},
 \qquad
-\mathbf{l} =
+\mathbf l =
 \begin{bmatrix}
 1 \\
 \sqrt{10} \\
@@ -777,16 +777,16 @@ $$
 $$
 
 $$
-L^{-1} = \mathrm{diag}(1 / \mathbf{l}) =
+L^{-1} = \mathrm{diag}(1 / \mathbf l) =
 \begin{bmatrix}
 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1/\sqrt{10} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1/\sqrt{10} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
@@ -829,54 +829,54 @@ Initial cable lengths l_init (m): [1.    3.162 1.    3.162 1.414 1.414 1.414 1.4
 
 ### B.3 Nonlinear equilibrium in 4 stages, equation (2)
 
-From a single cable's tension $s_j$ and length $l_j$, we derive the 4-stage matrix equilibrium equation $\mathbf{e} _ x = C^T U L^{-1} \mathbf{s} - \mathbf{p} _ x$, reading the matrix product **right to left** from Stage 1 to Stage 4.
+From a single cable's tension $s_j$ and length $l_j$, we derive the 4-stage matrix equilibrium equation $\mathbf e_x = C^T U L^{-1} \mathbf s - \mathbf p_x$, reading the matrix product **right to left** from Stage 1 to Stage 4.
 
 ![Section B.3 Four-Stage Nonlinear Equilibrium and Flat Net Imbalance](images/fd_sec_b3_nonlinear_stages.png)
 
 ### How Stages 1–4 Are Derived (From One Cable to Matrix Form, Eq. 2)
 
-1. **Single cable $j\ (i \to k)$:** Cable $j$ pulls with axial tension $s_j$ ($\text{kN}$) along its 3D length $l_j$ ($\text{m}$). By similar triangles, its direction cosine along $x$ is $u_j / l_j = (x_i - x_k) / l_j$, so its horizontal force component is:
+1. **Single cable $j\ (i \to k)$:** Cable $j$ pulls with axial tension $s_j$ (kN) along its 3D length $l_j$ (m). By similar triangles, its direction cosine along $x$ is $u_j / l_j = (x_i - x_k) / l_j$, so its horizontal force component is:
 
 $$
 F_{x,j} = s_j \frac{u_j}{l_j} = u_j \underbrace{\left(\frac{s_j}{l_j}\right)} _ {\text{Stage 1: } q_j}
 $$
 
 2. **All 12 cables in matrix form (Stages 1 & 2):** Using the diagonal matrices $L^{-1} = \mathrm{diag}(1/l_1, \dots, 1/l_{12})$ and $U = \mathrm{diag}(u_1, \dots, u_{12})$:
-   * **Stage 1:** $\mathbf{q} = L^{-1} \mathbf{s}\ (12 \times 1)$ divides each cable's tension $s_j$ by its length $l_j$ ($q_j = s_j / l_j$).
-   * **Stage 2:** $\mathbf{F} _ x = U \mathbf{q} = U L^{-1} \mathbf{s}\ (12 \times 1)$ multiplies each cable's ratio $q_j$ by its span $u_j$ ($F_{x,j} = u_j q_j$).
-3. **Force balance at the 5 free nodes (Stages 3 & 4):** Row $i$ of $C^T\ (5 \times 12)$ has $+1$ for cables starting at node $i$ and $-1$ for cables ending at node $i$, so multiplying by $C^T$ sums the cable forces at each free node $i = 1 \dots 5$, and subtracting external load $\mathbf{p} _ x\ (5 \times 1)$ gives the out-of-balance residual:
+   * **Stage 1:** $\mathbf q = L^{-1} \mathbf s\ (12 \times 1)$ divides each cable's tension $s_j$ by its length $l_j$ ($q_j = s_j / l_j$).
+   * **Stage 2:** $\mathbf F_x = U \mathbf q = U L^{-1} \mathbf s\ (12 \times 1)$ multiplies each cable's ratio $q_j$ by its span $u_j$ ($F_{x,j} = u_j q_j$).
+3. **Force balance at the 5 free nodes (Stages 3 & 4):** Row $i$ of $C^T\ (5 \times 12)$ has $+1$ for cables starting at node $i$ and $-1$ for cables ending at node $i$, so multiplying by $C^T$ sums the cable forces at each free node $i = 1 \dots 5$, and subtracting external load $\mathbf p_x\ (5 \times 1)$ gives the out-of-balance residual:
 
 $$
-\mathbf{e} _ x = \underbrace{C^T} _ {\text{Stage 3: sum at nodes } (5\times 12)} \quad \underbrace{U} _ {\text{Stage 2: project } x\ (12\times 12)} \quad \underbrace{L^{-1} \mathbf{s}} _ {\text{Stage 1: } q_j = s_j / l_j\ (12\times 1)} \quad - \quad \underbrace{\mathbf{p} _ x} _ {\text{Stage 4: load } (5\times 1)}
+\mathbf e_x = \underbrace{C^T} _ {\text{Stage 3: sum at nodes } (5\times 12)} \quad \underbrace{U} _ {\text{Stage 2: project } x\ (12\times 12)} \quad \underbrace{L^{-1} \mathbf s} _ {\text{Stage 1: } q_j = s_j / l_j\ (12\times 1)} \quad - \quad \underbrace{\mathbf p_x} _ {\text{Stage 4: load } (5\times 1)}
 $$
 
 ---
 
-### Stage-by-Stage Matrix Breakdown (Flat Trial Net with $s_j = 1\text{ kN}$)
+### Stage-by-Stage Matrix Breakdown (Flat Trial Net with $s_j = 1$ kN)
 
-#### Stage 1 — Force Density Ratios: $\mathbf{q} = L^{-1} \mathbf{s}\ (12 \times 1)$
+#### Stage 1 — Force Density Ratios: $\mathbf q = L^{-1} \mathbf s\ (12 \times 1)$
 
-* **$L^{-1}$ $(12 \times 12)$:** Diagonal inverse-length matrix $\mathrm{diag}(1/l_1, \dots, 1/l_{12})$ ($\text{m}^{-1}$).
-* **$\mathbf{s}$ $(12 \times 1)$:** Trial axial cable tensions $s_j$ ($\text{kN}$).
-* **$\mathbf{q} = L^{-1}\mathbf{s}$ $(12 \times 1)$:** Force-to-length ratios $q_j = s_j / l_j$ ($\text{kN/m}$).
+* **$L^{-1}$ (12×12):** Diagonal inverse-length matrix $\mathrm{diag}(1/l_1, \dots, 1/l_{12})$ (m⁻¹).
+* **$\mathbf s$ (12×1):** Trial axial cable tensions $s_j$ (kN).
+* **$\mathbf q = L^{-1}\mathbf s$ (12×1):** Force-to-length ratios $q_j = s_j / l_j$ (kN/m).
 
 $$
-\mathbf{q} =
+\mathbf q =
 \underset{L^{-1}\ (12\times 12)}{\begin{bmatrix}
 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1/\sqrt{10} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 1/\sqrt{10} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1/\sqrt{2} & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
-\underset{\mathbf{s}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf s\ (12\times 1)}{\begin{bmatrix}
 1 \\
 1 \\
 1 \\
@@ -892,13 +892,13 @@ $$
 \end{bmatrix}} =
 \begin{bmatrix}
 1 \\
-\tfrac{1}{\sqrt{10}} \\
+1/\sqrt{10} \\
 1 \\
-\tfrac{1}{\sqrt{10}} \\
-\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
+1/\sqrt{10} \\
+1/\sqrt{2} \\
+1/\sqrt{2} \\
+1/\sqrt{2} \\
+1/\sqrt{2} \\
 1 \\
 1 \\
 1 \\
@@ -921,15 +921,15 @@ $$
 \end{bmatrix}\text{ kN/m}
 $$
 
-#### Stage 2 — Projected Branch Force Components: $\mathbf{F} _ x = U \mathbf{q},\ \mathbf{F} _ y = V \mathbf{q},\ \mathbf{F} _ z = W \mathbf{q}\ (12 \times 1)$
+#### Stage 2 — Projected Branch Force Components: $\mathbf F_x = U \mathbf q,\ \mathbf F_y = V \mathbf q,\ \mathbf F_z = W \mathbf q\ (12 \times 1)$
 
-* **$U, V, W$ $(12 \times 12)$:** Diagonal matrices $\mathrm{diag}(\mathbf{u}),\ \mathrm{diag}(\mathbf{v}),\ \mathrm{diag}(\mathbf{w})$ holding the 12 cable coordinate differences $u_j = x_i - x_k,\ v_j = y_i - y_k,\ w_j = z_i - z_k$ ($\text{m}$) from Section B.2 ($\mathbf{u} = C\mathbf{x} + C_f\mathbf{x} _ f$).
-* **$\mathbf{q}$ $(12 \times 1)$:** Cable force-density vector $q_j = s_j / l_j$ ($\text{kN/m}$) from Stage 1.
-* **$\mathbf{F} _ x, \mathbf{F} _ y, \mathbf{F} _ z$ $(12 \times 1)$:** Directed cable force components $F_{x,j} = u_j q_j,\ F_{y,j} = v_j q_j,\ F_{z,j} = w_j q_j$ along $x, y, z$ ($\text{kN}$).
+* **$U, V, W$ (12×12):** Diagonal matrices $\mathrm{diag}(\mathbf u),\ \mathrm{diag}(\mathbf v),\ \mathrm{diag}(\mathbf w)$ holding the 12 cable coordinate differences $u_j = x_i - x_k,\ v_j = y_i - y_k,\ w_j = z_i - z_k$ (m) from Section B.2 ($\mathbf u = C\mathbf x + C_f\mathbf x_f$).
+* **$\mathbf q$ (12×1):** Cable force-density vector $q_j = s_j / l_j$ (kN/m) from Stage 1.
+* **$\mathbf F_x, \mathbf F_y, \mathbf F_z$ (12×1):** Directed cable force components $F_{x,j} = u_j q_j,\ F_{y,j} = v_j q_j,\ F_{z,j} = w_j q_j$ along $x, y, z$ (kN).
 
 $$
-\mathbf{F} _ x = U \mathbf{q} =
-\underset{U = \mathrm{diag}(\mathbf{u})\ (12\times 12)}{\begin{bmatrix}
+\mathbf F_x = U \mathbf q =
+\underset{U = \mathrm{diag}(\mathbf u)\ (12\times 12)}{\begin{bmatrix}
 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
@@ -943,7 +943,7 @@ $$
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
-\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf q\ (12\times 1)}{\begin{bmatrix}
 1.000 \\
 0.316 \\
 1.000 \\
@@ -987,10 +987,10 @@ $$
 \end{matrix}
 $$
 
-Similarly along $y$ ($\mathbf{F} _ y = V \mathbf{q}$) and $z$ ($\mathbf{F} _ z = W \mathbf{q}$):
+Similarly along $y$ ($\mathbf F_y = V \mathbf q$) and $z$ ($\mathbf F_z = W \mathbf q$):
 
 $$
-\mathbf{F} _ y = V \mathbf{q} =
+\mathbf F_y = V \mathbf q =
 \underset{V\ (12\times 12)}{\begin{bmatrix}
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & -3 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
@@ -1005,7 +1005,7 @@ $$
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
 \end{bmatrix}}
-\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf q\ (12\times 1)}{\begin{bmatrix}
 1.000 \\
 0.316 \\
 1.000 \\
@@ -1036,7 +1036,7 @@ $$
 $$
 
 $$
-\mathbf{F} _ z = W \mathbf{q} =
+\mathbf F_z = W \mathbf q =
 \underset{W\ (12\times 12)}{\begin{bmatrix}
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
@@ -1051,7 +1051,7 @@ $$
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0
 \end{bmatrix}}
-\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf q\ (12\times 1)}{\begin{bmatrix}
 1.000 \\
 0.316 \\
 1.000 \\
@@ -1081,14 +1081,14 @@ $$
 \end{bmatrix}\text{ kN}
 $$
 
-#### Stage 3 — Sum Cable Forces at Free Nodes: $C^T \mathbf{F} _ x,\ C^T \mathbf{F} _ y,\ C^T \mathbf{F} _ z\ (5 \times 1)$
+#### Stage 3 — Sum Cable Forces at Free Nodes: $C^T \mathbf F_x,\ C^T \mathbf F_y,\ C^T \mathbf F_z\ (5 \times 1)$
 
-* **$C^T$ $(5 \times 12)$:** Transpose of the free-node connectivity matrix (row $i$ has $+1$ for cables starting at node $i$ and $-1$ for cables ending at node $i$).
-* **$\mathbf{F} _ x, \mathbf{F} _ y, \mathbf{F} _ z$ $(12 \times 1)$:** Cable force components from Stage 2 ($\text{kN}$).
-* **$C^T \mathbf{F} _ x, C^T \mathbf{F} _ y, C^T \mathbf{F} _ z$ $(5 \times 1)$:** Net internal cable force resultant at each of the 5 free nodes ($\text{kN}$).
+* **$C^T$ (5×12):** Transpose of the free-node connectivity matrix (row $i$ has $+1$ for cables starting at node $i$ and $-1$ for cables ending at node $i$).
+* **$\mathbf F_x, \mathbf F_y, \mathbf F_z$ (12×1):** Cable force components from Stage 2 (kN).
+* **$C^T \mathbf F_x, C^T \mathbf F_y, C^T \mathbf F_z$ (5×1):** Net internal cable force resultant at each of the 5 free nodes (kN).
 
 $$
-C^T \mathbf{F} _ x =
+C^T \mathbf F_x =
 \underset{C^T\ (5\times 12)}{\begin{bmatrix}
 1 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 0 \\
 0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 & 0 \\
@@ -1096,7 +1096,7 @@ C^T \mathbf{F} _ x =
 0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 1 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
 \end{bmatrix}}
-\underset{\mathbf{F} _ x\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf F_x\ (12\times 1)}{\begin{bmatrix}
 1.000 \\
 0 \\
 -1.000 \\
@@ -1127,7 +1127,7 @@ C^T \mathbf{F} _ x =
 $$
 
 $$
-C^T \mathbf{F} _ y =
+C^T \mathbf F_y =
 \underset{C^T\ (5\times 12)}{\begin{bmatrix}
 1 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 0 \\
 0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 & 0 \\
@@ -1135,7 +1135,7 @@ C^T \mathbf{F} _ y =
 0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 1 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
 \end{bmatrix}}
-\underset{\mathbf{F} _ y\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf F_y\ (12\times 1)}{\begin{bmatrix}
 0 \\
 -0.949 \\
 0 \\
@@ -1157,7 +1157,7 @@ C^T \mathbf{F} _ y =
 0
 \end{bmatrix}\text{ kN},
 \qquad
-C^T \mathbf{F} _ z =
+C^T \mathbf F_z =
 \begin{bmatrix}
 0 \\
 -0.316 \\
@@ -1167,14 +1167,14 @@ C^T \mathbf{F} _ z =
 \end{bmatrix}\text{ kN}
 $$
 
-#### Stage 4 — Subtract Applied Loads to Check Equilibrium: $\mathbf{e} = C^T \mathbf{F} - \mathbf{p}\ (5 \times 1)$
+#### Stage 4 — Subtract Applied Loads to Check Equilibrium: $\mathbf e = C^T \mathbf F - \mathbf p\ (5 \times 1)$
 
-* **$C^T \mathbf{F} _ x, C^T \mathbf{F} _ y, C^T \mathbf{F} _ z$ $(5 \times 1)$:** Internal cable force resultants at free nodes $1 \dots 5$ ($\text{kN}$).
-* **$\mathbf{p} _ x, \mathbf{p} _ y, \mathbf{p} _ z$ $(5 \times 1)$:** External applied nodal loads at free nodes $1 \dots 5$ ($\text{kN}$).
-* **$\mathbf{e} _ x, \mathbf{e} _ y, \mathbf{e} _ z$ $(5 \times 1)$:** Out-of-balance nodal force residuals ($\text{kN}$; zero when in equilibrium).
+* **$C^T \mathbf F_x, C^T \mathbf F_y, C^T \mathbf F_z$ (5×1):** Internal cable force resultants at free nodes $1 \dots 5$ (kN).
+* **$\mathbf p_x, \mathbf p_y, \mathbf p_z$ (5×1):** External applied nodal loads at free nodes $1 \dots 5$ (kN).
+* **$\mathbf e_x, \mathbf e_y, \mathbf e_z$ (5×1):** Out-of-balance nodal force residuals (kN; zero when in equilibrium).
 
 $$
-\mathbf{e} _ x =
+\mathbf e_x =
 \begin{bmatrix}
 -1.414 \\
 0 \\
@@ -1197,7 +1197,7 @@ $$
 0
 \end{bmatrix},
 \qquad
-\mathbf{e} _ y =
+\mathbf e_y =
 \begin{bmatrix}
 0 \\
 -3.363 \\
@@ -1222,7 +1222,7 @@ $$
 $$
 
 $$
-\mathbf{e} _ z =
+\mathbf e_z =
 \begin{bmatrix}
 0 \\
 -0.316 \\
@@ -1283,35 +1283,35 @@ Initial out-of-balance residual e_z at (x_0, y_0, z_0) (kN): [0.5   0.184 0.5   
 
 ### C.1 The force density trick and the diagonal swap, equations (4) to (6)
 
-In Section B.3, the horizontal branch force $F_{x,j} = s_j (u_j / l_j)$ was nonlinear because the unknown length $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ sat in the denominator. If instead we prescribe the **force density** $q_j = s_j / l_j$ ($\text{kN/m}$, so $s_j = q_j l_j$), then $l_j$ in the numerator and denominator cancels out: $F_{x,j} = (q_j l_j)(u_j / l_j) = q_j u_j$.
+In Section B.3, the horizontal branch force $F_{x,j} = s_j (u_j / l_j)$ was nonlinear because the unknown length $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ sat in the denominator. If instead we prescribe the **force density** $q_j = s_j / l_j$ (kN/m, so $s_j = q_j l_j$), then $l_j$ in the numerator and denominator cancels out: $F_{x,j} = (q_j l_j)(u_j / l_j) = q_j u_j$.
 
 ![Section C.1 How Force Density Uses Coordinate Difference u to Linearize Equilibrium](images/fd_sec_c1_force_density_trick.png)
 
 ### General Equations (Eqs. 4–6) & Meaning of $u$
 
 $$
-q_j = \frac{s_j}{l_j} \quad (\mathbf{q} = L^{-1} \mathbf{s})
+q_j = \frac{s_j}{l_j} \quad (\mathbf q = L^{-1} \mathbf s)
 \qquad \Longrightarrow \qquad
 F_{x, j} = s_j \frac{u_j}{l_j} = (q_j l_j) \frac{u_j}{l_j} = q_j u_j = q_j (x_i - x_k)
 $$
 
 $$
-C^T U \mathbf{q} = C^T Q \mathbf{u} = \mathbf{p} _ x, \qquad
-C^T V \mathbf{q} = C^T Q \mathbf{v} = \mathbf{p} _ y, \qquad
-C^T W \mathbf{q} = C^T Q \mathbf{w} = \mathbf{p} _ z
+C^T U \mathbf q = C^T Q \mathbf u = \mathbf p_x, \qquad
+C^T V \mathbf q = C^T Q \mathbf v = \mathbf p_y, \qquad
+C^T W \mathbf q = C^T Q \mathbf w = \mathbf p_z
 $$
 
-* **$u_j$, $\mathbf{u}$ $(12 \times 1)$, and $U = \mathrm{diag}(\mathbf{u})$ $(12 \times 12)$:** $u_j = x_i - x_k$ is the $x$-coordinate difference ($\text{m}$) between start node $i$ and end node $k$ of branch $j$ (similarly $v_j = y_i - y_k$ in $V$, $w_j = z_i - z_k$ in $W$).
-* **Why we swap $U \mathbf{q} = Q \mathbf{u}$:** moves the **unknown** coordinate vector $\mathbf{u}$ to the right of the **known** diagonal force-density matrix $Q = \mathrm{diag}(\mathbf{q})$.
+* **$u_j$, $\mathbf u$ (12×1), and $U = \mathrm{diag}(\mathbf u)$ (12×12):** $u_j = x_i - x_k$ is the $x$-coordinate difference (m) between start node $i$ and end node $k$ of branch $j$ (similarly $v_j = y_i - y_k$ in $V$, $w_j = z_i - z_k$ in $W$).
+* **Why we swap $U \mathbf q = Q \mathbf u$:** moves the **unknown** coordinate vector $\mathbf u$ to the right of the **known** diagonal force-density matrix $Q = \mathrm{diag}(\mathbf q)$.
 
-### Matrix Example ($\mathbf{F} _ x = U \mathbf{q} = Q \mathbf{u}$ on All 12 Branches)
+### Matrix Example ($\mathbf F_x = U \mathbf q = Q \mathbf u$ on All 12 Branches)
 
-* **$U = \mathrm{diag}(\mathbf{u})$ $(12 \times 12)$ and $\mathbf{u}$ $(12 \times 1)$:** Unknown cable $x$-coordinate differences $u_j = x_i - x_k$ ($\text{m}$).
-* **$Q = \mathrm{diag}(\mathbf{q})$ $(12 \times 12)$ and $\mathbf{q}$ $(12 \times 1)$:** Known prescribed cable force densities $q_j$ ($\text{kN/m}$).
-* **$\mathbf{F} _ x = U\mathbf{q} = Q\mathbf{u}$ $(12 \times 1)$:** Linearized horizontal cable force components $q_j(x_i - x_k)$ ($\text{kN}$).
+* **$U = \mathrm{diag}(\mathbf u)$ (12×12) and $\mathbf u$ (12×1):** Unknown cable $x$-coordinate differences $u_j = x_i - x_k$ (m).
+* **$Q = \mathrm{diag}(\mathbf q)$ (12×12) and $\mathbf q$ (12×1):** Known prescribed cable force densities $q_j$ (kN/m).
+* **$\mathbf F_x = U\mathbf q = Q\mathbf u$ (12×1):** Linearized horizontal cable force components $q_j(x_i - x_k)$ (kN).
 
 $$
-\mathbf{F} _ x =
+\mathbf F_x =
 \underset{U\ (12\times 12)}{\begin{bmatrix}
 u_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & u_2 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
@@ -1326,7 +1326,7 @@ u_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & u_{11} & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & u_{12}
 \end{bmatrix}}
-\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf q\ (12\times 1)}{\begin{bmatrix}
 2 \\
 2 \\
 2 \\
@@ -1354,7 +1354,7 @@ u_1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
-\underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
+\underset{\mathbf u\ (12\times 1)}{\begin{bmatrix}
 u_1 \\
 u_2 \\
 u_3 \\
@@ -1400,24 +1400,24 @@ Prescribed force densities q (kN/m): [2. 2. 2. 2. 1. 1. 1. 1. 1. 1. 1. 1.]
 
 ### C.2 System matrices $D$ and $D_f$, equations (7) and (8)
 
-Substituting $\mathbf{u} = C \mathbf{x} + C_f \mathbf{x} _ f$ into $C^T Q \mathbf{u} = \mathbf{p} _ x$ separates unknown free-node coordinates $\mathbf{x}$ from known anchor coordinates $\mathbf{x} _ f$ via $D = C^T Q C\ (5 \times 5)$ and $D_f = C^T Q C_f\ (5 \times 4)$.
+Substituting $\mathbf u = C \mathbf x + C_f \mathbf x_f$ into $C^T Q \mathbf u = \mathbf p_x$ separates unknown free-node coordinates $\mathbf x$ from known anchor coordinates $\mathbf x_f$ via $D = C^T Q C\ (5 \times 5)$ and $D_f = C^T Q C_f\ (5 \times 4)$.
 
 ![Sections C.2 to D.1 Physical Meaning of D and Solved 3D Saddle Equilibrium Net](images/fd_sec_c2_c3_solved_net.png)
 
 ### General Equations (Eqs. 7–8)
 
 $$
-(C^T Q C)\mathbf{x} + (C^T Q C_f)\mathbf{x} _ f = \mathbf{p} _ x
+(C^T Q C)\mathbf x + (C^T Q C_f)\mathbf x_f = \mathbf p_x
 \qquad \Longrightarrow \qquad
-D \mathbf{x} = \mathbf{p} _ x - D_f \mathbf{x} _ f = \mathbf{b} _ x
+D \mathbf x = \mathbf p_x - D_f \mathbf x_f = \mathbf b_x
 $$
 
 ### 1. Symbolic Structure of $D$ and Schek Fig. 4 ($q_j = j$)
 
-* **$D = C^T Q C$ $(5 \times 5)$:** Free-node stiffness matrix (diagonal $D_{ii}$ sums $q_j$ of cables touching free node $i$; off-diagonal $D_{ik} = -q_j$ for cable $j$ between free nodes $i$ and $k$).
-* **$D_f = C^T Q C_f$ $(5 \times 4)$:** Fixed-anchor coupling matrix ($D_{f(i,k)} = -q_j$ if cable $j$ connects free node $i$ to fixed anchor $k$).
-* **$\mathbf{p} _ z$ $(5 \times 1)$ and $\mathbf{z} _ f$ $(4 \times 1)$:** External vertical loads ($\text{kN}$) and known anchor heights ($\text{m}$).
-* **$\mathbf{b} _ z = \mathbf{p} _ z - D_f \mathbf{z} _ f$ $(5 \times 1)$:** Known right-hand side vector combining external loads and anchor pull ($\text{kN}$).
+* **$D = C^T Q C$ (5×5):** Free-node stiffness matrix (diagonal $D_{ii}$ sums $q_j$ of cables touching free node $i$; off-diagonal $D_{ik} = -q_j$ for cable $j$ between free nodes $i$ and $k$).
+* **$D_f = C^T Q C_f$ (5×4):** Fixed-anchor coupling matrix ($D_{f(i,k)} = -q_j$ if cable $j$ connects free node $i$ to fixed anchor $k$).
+* **$\mathbf p_z$ (5×1) and $\mathbf z_f$ (4×1):** External vertical loads (kN) and known anchor heights (m).
+* **$\mathbf b_z = \mathbf p_z - D_f \mathbf z_f$ (5×1):** Known right-hand side vector combining external loads and anchor pull (kN).
 
 $$
 D =
@@ -1439,7 +1439,7 @@ D_{(q_j = j)} =
 \end{bmatrix}
 $$
 
-### 2. Actual Matrices $D$, $D_f$, and Right-Hand Side $\mathbf{b} _ z = \mathbf{p} _ z - D_f \mathbf{z} _ f$
+### 2. Actual Matrices $D$, $D_f$, and Right-Hand Side $\mathbf b_z = \mathbf p_z - D_f \mathbf z_f$
 
 $$
 D = C^T Q C =
@@ -1476,7 +1476,7 @@ D_f = C^T Q C_f =
 $$
 
 $$
-\mathbf{b} _ z = \mathbf{p} _ z - D_f \mathbf{z} _ f =
+\mathbf b_z = \mathbf p_z - D_f \mathbf z_f =
 \begin{bmatrix}
 -0.5 \\
 -0.5 \\
@@ -1564,21 +1564,21 @@ RHS [b_x, b_y, b_z] (5x3):
 
 ### C.3 Direct linear solve for free node coordinates, equation (9)
 
-Because $D = C^T Q C$ is constant and symmetric positive-definite, solving $D \mathbf{x} = \mathbf{b} _ x$, $D \mathbf{y} = \mathbf{b} _ y$, $D \mathbf{z} = \mathbf{b} _ z$ gives the exact 3D equilibrium coordinates in one direct step.
+Because $D = C^T Q C$ is constant and symmetric positive-definite, solving $D \mathbf x = \mathbf b_x$, $D \mathbf y = \mathbf b_y$, $D \mathbf z = \mathbf b_z$ gives the exact 3D equilibrium coordinates in one direct step.
 
 ### General Equations (Eq. 9)
 
 $$
-D \mathbf{x} = \mathbf{p} _ x - D_f \mathbf{x} _ f, \qquad
-D \mathbf{y} = \mathbf{p} _ y - D_f \mathbf{y} _ f, \qquad
-D \mathbf{z} = \mathbf{p} _ z - D_f \mathbf{z} _ f
+D \mathbf x = \mathbf p_x - D_f \mathbf x_f, \qquad
+D \mathbf y = \mathbf p_y - D_f \mathbf y_f, \qquad
+D \mathbf z = \mathbf p_z - D_f \mathbf z_f
 $$
 
-### Matrix Example (Vertical Equilibrium Solve $D \mathbf{z} = \mathbf{b} _ z$ and 3D Coordinates)
+### Matrix Example (Vertical Equilibrium Solve $D \mathbf z = \mathbf b_z$ and 3D Coordinates)
 
-* **$D$ $(5 \times 5)$:** Symmetric positive-definite free-node stiffness matrix ($\text{kN/m}$).
-* **$\mathbf{b} _ z$ $(5 \times 1)$:** Known vertical right-hand side $\mathbf{p} _ z - D_f \mathbf{z} _ f$ ($\text{kN}$).
-* **$\mathbf{x}, \mathbf{y}, \mathbf{z}$ $(5 \times 1)$:** Solved equilibrium coordinates of the 5 free nodes $1 \dots 5$ ($\text{m}$).
+* **$D$ (5×5):** Symmetric positive-definite free-node stiffness matrix (kN/m).
+* **$\mathbf b_z$ (5×1):** Known vertical right-hand side $\mathbf p_z - D_f \mathbf z_f$ (kN).
+* **$\mathbf x, \mathbf y, \mathbf z$ (5×1):** Solved equilibrium coordinates of the 5 free nodes $1 \dots 5$ (m).
 
 $$
 \underset{D\ (5\times 5)}{\begin{bmatrix}
@@ -1588,14 +1588,14 @@ $$
 -1 & 0 & -1 & 5 & -1 \\
 -1 & -1 & -1 & -1 & 4
 \end{bmatrix}}
-\underset{\mathbf{z}\ (5\times 1)}{\begin{bmatrix}
+\underset{\mathbf z\ (5\times 1)}{\begin{bmatrix}
 z_1 \\
 z_2 \\
 z_3 \\
 z_4 \\
 z_5
 \end{bmatrix}} =
-\underset{\mathbf{b} _ z\ (5\times 1)}{\begin{bmatrix}
+\underset{\mathbf b_z\ (5\times 1)}{\begin{bmatrix}
 -0.5 \\
 1.5 \\
 -0.5 \\
@@ -1603,7 +1603,7 @@ z_5
 -0.5
 \end{bmatrix}}
 \qquad \overset{\text{solve}}{\longrightarrow} \qquad
-\mathbf{z} =
+\mathbf z =
 \begin{bmatrix}
 0.045 \\
 0.330 \\
@@ -1614,7 +1614,7 @@ z_5
 $$
 
 $$
-\begin{bmatrix} \mathbf{x} & \mathbf{y} & \mathbf{z} \end{bmatrix} =
+\begin{bmatrix} \mathbf x & \mathbf y & \mathbf z \end{bmatrix} =
 \begin{bmatrix}
 -0.800 & 0.000 & 0.045 \\
 0.000 & 0.800 & 0.330 \\
@@ -1653,26 +1653,26 @@ Solved free-node coordinates [x, y, z] (5x3):
 
 ### C.4 Recovering cable lengths, forces, materialization cutting lengths, and verification, equation (10)
 
-From the solved coordinates $(\mathbf{x}, \mathbf{y}, \mathbf{z})$, we recompute branch lengths $\mathbf{l}$, recover branch tensions $\mathbf{s} = Q \mathbf{l}$, and compute unstressed cutting lengths $l_{0,j} = l_j / (1 + s_j / EA_j)$.
+From the solved coordinates $(\mathbf x, \mathbf y, \mathbf z)$, we recompute branch lengths $\mathbf l$, recover branch tensions $\mathbf s = Q \mathbf l$, and compute unstressed cutting lengths $l_{0,j} = l_j / (1 + s_j / EA_j)$.
 
 ### General Equations (Schek Eq. 10 & Linkwitz Eq. 6.37)
 
 $$
-s_j = q_j l_j \quad (\mathbf{s} = Q \mathbf{l} = L \mathbf{q}), \qquad
-\mathbf{e} _ x = C^T U L^{-1} \mathbf{s} - \mathbf{p} _ x = \mathbf{0}, \qquad
+s_j = q_j l_j \quad (\mathbf s = Q \mathbf l = L \mathbf q), \qquad
+\mathbf e_x = C^T U L^{-1} \mathbf s - \mathbf p_x = \mathbf 0, \qquad
 l_{0,j} = \frac{l_j}{1 + s_j / EA_j}
 $$
 
-### Matrix Example ($\mathbf{q}$, $\mathbf{l}$, $\mathbf{s}$, and Cutting Lengths $\mathbf{l} _ 0$ for $EA = 500\text{ kN}$)
+### Matrix Example ($\mathbf q$, $\mathbf l$, $\mathbf s$, and Cutting Lengths $\mathbf l_0$ for $EA = 500$ kN)
 
-* **$\mathbf{q}$ $(12 \times 1)$:** Prescribed cable force densities $q_j$ ($\text{kN/m}$).
-* **$\mathbf{l}$ $(12 \times 1)$:** Solved stressed equilibrium cable lengths $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ ($\text{m}$).
-* **$\mathbf{s} = \mathbf{q} \odot \mathbf{l}$ $(12 \times 1)$:** Recovered axial cable tensions $s_j = q_j l_j$ ($\text{kN}$).
-* **$EA_j = E_j A_j$:** Cable axial stiffness ($\text{kN}$, Young's modulus $E_j$ times cross-sectional area $A_j$).
-* **$\mathbf{l} _ 0$ $(12 \times 1)$ and $e_j = l_j - l_{0,j}$:** Unstressed workshop cutting lengths $l_{0,j} = l_j / (1 + s_j / EA_j)$ ($\text{m}$) and elastic stretch $e_j$ ($\text{mm}$).
+* **$\mathbf q$ (12×1):** Prescribed cable force densities $q_j$ (kN/m).
+* **$\mathbf l$ (12×1):** Solved stressed equilibrium cable lengths $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ (m).
+* **$\mathbf s = \mathbf q \odot \mathbf l$ (12×1):** Recovered axial cable tensions $s_j = q_j l_j$ (kN).
+* **$EA_j = E_j A_j$:** Cable axial stiffness (kN, Young's modulus $E_j$ times cross-sectional area $A_j$).
+* **$\mathbf l_0$ (12×1) and $e_j = l_j - l_{0,j}$:** Unstressed workshop cutting lengths $l_{0,j} = l_j / (1 + s_j / EA_j)$ (m) and elastic stretch $e_j$ (mm).
 
 $$
-\underset{\mathbf{q}\ (\text{kN/m})}{\begin{bmatrix}
+\underset{\mathbf q\ (\text{kN/m})}{\begin{bmatrix}
 2.0 \\
 2.0 \\
 2.0 \\
@@ -1686,7 +1686,7 @@ $$
 1.0 \\
 1.0
 \end{bmatrix}} \odot
-\underset{\mathbf{l}\ (\text{m})}{\begin{bmatrix}
+\underset{\mathbf l\ (\text{m})}{\begin{bmatrix}
 1.201 \\
 1.374 \\
 1.201 \\
@@ -1700,7 +1700,7 @@ $$
 0.844 \\
 0.800
 \end{bmatrix}} =
-\underset{\mathbf{s}\ (\text{kN})}{\begin{bmatrix}
+\underset{\mathbf s\ (\text{kN})}{\begin{bmatrix}
 2.402 \\
 2.748 \\
 2.402 \\
@@ -1715,7 +1715,7 @@ $$
 0.800
 \end{bmatrix}}
 \qquad \overset{EA_j = 500\text{ kN}}{\longrightarrow} \qquad
-\underset{\mathbf{l} _ 0\ (\text{m})}{\begin{bmatrix}
+\underset{\mathbf l_0\ (\text{m})}{\begin{bmatrix}
 1.195 \\
 1.367 \\
 1.195 \\
@@ -1729,20 +1729,20 @@ $$
 0.842 \\
 0.799
 \end{bmatrix}}
-\begin{matrix}
-\leftarrow b_1\ (1\to 6,\ e_1 = 5.7\text{ mm}) \\
-\leftarrow b_2\ (2\to 7,\ e_2 = 7.5\text{ mm}) \\
-\leftarrow b_3\ (3\to 8,\ e_3 = 5.7\text{ mm}) \\
-\leftarrow b_4\ (4\to 9,\ e_4 = 7.5\text{ mm}) \\
-\leftarrow b_5\ (1\to 4,\ e_5 = 2.7\text{ mm}) \\
-\leftarrow b_6\ (1\to 2,\ e_6 = 2.7\text{ mm}) \\
-\leftarrow b_7\ (2\to 3,\ e_7 = 2.7\text{ mm}) \\
-\leftarrow b_8\ (3\to 4,\ e_8 = 2.7\text{ mm}) \\
-\leftarrow b_9\ (4\to 5,\ e_9 = 1.4\text{ mm}) \\
-\leftarrow b_{10}\ (1\to 5,\ e_{10} = 1.3\text{ mm}) \\
-\leftarrow b_{11}\ (2\to 5,\ e_{11} = 1.4\text{ mm}) \\
-\leftarrow b_{12}\ (3\to 5,\ e_{12} = 1.3\text{ mm})
-\end{matrix}
+\underset{\text{stretch } e_j\ (\text{mm})}{\begin{matrix}
+\leftarrow b_1\ (1\to 6,\ e_1 = 5.7) \\
+\leftarrow b_2\ (2\to 7,\ e_2 = 7.5) \\
+\leftarrow b_3\ (3\to 8,\ e_3 = 5.7) \\
+\leftarrow b_4\ (4\to 9,\ e_4 = 7.5) \\
+\leftarrow b_5\ (1\to 4,\ e_5 = 2.7) \\
+\leftarrow b_6\ (1\to 2,\ e_6 = 2.7) \\
+\leftarrow b_7\ (2\to 3,\ e_7 = 2.7) \\
+\leftarrow b_8\ (3\to 4,\ e_8 = 2.7) \\
+\leftarrow b_9\ (4\to 5,\ e_9 = 1.4) \\
+\leftarrow b_{10}\ (1\to 5,\ e_{10} = 1.3) \\
+\leftarrow b_{11}\ (2\to 5,\ e_{11} = 1.4) \\
+\leftarrow b_{12}\ (3\to 5,\ e_{12} = 1.3)
+\end{matrix}}
 $$
 
 **Add to your program:**
@@ -1778,27 +1778,27 @@ Max equilibrium err: 1.11e-15
 
 ### D.1 Complete linear form-finding function and support reactions (figure 3)
 
-We package Steps A.3–C.4 into `form_finding` and compute the 3D support reactions $\mathbf{R} _ f = C_f^T Q \mathbf{U} _ {xyz}$ at the 4 fixed anchors.
+We package Steps A.3–C.4 into `form_finding` and compute the 3D support reactions $\mathbf R_f = C_f^T Q \mathbf U_{xyz}$ at the 4 fixed anchors.
 
 ![Fig. 3](images/schek_fig3.png)
 
 ### General Equations
 
 $$
-D \mathbf{X} = \mathbf{P} - D_f \mathbf{X} _ f, \qquad
-\mathbf{U} _ {xyz} = C \mathbf{X} + C_f \mathbf{X} _ f, \qquad
-\mathbf{R} _ f = C_f^T Q \mathbf{U} _ {xyz}
+D \mathbf X = \mathbf P - D_f \mathbf X_f, \qquad
+\mathbf U_{xyz} = C \mathbf X + C_f \mathbf X_f, \qquad
+\mathbf R_f = C_f^T Q \mathbf U_{xyz}
 $$
 
-### Matrix Example (Support Reactions $\mathbf{R} _ f$)
+### Matrix Example (Support Reactions $\mathbf R_f$)
 
-* **$C_f^T$ $(4 \times 12)$:** Transpose of the fixed-anchor connectivity matrix.
-* **$Q$ $(12 \times 12)$:** Diagonal force-density matrix $\mathrm{diag}(\mathbf{q})$ ($\text{kN/m}$).
-* **$\mathbf{U} _ {xyz} = [\mathbf{u}, \mathbf{v}, \mathbf{w}]$ $(12 \times 3)$:** Table of cable coordinate differences along $x, y, z$ ($\text{m}$).
-* **$\mathbf{R} _ f = C_f^T Q \mathbf{U} _ {xyz}$ $(4 \times 3)$:** Support reaction forces $(R_{ix}, R_{iy}, R_{iz})$ at the 4 fixed anchors $6 \dots 9$ ($\text{kN}$).
+* **$C_f^T$ (4×12):** Transpose of the fixed-anchor connectivity matrix.
+* **$Q$ (12×12):** Diagonal force-density matrix $\mathrm{diag}(\mathbf q)$ (kN/m).
+* **$\mathbf U_{xyz} = [\mathbf u, \mathbf v, \mathbf w]$ (12×3):** Table of cable coordinate differences along $x, y, z$ (m).
+* **$\mathbf R_f = C_f^T Q \mathbf U_{xyz}$ (4×3):** Support reaction forces $(R_{ix}, R_{iy}, R_{iz})$ at the 4 fixed anchors $6 \dots 9$ (kN).
 
 $$
-\mathbf{R} _ f = C_f^T Q \mathbf{U} _ {xyz} =
+\mathbf R_f = C_f^T Q \mathbf U_{xyz} =
 \begin{bmatrix}
 R_{6x} & R_{6y} & R_{6z} \\
 R_{7x} & R_{7y} & R_{7z} \\
@@ -1844,18 +1844,18 @@ def form_finding(branches, n_free, xyz_fixed, q, p):
 
 ### D.2 Parameter study: moving anchors, changing force densities, and scale invariance
 
-Moving anchors $\mathbf{X} _ f$ only updates the right-hand side, changing $\mathbf{q}$ rebuilds $D$, and scaling $(2\mathbf{q}, 2\mathbf{P})$ leaves the 3D geometry identical while doubling forces (scale invariance).
+Moving anchors $\mathbf X_f$ only updates the right-hand side, changing $\mathbf q$ rebuilds $D$, and scaling $(2\mathbf q, 2\mathbf P)$ leaves the 3D geometry identical while doubling forces (scale invariance).
 
 ![Parts D, E and F Parameter Study, Energy Minimization and Target Length Constraints](images/fd_sec_e_f_constraints.png)
 
-### Matrix Example (Free-Node Heights $\mathbf{z}$ Across 4 Cases)
+### Matrix Example (Free-Node Heights $\mathbf z$ Across 4 Cases)
 
-* **$\mathbf{z} _ {\text{case 1..4}}$ $(5 \times 1)$:** Equilibrium heights $z_1 \dots z_5$ of the 5 free nodes ($\text{m}$) for each of the 4 parameter cases.
-* **$\mathbf{s} _ {\text{case 1}}, \mathbf{s} _ {\text{case 4}}$ $(12 \times 1)$:** Cable tension vectors ($\text{kN}$) before and after scaling $(2\mathbf{q}, 2\mathbf{P})$.
+* **$\mathbf z_{\text{case 1..4}}$ (5×1):** Equilibrium heights $z_1 \dots z_5$ of the 5 free nodes (m) for each of the 4 parameter cases.
+* **$\mathbf s_{\text{case 1}}, \mathbf s_{\text{case 4}}$ (12×1):** Cable tension vectors (kN) before and after scaling $(2\mathbf q, 2\mathbf P)$.
 
 $$
 \begin{bmatrix}
-\mathbf{z} _ {\text{case 1}} & \mathbf{z} _ {\text{case 2}} & \mathbf{z} _ {\text{case 3}} & \mathbf{z} _ {\text{case 4}}
+\mathbf z_{\text{case 1}} & \mathbf z_{\text{case 2}} & \mathbf z_{\text{case 3}} & \mathbf z_{\text{case 4}}
 \end{bmatrix} =
 \begin{bmatrix}
 0.045 & 1.045 & 0.104 & 0.045 \\
@@ -1872,15 +1872,15 @@ $$
 \leftarrow \text{Node 5 (center)}
 \end{matrix},
 \qquad
-\mathbf{s} _ {\text{case 4}} = 2\mathbf{s} _ {\text{case 1}}
+\mathbf s_{\text{case 4}} = 2\mathbf s_{\text{case 1}}
 $$
 
-| Case | Matrix $D\ (5\times 5)$ | RHS $\mathbf{P} - D_f \mathbf{X} _ f$ | Center Height $z_5\ (\text{m})$ | Max Force $\max(\mathbf{s})$ |
+| Case | Matrix $D\ (5\times 5)$ | RHS $\mathbf P - D_f \mathbf X_f$ | Center Height $z_5\ (\text{m})$ | Max Force $\max(\mathbf s)$ |
 |---|---|---|---|---|
-| **1. Base case** ($q_{\text{anchor}} = 2,\ \mathbf{p} _ z = -0.5$) | built once | base | $0.063\text{ m}$ | $2.748\text{ kN}$ |
-| **2. All anchors lifted** $+1\text{ m}$ | **unchanged** | updated | $1.063\text{ m}$ | $2.748\text{ kN}$ |
-| **3. Stiffer anchors** ($q_{\text{anchor}} = 10,\ \mathbf{p} _ z = -0.5$) | **rebuilt** | updated | $0.313\text{ m}$ | $4.732\text{ kN}$ |
-| **4. Scale invariance** ($2\mathbf{q},\ 2\mathbf{p} _ z$) | $2\times$ | $2\times$ | **$0.063\text{ m}$** | **$5.496\text{ kN}$ ($2\times$)** |
+| **1. Base case** ($q_{\text{anchor}} = 2,\ \mathbf p_z = -0.5$) | built once | base | 0.063 m | 2.748 kN |
+| **2. All anchors lifted** +1 m | **unchanged** | updated | 1.063 m | 2.748 kN |
+| **3. Stiffer anchors** ($q_{\text{anchor}} = 10,\ \mathbf p_z = -0.5$) | **rebuilt** | updated | 0.313 m | 4.732 kN |
+| **4. Scale invariance** ($2\mathbf q,\ 2\mathbf p_z$) | $2\times$ | $2\times$ | **0.063 m** | **5.496 kN ($2\times$)** |
 
 **Add to your program:**
 
@@ -1927,24 +1927,24 @@ Scale invariance max |xyz4 - xyz1|: 0.0
 
 ### E.1 Geometric meaning of force densities (section 4)
 
-For an unloaded network ($\mathbf{P} = \mathbf{0}$), solving $D\mathbf{X} = -D_f\mathbf{X} _ f$ minimizes the weighted squared-length functional $\Phi = \sum q_j l_j^2$ (Theorem 1), and setting $q_j = c / l_j$ produces a constant-force net $s_j = c$ (Theorem 2).
+For an unloaded network ($\mathbf P = \mathbf 0$), solving $D\mathbf X = -D_f\mathbf X_f$ minimizes the weighted squared-length functional $\Phi = \sum q_j l_j^2$ (Theorem 1), and setting $q_j = c / l_j$ produces a constant-force net $s_j = c$ (Theorem 2).
 
 ### General Equations (Eqs. 37–40)
 
 $$
-\Phi(\mathbf{x}, \mathbf{y}, \mathbf{z}) = \mathbf{u}^T Q \mathbf{u} + \mathbf{v}^T Q \mathbf{v} + \mathbf{w}^T Q \mathbf{w} = \sum_{j=1}^m q_j l_j^2 \longrightarrow \min
+\Phi(\mathbf x, \mathbf y, \mathbf z) = \mathbf u^T Q \mathbf u + \mathbf v^T Q \mathbf v + \mathbf w^T Q \mathbf w = \sum_{j=1}^m q_j l_j^2 \longrightarrow \min
 \qquad \Longleftrightarrow \qquad
-\frac{\partial \Phi}{\partial \mathbf{x}} = 2 C^T Q \mathbf{u} = 2 (D \mathbf{x} + D_f \mathbf{x} _ f) = \mathbf{0}
+\frac{\partial \Phi}{\partial \mathbf x} = 2 C^T Q \mathbf u = 2 (D \mathbf x + D_f \mathbf x_f) = \mathbf 0
 $$
 
-### Matrix Example (Unloaded Saddle $\mathbf{P} = \mathbf{0}$)
+### Matrix Example (Unloaded Saddle $\mathbf P = \mathbf 0$)
 
-* **$\mathbf{X} _ 0 = [\mathbf{x} _ 0, \mathbf{y} _ 0, \mathbf{z} _ 0]$ $(5 \times 3)$:** Equilibrium coordinates of the 5 free nodes when external load $\mathbf{P} = \mathbf{0}$ ($\text{m}$).
-* **$\mathbf{U} _ 0 = C\mathbf{X} _ 0 + C_f\mathbf{X} _ f$ $(12 \times 3)$:** Cable coordinate differences in the unloaded saddle ($\text{m}$).
-* **$\Phi = \sum q_j l_j^2$ and $\nabla\Phi(\mathbf{X} _ 0)$ $(5 \times 3)$:** Weighted squared-length energy functional and its gradient $2 C^T Q \mathbf{U} _ 0$ at equilibrium.
+* **$\mathbf X_0 = [\mathbf x_0, \mathbf y_0, \mathbf z_0]$ (5×3):** Equilibrium coordinates of the 5 free nodes when external load $\mathbf P = \mathbf 0$ (m).
+* **$\mathbf U_0 = C\mathbf X_0 + C_f\mathbf X_f$ (12×3):** Cable coordinate differences in the unloaded saddle (m).
+* **$\Phi = \sum q_j l_j^2$ and $\nabla\Phi(\mathbf X_0)$ (5×3):** Weighted squared-length energy functional and its gradient $2 C^T Q \mathbf U_0$ at equilibrium.
 
 $$
-\mathbf{X} _ 0 = \begin{bmatrix}
+\mathbf X_0 = \begin{bmatrix}
 -0.800 & 0.000 & 0.357 \\
 0.000 & 0.800 & 0.643 \\
 0.800 & 0.000 & 0.357 \\
@@ -1959,7 +1959,7 @@ $$
 \leftarrow \text{Node 5 (exact saddle midpoint } z_5 = 0.500\text{ m)}
 \end{matrix},
 \qquad
-\nabla \Phi(\mathbf{X} _ 0) = 2 C^T Q \mathbf{U} _ 0 = \mathbf{0} _ {5\times 3}
+\nabla \Phi(\mathbf X_0) = 2 C^T Q \mathbf U_0 = \mathbf 0_{5\times 3}
 $$
 
 **Add to your program:**
@@ -1990,32 +1990,32 @@ Theorem 2 uniform forces s (kN): [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 
 ### F.1 Target length and force constraints, equation (11)
 
-To enforce target equilibrium branch lengths $\mathbf{l} _ v$ or forces $\mathbf{s} _ v$, we form the residual vector $\mathbf{g}^{\ast}(\mathbf{q})$ and solve for $\mathbf{q}^{\ast} \gt \mathbf{0}$ such that $\mathbf{g}^{\ast}(\mathbf{q}^{\ast}) = \mathbf{0}$.
+To enforce target equilibrium branch lengths $\mathbf l_v$ or forces $\mathbf s_v$, we form the residual vector $\mathbf g^{\ast}(\mathbf q)$ and solve for $\mathbf q^{\ast} \gt \mathbf 0$ such that $\mathbf g^{\ast}(\mathbf q^{\ast}) = \mathbf 0$.
 
 ### General Equation (Eq. 11)
 
 $$
-\mathbf{g}^{\ast}(\mathbf{q}) = \begin{bmatrix}
-\mathbf{l} _ {\text{constrained}}(\mathbf{q}) - \mathbf{l} _ v \\
-\mathbf{s} _ {\text{constrained}}(\mathbf{q}) - \mathbf{s} _ v
-\end{bmatrix} = \mathbf{0}
+\mathbf g^{\ast}(\mathbf q) = \begin{bmatrix}
+\mathbf l_{\text{constrained}}(\mathbf q) - \mathbf l_v \\
+\mathbf s_{\text{constrained}}(\mathbf q) - \mathbf s_v
+\end{bmatrix} = \mathbf 0
 $$
 
-### Matrix Example (Target Anchor Length $l_{1..4} = 1.200\text{ m}$)
+### Matrix Example (Target Anchor Length $l_{1..4} = 1.200$ m)
 
-* **$\mathbf{l} _ {1..4}(\mathbf{q})$ $(4 \times 1)$:** Current equilibrium lengths of the 4 anchor cables $b_1 \dots b_4$ ($\text{m}$).
-* **$\mathbf{l} _ v$ $(4 \times 1)$:** Prescribed target lengths for those 4 anchor cables ($1.200\text{ m}$).
-* **$\mathbf{g}^{\ast}(\mathbf{q}) = \mathbf{l} _ {1..4}(\mathbf{q}) - \mathbf{l} _ v$ $(4 \times 1)$:** Length constraint residual vector ($\text{m}$; zero when targets are met).
+* **$\mathbf l_{1..4}(\mathbf q)$ (4×1):** Current equilibrium lengths of the 4 anchor cables $b_1 \dots b_4$ (m).
+* **$\mathbf l_v$ (4×1):** Prescribed target lengths for those 4 anchor cables (1.200 m).
+* **$\mathbf g^{\ast}(\mathbf q) = \mathbf l_{1..4}(\mathbf q) - \mathbf l_v$ (4×1):** Length constraint residual vector (m; zero when targets are met).
 
 $$
-\mathbf{g}^{\ast}(\mathbf{q}) =
-\underset{\mathbf{l} _ {1..4}(\mathbf{q})}{\begin{bmatrix}
+\mathbf g^{\ast}(\mathbf q) =
+\underset{\mathbf l_{1..4}(\mathbf q)}{\begin{bmatrix}
 1.201 \\
 1.374 \\
 1.201 \\
 1.374
 \end{bmatrix}} -
-\underset{\mathbf{l} _ v}{\begin{bmatrix}
+\underset{\mathbf l_v}{\begin{bmatrix}
 1.200 \\
 1.200 \\
 1.200 \\
@@ -2054,22 +2054,22 @@ Length residual g*(q) (m):  [0.001 0.174 0.001 0.174]
 
 ### F.2 Iterative solver for prescribed lengths and forces (sections 3.1 to 3.6)
 
-At each iteration, we run `form_finding(q)` and update $\mathbf{q} \gt \mathbf{0}$ via least squares until the constraint residual $\mathbf{g}^{\ast}(\mathbf{q}^{\ast})$ vanishes.
+At each iteration, we run `form_finding(q)` and update $\mathbf q \gt \mathbf 0$ via least squares until the constraint residual $\mathbf g^{\ast}(\mathbf q^{\ast})$ vanishes.
 
 ### Iteration Loop
 
 $$
-\mathbf{q}^{(k)} \xrightarrow{D(\mathbf{q}^{(k)})\mathbf{X} = \mathbf{B}} \mathbf{l}(\mathbf{q}^{(k)}),\ \mathbf{s}(\mathbf{q}^{(k)}) \xrightarrow{\text{residual}} \mathbf{g}^{\ast}(\mathbf{q}^{(k)}) \xrightarrow{\Delta\mathbf{q}} \mathbf{q}^{(k+1)}
+\mathbf q^{(k)} \xrightarrow{D(\mathbf q^{(k)})\mathbf X = \mathbf B} \mathbf l(\mathbf q^{(k)}),\ \mathbf s(\mathbf q^{(k)}) \xrightarrow{\text{residual}} \mathbf g^{\ast}(\mathbf q^{(k)}) \xrightarrow{\Delta\mathbf q} \mathbf q^{(k+1)}
 $$
 
 ### Matrix Example (Before vs. After on Anchor Cables 1–4)
 
-* **$\mathbf{q} _ {1..4}^{(0)}$ and $\mathbf{l} _ {1..4}^{(0)}$ $(4 \times 1)$:** Initial force densities ($\text{kN/m}$) and resulting initial lengths ($\text{m}$) of anchor cables $1 \dots 4$.
-* **$\mathbf{q} _ {1..4}^{\ast}$ and $\mathbf{l} _ {1..4}^{\ast}$ $(4 \times 1)$:** Optimized force densities ($\text{kN/m}$) and achieved target lengths ($1.200\text{ m}$) after least-squares convergence.
+* **$\mathbf q_{1..4}^{(0)}$ and $\mathbf l_{1..4}^{(0)}$ (4×1):** Initial force densities (kN/m) and resulting initial lengths (m) of anchor cables $1 \dots 4$.
+* **$\mathbf q_{1..4}^{\ast}$ and $\mathbf l_{1..4}^{\ast}$ (4×1):** Optimized force densities (kN/m) and achieved target lengths (1.200 m) after least-squares convergence.
 
 $$
 \text{Initial:}\quad
-\mathbf{q} _ {1..4}^{(0)} =
+\mathbf q_{1..4}^{(0)} =
 \begin{bmatrix}
 2.000 \\
 2.000 \\
@@ -2077,7 +2077,7 @@ $$
 2.000
 \end{bmatrix}\text{ kN/m},
 \quad
-\mathbf{l} _ {1..4}^{(0)} =
+\mathbf l_{1..4}^{(0)} =
 \begin{bmatrix}
 1.201 \\
 1.374 \\
@@ -2086,7 +2086,7 @@ $$
 \end{bmatrix}\text{ m}
 \qquad \longrightarrow \qquad
 \text{Solved:}\quad
-\mathbf{q} _ {1..4}^{\ast} =
+\mathbf q_{1..4}^{\ast} =
 \begin{bmatrix}
 1.972 \\
 2.412 \\
@@ -2094,7 +2094,7 @@ $$
 2.412
 \end{bmatrix}\text{ kN/m},
 \quad
-\mathbf{l} _ {1..4}^{\ast} =
+\mathbf l_{1..4}^{\ast} =
 \begin{bmatrix}
 1.200 \\
 1.200 \\
@@ -2152,23 +2152,23 @@ Optimized q*_[1..4]: [1.972 2.412 1.972 2.412] -> lengths l*_[1..4]: [1.2 1.2 1.
 Mixed target spokes l*_[9..12]: [0.9 0.9 0.9 0.9] m, anchor forces s*_[1..4]: [2. 2. 2. 2.] kN (err=7.5e-11)
 ```
 
-### F.3 Sensitivity Jacobian $G^T = \partial \mathbf{g}^{\ast} / \partial \mathbf{q}$ (sections 3.2 to 3.5)
+### F.3 Sensitivity Jacobian $G^T = \partial \mathbf g^{\ast} / \partial \mathbf q$ (sections 3.2 to 3.5)
 
-Differentiating $C^T Q \mathbf{u}(\mathbf{q}) = \mathbf{p} _ x$ with respect to $\mathbf{q}$ gives the node sensitivity $\partial \mathbf{x} / \partial \mathbf{q} = -D^{-1} C^T U$ and the constraint Jacobian $G^T = \partial \mathbf{g}^{\ast} / \partial \mathbf{q}$.
+Differentiating $C^T Q \mathbf u(\mathbf q) = \mathbf p_x$ with respect to $\mathbf q$ gives the node sensitivity $\partial \mathbf x / \partial \mathbf q = -D^{-1} C^T U$ and the constraint Jacobian $G^T = \partial \mathbf g^{\ast} / \partial \mathbf q$.
 
 ### General Equations (Eqs. 28 & 31)
 
 $$
-\frac{\partial \mathbf{x}}{\partial \mathbf{q}} = -D^{-1} C^T U, \qquad
-\frac{\partial \mathbf{y}}{\partial \mathbf{q}} = -D^{-1} C^T V, \qquad
-\frac{\partial \mathbf{z}}{\partial \mathbf{q}} = -D^{-1} C^T W, \qquad
-G^T = \frac{\partial \mathbf{g}^{\ast}}{\partial \mathbf{q}}
+\frac{\partial \mathbf x}{\partial \mathbf q} = -D^{-1} C^T U, \qquad
+\frac{\partial \mathbf y}{\partial \mathbf q} = -D^{-1} C^T V, \qquad
+\frac{\partial \mathbf z}{\partial \mathbf q} = -D^{-1} C^T W, \qquad
+G^T = \frac{\partial \mathbf g^{\ast}}{\partial \mathbf q}
 $$
 
-### Matrix Example (Anchor Length Jacobian $G^T_{1..4,\ 1..4}$ and Height Sensitivity $\partial \mathbf{z} / \partial \mathbf{q} _ {1..4}$)
+### Matrix Example (Anchor Length Jacobian $G^T_{1..4,\ 1..4}$ and Height Sensitivity $\partial \mathbf z / \partial \mathbf q_{1..4}$)
 
-* **$G^T_{1..4,\ 1..4} = \partial \mathbf{l} _ {1..4} / \partial \mathbf{q} _ {1..4}$ $(4 \times 4)$:** Sensitivity Jacobian entry $(r, j)$ giving how much anchor cable length $l_r$ ($\text{m}$) changes per unit change in force density $q_j$ ($\text{kN/m}$).
-* **$\partial \mathbf{z} / \partial \mathbf{q} _ {1..4} = -D^{-1} C^T W_{:, 1..4}$ $(5 \times 4)$:** Node height sensitivity entry $(i, j)$ giving how much free node height $z_i$ ($\text{m}$) changes per unit change in anchor force density $q_j$ ($\text{kN/m}$).
+* **$G^T_{1..4,\ 1..4} = \partial \mathbf l_{1..4} / \partial \mathbf q_{1..4}$ (4×4):** Sensitivity Jacobian entry $(r, j)$ giving how much anchor cable length $l_r$ (m) changes per unit change in force density $q_j$ (kN/m).
+* **$\partial \mathbf z / \partial \mathbf q_{1..4} = -D^{-1} C^T W_{:, 1..4}$ (5×4):** Node height sensitivity entry $(i, j)$ giving how much free node height $z_i$ (m) changes per unit change in anchor force density $q_j$ (kN/m).
 
 $$
 G^T_{1..4,\ 1..4} =
@@ -2187,7 +2187,7 @@ G^T_{1..4,\ 1..4} =
 $$
 
 $$
-\frac{\partial \mathbf{z}}{\partial \mathbf{q} _ {1..4}} = -D^{-1} C^T W_{:, 1..4} =
+\frac{\partial \mathbf z}{\partial \mathbf q_{1..4}} = -D^{-1} C^T W_{:, 1..4} =
 \begin{bmatrix}
 -0.012 & 0.060 & -0.003 & 0.060 \\
 -0.004 & 0.175 & -0.004 & 0.041 \\
@@ -2248,8 +2248,8 @@ Apply the exact same `form_finding` function without modification to Schek's lar
 | Matrix / Vector | Fig. 2 Net (Parts A–F) | Fig. 5 Tent (Part G) |
 |---|---|---|
 | Connectivity $C_s = [C \mid C_f]$ | $(12 \times 5)\ \big\|\ (12 \times 4)$ | $(110 \times 61)\ \big\|\ (110 \times 6)$ |
-| Diagonal Force Density $Q$ | $(12 \times 12)$ | $(110 \times 110)$ |
-| Free System Matrix $D = C^T Q C$ | $(5 \times 5)$ | $(61 \times 61)$ |
+| Diagonal Force Density $Q$ | (12×12) | (110×110) |
+| Free System Matrix $D = C^T Q C$ | (5×5) | (61×61) |
 
 $$
 q_j = \begin{cases}
@@ -2359,7 +2359,7 @@ Branch counts: 29 border, 10 radial spokes, 71 interior
 
 ### G.2 Figure 6: shifting fixed support coordinates
 
-Translate the high apex support (node 67) horizontally in plan by $(\Delta x, \Delta y) = (0, 0),\ (6, 2),\ (12, 4)\text{ m}$. Because $\mathbf{q}$ is unchanged, $D\ (61 \times 61)$ is invariant and only the right-hand side $\mathbf{P} - D_f \mathbf{X} _ f$ updates.
+Translate the high apex support (node 67) horizontally in plan by $(\Delta x, \Delta y) = (0, 0),\ (6, 2),\ (12, 4)$ m. Because $\mathbf q$ is unchanged, $D\ (61 \times 61)$ is invariant and only the right-hand side $\mathbf P - D_f \mathbf X_f$ updates.
 
 ![Fig. 1](images/schek_fig1.png)
 
@@ -2370,9 +2370,9 @@ Translate the high apex support (node 67) horizontally in plan by $(\Delta x, \D
 
 | Run | Apex Shift $(\Delta x, \Delta y)$ | Radial Length Range | Vertical Apex Reaction $R_{67, z}$ |
 |---|---|---|---|
-| `fig6_1` | $(0, 0)\text{ m}$ | $8.1\text{ to }9.0\text{ m}$ | $38.9\text{ kN}$ |
-| `fig6_2` | $(6, 2)\text{ m}$ | $8.0\text{ to }9.3\text{ m}$ | $38.9\text{ kN}$ |
-| `fig6_3` | $(12, 4)\text{ m}$ | $8.4\text{ to }10.9\text{ m}$ | $38.9\text{ kN}$ |
+| `fig6_1` | $(0, 0)$ m | 8.1 to 9.0 m | 38.9 kN |
+| `fig6_2` | $(6, 2)$ m | 8.0 to 9.3 m | 38.9 kN |
+| `fig6_3` | $(12, 4)$ m | 8.4 to 10.9 m | 38.9 kN |
 
 **Add to your program:**
 
@@ -2412,9 +2412,9 @@ Vary the radial force density $q_{\text{spoke}} \in \{1.0, 0.7, 0.3\}$ (Fig. 7) 
 
 | Fig. 7 Run | $q_{\text{spoke}}$ | Radial Lengths | Fig. 8 Run | $q_{\text{border}}$ | Border Lengths |
 |---|---|---|---|---|---|
-| `fig7_1` | $1.0$ | $5.0\text{ to }5.9\text{ m}$ | `fig8_1` | $10.0$ | $3.4\text{ to }4.8\text{ m}$ |
-| `fig7_2` | $0.7$ | $6.5\text{ to }7.4\text{ m}$ | `fig8_2` | $5.0$ | $3.5\text{ to }4.9\text{ m}$ |
-| `fig7_3` | $0.3$ | $10.6\text{ to }11.6\text{ m}$ | `fig8_3` | $1.0$ | $2.9\text{ to }6.5\text{ m}$ |
+| `fig7_1` | $1.0$ | 5.0 to 5.9 m | `fig8_1` | $10.0$ | 3.4 to 4.8 m |
+| `fig7_2` | $0.7$ | 6.5 to 7.4 m | `fig8_2` | $5.0$ | 3.5 to 4.9 m |
+| `fig7_3` | $0.3$ | 10.6 to 11.6 m | `fig8_3` | $1.0$ | 2.9 to 6.5 m |
 
 **Add to your program:**
 
@@ -2456,11 +2456,11 @@ Constrain all $r = 62$ interior branches not touching the boundary ($10$ radial 
 
 ### Constrained Runs (62 Equations in 110 Unknowns)
 
-| Run | Target $l_{\text{radial}}$ | Ring Scale Factor | Evaluations | $\max \|\mathbf{g}^{\ast}(\mathbf{q})\|$ |
+| Run | Target $l_{\text{radial}}$ | Ring Scale Factor | Evaluations | $\max \|\mathbf g^{\ast}(\mathbf q)\|$ |
 |---|---|---|---|---|
-| `fig9_1` | $6.0\text{ m}$ | $1.25 \times \mathbf{l} _ {\text{base}}$ | $35$ | $3.8 \times 10^{-9}\text{ m}$ |
-| `fig9_2` | $6.0\text{ m}$ | $0.85 \times \mathbf{l} _ {\text{base}}$ | $38$ | $6.3 \times 10^{-12}\text{ m}$ |
-| `fig9_3` | $4.5\text{ m}$ | $0.70 \times \mathbf{l} _ {\text{base}}$ | $47$ | $9.1 \times 10^{-10}\text{ m}$ |
+| `fig9_1` | 6.0 m | $1.25 \times \mathbf l_{\text{base}}$ | $35$ | $3.8 \times 10^{-9}$ m |
+| `fig9_2` | 6.0 m | $0.85 \times \mathbf l_{\text{base}}$ | $38$ | $6.3 \times 10^{-12}$ m |
+| `fig9_3` | 4.5 m | $0.70 \times \mathbf l_{\text{base}}$ | $47$ | $9.1 \times 10^{-10}$ m |
 
 **Add to your program:**
 
@@ -2495,18 +2495,18 @@ fig9_3: 58 evals, max length residual = 7.49e-10 m
 
 ### G.5 Figure 10: 8x8 grid-shell of 112 bars
 
-Generate an $8 \times 8$ orthogonal grid ($n = 60$ free nodes, $n_f = 4$ corner supports, $m = 112$ bars) and solve three benchmark problems: (10.1) hanging net of 112 equal-length $1.0\text{ m}$ bars under self-weight, (10.2) prestressed saddle with raised corners, and (10.3) mixed equal-length and equal-force constraints.
+Generate an $8 \times 8$ orthogonal grid ($n = 60$ free nodes, $n_f = 4$ corner supports, $m = 112$ bars) and solve three benchmark problems: (10.1) hanging net of 112 equal-length 1.0 m bars under self-weight, (10.2) prestressed saddle with raised corners, and (10.3) mixed equal-length and equal-force constraints.
 
 ![Fig. 10](images/schek_fig10_persp.png)
 ![Fig. 10, plan](images/schek_fig10_plan.png)
 
 ### Summary of the Three 112-Bar Cases
 
-| Case | Corner Supports | Load $\mathbf{P}$ | Constraints | Result |
+| Case | Corner Supports | Load $\mathbf P$ | Constraints | Result |
 |---|---|---|---|---|
-| `fig10_1` | 4 corners at 80% span | bar weight | $l_j = 1.0\text{ m}\ (\forall j=1..112)$ | $\|\mathbf{e} _ l\| \le 7.6\times 10^{-10}\text{ m},\ s \in [0.12, 2.77]\text{ kN}$ |
-| `fig10_2` | 2 corners lifted to $3\text{ m}$ | $\mathbf{0}$ | linear ($q_{\text{border}}=10, q_{\text{in}}=1$) | $l_{\text{in}} \in [0.65, 0.81]\text{ m}$ |
-| `fig10_3` | 2 corners lifted to $3\text{ m}$ | $\mathbf{0}$ | equal inner $l$ + equal link $s$ | $\|\mathbf{g}^{\ast}\| \le 1.6\times 10^{-8}$ |
+| `fig10_1` | 4 corners at 80% span | bar weight | $l_j = 1.0\text{ m}\ (\forall j=1..112)$ | $\|\mathbf e_l\| \le 7.6\times 10^{-10}\text{ m},\ s \in [0.12, 2.77]$ kN |
+| `fig10_2` | 2 corners lifted to 3 m | $\mathbf 0$ | linear ($q_{\text{border}}=10, q_{\text{in}}=1$) | $l_{\text{in}} \in [0.65, 0.81]$ m |
+| `fig10_3` | 2 corners lifted to 3 m | $\mathbf 0$ | equal inner $l$ + equal link $s$ | $\|\mathbf g^{\ast}\| \le 1.6\times 10^{-8}$ |
 
 **Add to your program:**
 
@@ -2673,12 +2673,12 @@ Internally (`solvers/fd_numerical_data.py`, `solvers/fd_numpy.py`):
 | $Q\ (12 \times 12)$ | `Q` | `diags([q.flatten()], [0])` |
 | $D\ (5 \times 5)$ | `Ai` | `Ci.T @ Q @ Ci` |
 | $D_f\ (5 \times 4)$ | `Af` | `Ci.T @ Q @ Cf` |
-| full $C_s^{t} Q C_s\ (9 \times 9)$ | `A` | `C.T @ Q @ C` (used only for residuals) |
-| right-hand side of (8) $(5 \times 3)$ | `b` | `p[free] - Af @ xyz[fixed]` |
-| (9) $(5 \times 3)$ | — | `xyz[free] = spsolve(Ai, b)` |
-| $\mathbf{l}\ (12 \times 1)$ | `lengths` | `normrow(C @ xyz)` |
-| (10) $\mathbf{s}\ (12 \times 1)$ | `forces` | `q * lengths` |
-| residual $(9 \times 3)$ | `residuals` | `p - A @ xyz` |
+| full $C_s^t Q C_s\ (9 \times 9)$ | `A` | `C.T @ Q @ C` (used only for residuals) |
+| right-hand side of (8) (5×3) | `b` | `p[free] - Af @ xyz[fixed]` |
+| (9) (5×3) | — | `xyz[free] = spsolve(Ai, b)` |
+| $\mathbf l\ (12 \times 1)$ | `lengths` | `normrow(C @ xyz)` |
+| (10) $\mathbf s\ (12 \times 1)$ | `forces` | `q * lengths` |
+| residual (9×3) | `residuals` | `p - A @ xyz` |
 
 The compas-FoFin GitBook shows the same lines verbatim as the "matrix formulation".
 Node ordering is free: the code selects columns by index, so fixed nodes need not
@@ -2750,13 +2750,13 @@ Running `compas_fd` 0.5.4 (`fd_numpy`) on our **9-node, 12-branch saddle cable n
 
 | Quantity (9-node, 12-branch net) | Value from `fd_numpy` & `schek_app.py` |
 |---|---|
-| Free nodes 1, 3 (`vertices[0]`, `vertices[2]`) | $(\mp 0.800,\ 0.000,\ 0.045)\text{ m}$; difference $\lt  10^{-15}\text{ m}$ |
-| Free nodes 2, 4 (`vertices[1]`, `vertices[3]`) | $(0.000,\ \pm 0.800,\ 0.330)\text{ m}$; difference $\lt  10^{-15}\text{ m}$ |
-| Center free node 5 (`vertices[4]`) | $(0.000,\ 0.000,\ 0.063)\text{ m}$; difference $\lt  10^{-15}\text{ m}$ |
-| Residuals at free nodes 1–5 | $(0,\ 0,\ 0)\text{ kN}$ ($\lt  10^{-15}\text{ kN}$) |
-| Anchor lengths $l_{1,3}$ / $l_{2,4}$ | $1.201\text{ m}$ / $1.374\text{ m}$ |
-| Anchor forces $s_{1,3}$ / $s_{2,4}$ | $2.402\text{ kN}$ / $2.749\text{ kN}$ ($= q_j l_j$) |
-| Support reactions $\sum_{i=6}^9 R_{i,z}$ | $-0.089 + 1.339 - 0.089 + 1.339 = +2.500\text{ kN}$ — balances $5 \times (-0.5)\text{ kN}$ |
+| Free nodes 1, 3 (`vertices[0]`, `vertices[2]`) | $(\mp 0.800,\ 0.000,\ 0.045)$ m; difference $\lt  10^{-15}$ m |
+| Free nodes 2, 4 (`vertices[1]`, `vertices[3]`) | $(0.000,\ \pm 0.800,\ 0.330)$ m; difference $\lt  10^{-15}$ m |
+| Center free node 5 (`vertices[4]`) | $(0.000,\ 0.000,\ 0.063)$ m; difference $\lt  10^{-15}$ m |
+| Residuals at free nodes 1–5 | $(0,\ 0,\ 0)$ kN ($\lt  10^{-15}$ kN) |
+| Anchor lengths $l_{1,3}$ / $l_{2,4}$ | 1.201 m / 1.374 m |
+| Anchor forces $s_{1,3}$ / $s_{2,4}$ | 2.402 kN / 2.749 kN ($= q_j l_j$) |
+| Support reactions $\sum_{i=6}^9 R_{i,z}$ | $-0.089 + 1.339 - 0.089 + 1.339 = +2.500$ kN — balances $5 \times (-0.5)$ kN |
 
 **Structure of D (Schek figure 4).** Building $C_s$ for the 9-node, 12-branch graph
 of figure 2 and setting $q_j = j$ gives
@@ -2767,11 +2767,11 @@ and off-diagonals $-q_j$ exactly as printed in the paper. (Branch 5 joins nodes 
 and 4; the scanned figure is ambiguous there, but figure 4 fixes it.)
 
 **Theorem 1.** For random anchors and random $q \in [0.5, 3]$ on that graph, the
-unloaded FDM solution and a BFGS minimiser of $\sum_j q_j l_j^{2}$ agree to
+unloaded FDM solution and a BFGS minimiser of $\sum_j q_j l_j^2$ agree to
 $4 \times 10^{-8}$.
 
 **Jacobian (31) and damped iteration (20 to 25).** Implemented literally for
-$r = 4$ prescribed strained lengths on the same graph: the analytic $G_d^{t}$ matches
+$r = 4$ prescribed strained lengths on the same graph: the analytic $G_d^t$ matches
 finite differences to $9 \times 10^{-8}$, and the modified damped scheme with
 $a_j = 0.8$ and $P^{-1} = 10^{-6} I$ reaches the prescribed lengths to $10^{-12}$
 in 17 iterations while the free-node residual stays at machine precision. These
@@ -2792,10 +2792,10 @@ checks are part of `examples/form_finding/schek_equations.py`.
   synclastic curvature (Sec. 6.1–6.2, Figs. 6.2–6.3 & 6.7), the single-node 4-bar
   derivation of direction cosines and the $q$-weighted average coordinates
   (Sec. 6.2.1–6.2.3, Fig. 6.4, Eqs. 6.1–6.13), the Jacobian identity
-  $(\partial \mathbf{f}(\mathbf{x})/\partial \mathbf{x})^T = C^T U L^{-1}$ (Sec. 6.4.2,
+  $(\partial \mathbf f(\mathbf x)/\partial \mathbf x)^T = C^T U L^{-1}$ (Sec. 6.4.2,
   Eqs. 6.22–6.24), the materialization cutting-length equation
-  $\mathbf{l} _ 0 = (I + (EA)^{-1} Q L)^{-1} \mathbf{l}$ (Sec. 6.5, Eqs. 6.34–6.37),
-  and the scale invariance of $(\mathbf{q}, \mathbf{p})$ (Sec. 6.7, Figs. 6.9–6.11).
+  $\mathbf l _ 0 = (I + (EA)^{-1} Q L)^{-1} \mathbf l$ (Sec. 6.5, Eqs. 6.34–6.37),
+  and the scale invariance of $(\mathbf q, \mathbf p)$ (Sec. 6.7, Figs. 6.9–6.11).
 - Block Research Group. *Force Densities Method*, compas-FoFin GitBook,
   <https://blockresearchgroup.gitbook.io/compas-fofin/theoretical-background/force-densities-method>
   (read 2026-10-15). Gives the single-node motivation, the rope analogy for $q$,

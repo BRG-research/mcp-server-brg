@@ -1489,20 +1489,20 @@ $$
 0.842 \\
 0.799
 \end{bmatrix}}
-\begin{matrix}
-\leftarrow b_1\ (1\to 6,\ e_1 = 5.7\text{ mm}) \\
-\leftarrow b_2\ (2\to 7,\ e_2 = 7.5\text{ mm}) \\
-\leftarrow b_3\ (3\to 8,\ e_3 = 5.7\text{ mm}) \\
-\leftarrow b_4\ (4\to 9,\ e_4 = 7.5\text{ mm}) \\
-\leftarrow b_5\ (1\to 4,\ e_5 = 2.7\text{ mm}) \\
-\leftarrow b_6\ (1\to 2,\ e_6 = 2.7\text{ mm}) \\
-\leftarrow b_7\ (2\to 3,\ e_7 = 2.7\text{ mm}) \\
-\leftarrow b_8\ (3\to 4,\ e_8 = 2.7\text{ mm}) \\
-\leftarrow b_9\ (4\to 5,\ e_9 = 1.4\text{ mm}) \\
-\leftarrow b_{10}\ (1\to 5,\ e_{10} = 1.3\text{ mm}) \\
-\leftarrow b_{11}\ (2\to 5,\ e_{11} = 1.4\text{ mm}) \\
-\leftarrow b_{12}\ (3\to 5,\ e_{12} = 1.3\text{ mm})
-\end{matrix}
+\underset{\text{stretch } e_j\ (\text{mm})}{\begin{matrix}
+\leftarrow b_1\ (1\to 6,\ e_1 = 5.7) \\
+\leftarrow b_2\ (2\to 7,\ e_2 = 7.5) \\
+\leftarrow b_3\ (3\to 8,\ e_3 = 5.7) \\
+\leftarrow b_4\ (4\to 9,\ e_4 = 7.5) \\
+\leftarrow b_5\ (1\to 4,\ e_5 = 2.7) \\
+\leftarrow b_6\ (1\to 2,\ e_6 = 2.7) \\
+\leftarrow b_7\ (2\to 3,\ e_7 = 2.7) \\
+\leftarrow b_8\ (3\to 4,\ e_8 = 2.7) \\
+\leftarrow b_9\ (4\to 5,\ e_9 = 1.4) \\
+\leftarrow b_{10}\ (1\to 5,\ e_{10} = 1.3) \\
+\leftarrow b_{11}\ (2\to 5,\ e_{11} = 1.4) \\
+\leftarrow b_{12}\ (3\to 5,\ e_{12} = 1.3)
+\end{matrix}}
 $$"""
 u, v, w, l = coordinate_differences(C, x, y, z, C_f, x_f, y_f, z_f)
 s = l * q                                       # eq. (10): axial forces (kN)

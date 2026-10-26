@@ -25,6 +25,7 @@ chunks = [md[:mid], md[mid:]] if mid != -1 else [md]
 
 total_display = 0
 total_inline = 0
+total_brace_budget = 0
 bad = []
 broken_rows = []
 
@@ -47,6 +48,13 @@ for n, c in enumerate(chunks):
     # or if CommonMark parsed _emphasis_ across _{ / }_ (which injects \n\n and &amp;amp;)
     # or if raw < / > inside math became &amp;lt; / &amp;gt; (which crashes MathJax/KaTeX)
     for block in re.findall(r"<math-renderer.*?</math-renderer>", html, flags=re.S):
+        inner = re.sub(r"^<math-renderer[^>]*>|</math-renderer>$", "", block)
+        import html as _html
+        raw_tex = _html.unescape(inner)
+        brace_cost = len(raw_tex.split("{"))
+        total_brace_budget += brace_cost
+        if brace_cost > 1000:
+            broken_rows.append((n, f"single block exceeds GitHub 1000-brace limit ({brace_cost}): {raw_tex[:80]}"))
         if "\n\n" in block:
             broken_rows.append((n, f"blank line (\\par) inside math-renderer: {block[:80]}"))
         if "&amp;amp;" in block or "&amp;gt;" in block or "&amp;lt;" in block:
@@ -73,8 +81,12 @@ for n, c in enumerate(chunks):
     for m in re.findall(r"\$+[^$\n]{1,80}\$+", stripped):
         bad.append((n, m))
 
+if total_brace_budget > 2000:
+    broken_rows.append((-1, f"page E.total() brace budget {total_brace_budget} exceeds GitHub 2000 limit!"))
+
 print(f"display <math-renderer> blocks : {total_display}")
 print(f"inline  <math-renderer> blocks : {total_inline}")
+print(f"GitHub brace budget E.total()  : {total_brace_budget} / 2000")
 print(f"UNRENDERED formulas (dollar signs shown) : {len(bad)}")
 print(f"BROKEN matrix row breaks : {len(broken_rows)}")
 for n, m in bad:
