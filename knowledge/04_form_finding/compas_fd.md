@@ -116,17 +116,22 @@ Network counts: m=12 branches, n=5 free nodes, n_f=4 fixed anchors
 
 ### A.2 Vectors, diagonal matrices, and the diagonal swap (section 1.4)
 
-On our 9-node, 12-branch network, lowercase bold letters ($\mathbf{u}, \mathbf{q}, \mathbf{l}$) denote $(12 \times 1)$ branch column vectors, while uppercase letters ($U, Q, L$) denote the $(12 \times 12)$ diagonal matrices formed by placing those 12 branch values on the main diagonal.
+In standard matrix algebra, you cannot multiply two $(12 \times 1)$ column vectors $\mathbf{u}$ and $\mathbf{q}$ element-by-element because their dimensions $(12 \times 1) \times (12 \times 1)$ do not match. To write element-by-element branch multiplication ($u_j q_j$ for each cable $j = 1 \dots 12$) as a valid matrix product, Schek places the 12 entries of $\mathbf{u}$ and $\mathbf{q}$ on the main diagonal of $(12 \times 12)$ diagonal matrices $U = \mathrm{diag}(\mathbf{u})$ and $Q = \mathrm{diag}(\mathbf{q})$.
 
 ### General Equation
 
 $$
-U = \mathrm{diag}(\mathbf{u}), \qquad Q = \mathrm{diag}(\mathbf{q}), \qquad U \mathbf{q} = Q \mathbf{u}
+U = \mathrm{diag}(\mathbf{u}), \qquad Q = \mathrm{diag}(\mathbf{q}), \qquad U \mathbf{q} = Q \mathbf{u} =
+\begin{bmatrix}
+u_1 q_1 \\
+\vdots \\
+u_{12} q_{12}
+\end{bmatrix}
 $$
 
 ### Matrix Example (12 Branches of the 9-Node Net)
 
-Placing the 12-branch coordinate-difference vector $\mathbf{u}$ and force-density vector $\mathbf{q}$ of our 9-node net onto $(12 \times 12)$ diagonals scales each branch row independently, so the factors commute ($U \mathbf{q} = Q \mathbf{u}$):
+Here the 12 diagonal numbers of $U$ are the horizontal $x$-spans $u_j = x_i - x_k$ ($\text{m}$) of the 12 cables, and the 12 diagonal numbers of $Q$ are their force densities $q_j$ ($\text{kN/m}$):
 
 $$
 \underset{U\ (12\times 12)}{\begin{bmatrix}
@@ -841,9 +846,15 @@ $$
 
 #### Stage 2 — Projected Branch Force Components: $\mathbf{F} _ x = U \mathbf{q},\ \mathbf{F} _ y = V \mathbf{q},\ \mathbf{F} _ z = W \mathbf{q}\ (12 \times 1)$
 
+* **What are $U, V, W$?** They are the $(12 \times 12)$ diagonal matrices whose diagonal entries are the coordinate differences $\mathbf{u}, \mathbf{v}, \mathbf{w}$ ($\text{m}$) computed in **Section B.2**:
+  * Row $j$ of $U = \mathrm{diag}(\mathbf{u})$ holds $u_j = x_i - x_k$, the horizontal $x$-span of cable $j$ (e.g., $u_1 = x_1 - x_6 = (-1) - (-2) = +1\text{ m}$; $u_2 = x_2 - x_7 = 0 - 0 = 0\text{ m}$).
+  * Row $j$ of $V = \mathrm{diag}(\mathbf{v})$ holds $v_j = y_i - y_k$, the horizontal $y$-span of cable $j$.
+  * Row $j$ of $W = \mathrm{diag}(\mathbf{w})$ holds $w_j = z_i - z_k$, the vertical $z$-span of cable $j$.
+* **Why is $U$ a diagonal matrix?** Because we want to multiply each cable's $x$-span $u_j$ ($\text{m}$) by its own force density $q_j = s_j / l_j$ ($\text{kN/m}$) to get that cable's $x$-force $F_{x,j} = u_j q_j = s_j (u_j / l_j)$ ($\text{kN}$). Putting $u_1 \dots u_{12}$ on the diagonal of $U\ (12 \times 12)$ turns element-by-element multiplication `u * q` into the matrix product $U \mathbf{q}$:
+
 $$
 \mathbf{F} _ x = U \mathbf{q} =
-\underset{U\ (12\times 12)}{\begin{bmatrix}
+\underset{U = \mathrm{diag}(\mathbf{u})\ (12\times 12)}{\begin{bmatrix}
 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
@@ -885,6 +896,20 @@ $$
 0 \\
 1.000
 \end{bmatrix}\text{ kN}
+\begin{matrix}
+\leftarrow b_1: u_1 q_1 = (+1)(1.000) \\
+\leftarrow b_2: u_2 q_2 = (0)(0.316) \\
+\leftarrow b_3: u_3 q_3 = (-1)(1.000) \\
+\leftarrow b_4: u_4 q_4 = (0)(0.316) \\
+\leftarrow b_5: u_5 q_5 = (-1)(0.707) \\
+\leftarrow b_6: u_6 q_6 = (-1)(0.707) \\
+\leftarrow b_7: u_7 q_7 = (-1)(0.707) \\
+\leftarrow b_8: u_8 q_8 = (+1)(0.707) \\
+\leftarrow b_9: u_9 q_9 = (0)(1.000) \\
+\leftarrow b_{10}: u_{10} q_{10} = (-1)(1.000) \\
+\leftarrow b_{11}: u_{11} q_{11} = (0)(1.000) \\
+\leftarrow b_{12}: u_{12} q_{12} = (+1)(1.000)
+\end{matrix}
 $$
 
 Similarly along $y$ ($\mathbf{F} _ y = V \mathbf{q}$) and $z$ ($\mathbf{F} _ z = W \mathbf{q}$):
