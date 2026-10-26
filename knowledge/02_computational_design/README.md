@@ -22,20 +22,27 @@ expression. Explanations and tasks are given in class.
 | 1 | [A COMPAS box](notebooks/01-basics/01-box.ipynb) | Turn dimensions into an inspectable primitive and scene. | 30 min |
 | 2 | [Data basics](notebooks/01-basics/02-data.ipynb) | Distinguish Python values, metadata and object properties. | 30 min |
 | 3 | [COMPAS JSON](notebooks/01-basics/03-json.ipynb) | Preserve a box, point and units beyond one Python session. | 45 min |
-| 4 | [Vectors and frames](notebooks/02-geometry/01-vectors-frames.ipynb) | Measure alignment and place geometry in local coordinates. | 60 min |
-| 5 | [Parametric patterns](notebooks/02-geometry/02-brick-pattern.ipynb) | Generate a grid and a small brick wall with loops and a rule. | 75 min |
-| 6 | [A graph](notebooks/03-datastructures/01-graph.ipynb) | Separate connectivity and attributes from node positions. | 45 min |
-| 7 | [A mesh](notebooks/03-datastructures/02-mesh.ipynb) | Add face cycles, normals and an indexed connectivity matrix. | 60 min |
-| 8 | [A COMPAS model](notebooks/04-aec/01-model.ipynb) | Organise one named element inside a group and save that hierarchy. | 35 min |
-| 9 | [An IFC wall](notebooks/04-aec/02-ifc.ipynb) | Create, save and load one wall in a storey with `compas_ifc`. | 45 min |
-| 10 | [Matrix decomposition](notebooks/05-solvers/01-qr.ipynb) | Locate a point from two constraints using QR and a residual check. | 60 min |
-| 11 | [Constrained optimisation](notebooks/05-solvers/02-optimisation.ipynb) | Search for dimensions satisfying volume and height requirements. | 90 min |
+| 4 | [Primitives](notebooks/02-geometry/01-primitives.ipynb) | Box, sphere, point and line in one scene (Calgary 2025). | 20 min |
+| 5 | [Vectors and frames](notebooks/02-geometry/02-vectors-frames.ipynb) | Measure alignment and place geometry in local coordinates. | 60 min |
+| 6 | [Transformations](notebooks/02-geometry/03-transformations.ipynb) | Rotate, scale, mirror, shear and project one cube (COMPAS II 2023). | 30 min |
+| 7 | [Frames along a curve](notebooks/02-geometry/04-curve-frames.ipynb) | Place boxes on the frames of a Bezier curve (ITA21). | 30 min |
+| 8 | [Bounding boxes](notebooks/02-geometry/05-bounding-boxes.ipynb) | Compare axis-aligned and oriented boxes around a point cloud (ITA21). | 30 min |
+| 9 | [Polygons](notebooks/02-geometry/06-polygons.ipynb) | Areas, centroids and offsets of regular polygons (ITA21). | 30 min |
+| 10 | [Parametric patterns](notebooks/02-geometry/07-brick-pattern.ipynb) | Generate a grid and a small brick wall with loops and a rule. | 75 min |
+| 11 | [Vault mesh and dual](notebooks/02-geometry/08-dual-mesh.ipynb) | Triangulate a vault and build its dual (Calgary 2025). | 30 min |
+| 12 | [Masonry blocks](notebooks/02-geometry/09-blocks.ipynb) | Offset each dual face into a block (Calgary 2025). | 45 min |
+| 13 | [A graph](notebooks/03-datastructures/01-graph.ipynb) | Separate connectivity and attributes from node positions. | 45 min |
+| 14 | [A mesh](notebooks/03-datastructures/02-mesh.ipynb) | Add face cycles, normals and an indexed connectivity matrix. | 60 min |
+| 15 | [A COMPAS model](notebooks/04-aec/01-model.ipynb) | Organise one named element inside a group and save that hierarchy. | 35 min |
+| 16 | [An IFC wall](notebooks/04-aec/02-ifc.ipynb) | Create, save and load one wall in a storey with `compas_ifc`. | 45 min |
+| 17 | [Matrix decomposition](notebooks/05-solvers/01-qr.ipynb) | Locate a point from two constraints using QR and a residual check. | 60 min |
+| 18 | [Constrained optimisation](notebooks/05-solvers/02-optimisation.ipynb) | Search for dimensions satisfying volume and height requirements. | 90 min |
 | Extension | [Graphic statics](notebooks/06-structures/01-ags.ipynb) | Form and force diagrams of a triangle frame with `compas_ags`. | 45 min |
 | Extension | [Force density](notebooks/06-structures/02-fd.ipynb) | A loaded cable net with `compas_fd`. | 45 min |
 | Extension | [Dynamic relaxation](notebooks/06-structures/03-dr.ipynb) | The same cable net with `compas_dr`. | 45 min |
 | Extension | [Thrust network analysis](notebooks/06-structures/04-tna.ipynb) | Form and force diagrams of a vault with `compas_tna`. | 60 min |
 
-The guided estimates total **9 h 35 min for foundations**, plus **3 h 15 min of
+The guided estimates total **13 h 10 min for foundations**, plus **3 h 15 min of
 optional extensions**. They are activities within a 30-hour course, not a claim
 that notebook code alone supplies 30 hours of instruction. A suggested five-session
 plan allocates six hours each to: (1) primitives, Python data and exchange;

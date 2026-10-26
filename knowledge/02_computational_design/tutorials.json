@@ -26,19 +26,75 @@
       "section": "foundation"
     },
     {
+      "id": "primitives",
+      "file": "02-geometry/01-primitives.ipynb",
+      "title": "Geometry: primitives",
+      "summary": "A box, a sphere, a point and a line in one scene.",
+      "minutes": 20,
+      "section": "foundation"
+    },
+    {
       "id": "vectors",
-      "file": "02-geometry/01-vectors-frames.ipynb",
+      "file": "02-geometry/02-vectors-frames.ipynb",
       "title": "Geometry: vectors and frames",
       "summary": "Dot and cross products, frames and transformations.",
       "minutes": 60,
       "section": "foundation"
     },
     {
+      "id": "transformations",
+      "file": "02-geometry/03-transformations.ipynb",
+      "title": "Geometry: transformations",
+      "summary": "Rotate, scale, mirror, shear and project one cube.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "curve-frames",
+      "file": "02-geometry/04-curve-frames.ipynb",
+      "title": "Geometry: frames along a curve",
+      "summary": "Place boxes on the frames of a Bezier curve.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "bounding-boxes",
+      "file": "02-geometry/05-bounding-boxes.ipynb",
+      "title": "Geometry: bounding boxes",
+      "summary": "Axis-aligned and oriented boxes around a rotated point cloud.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "polygons",
+      "file": "02-geometry/06-polygons.ipynb",
+      "title": "Geometry: polygons",
+      "summary": "Regular polygons, their areas, centroids and offsets.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
       "id": "patterns",
-      "file": "02-geometry/02-brick-pattern.ipynb",
+      "file": "02-geometry/07-brick-pattern.ipynb",
       "title": "Algorithms: grids and brick patterns",
       "summary": "A point grid and a staggered brick wall from loops.",
       "minutes": 75,
+      "section": "foundation"
+    },
+    {
+      "id": "dual",
+      "file": "02-geometry/08-dual-mesh.ipynb",
+      "title": "Geometry: vault mesh and its dual",
+      "summary": "Triangulate a vault surface and build its dual mesh.",
+      "minutes": 30,
+      "section": "foundation"
+    },
+    {
+      "id": "blocks",
+      "file": "02-geometry/09-blocks.ipynb",
+      "title": "Geometry: masonry blocks",
+      "summary": "Offset each dual face into a block with a flat top.",
+      "minutes": 45,
       "section": "foundation"
     },
     {
