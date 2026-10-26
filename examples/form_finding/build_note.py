@@ -38,7 +38,7 @@ def sanitize_gfm_math(text: str) -> str:
     """Prevent GFM CommonMark from parsing _emphasis_ or HTML-escaping < > inside TeX math."""
     def _fix(m: re.Match[str]) -> str:
         s = m.group(0)
-        s = s.replace("}_", "} _ ").replace("_{", " _ {")
+        s = re.sub(r"([})\]])_", r"\1 _ ", s)
         s = s.replace(">", r"\gt ").replace("<", r"\lt ")
         return s
 

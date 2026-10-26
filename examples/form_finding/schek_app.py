@@ -13,13 +13,38 @@ the application is derived from the paper and compas_fd is compared with it afte
 """
 
 # %% [a1] A.1 Vectors, matrices, and the diagonal trick (section 1.4)
-r"""Lowercase bold letters $\mathbf{u}, \mathbf{q}$ denote $(m \times 1)$ branch vectors and uppercase letters $U = \mathrm{diag}(\mathbf{u}),\ Q = \mathrm{diag}(\mathbf{q})$ denote their $(m \times m)$ diagonal matrices, allowing the swap $U \mathbf{q} = Q \mathbf{u}$.
+r"""Lowercase bold letters ($\mathbf{u}, \mathbf{q}, \mathbf{l}$) denote $(m \times 1)$ branch column vectors; uppercase letters ($U, Q, L$) denote the $(m \times m)$ diagonal matrices formed by placing those vectors on the main diagonal.
 
-### General Equation & Matrix Example
+### General Equation
 
 $$
 U = \mathrm{diag}(\mathbf{u}), \qquad Q = \mathrm{diag}(\mathbf{q}), \qquad U \mathbf{q} = Q \mathbf{u}
 $$
+
+### Matrix Example
+
+Turning a 3-branch vector $\mathbf{u}$ into a $(3 \times 3)$ diagonal matrix $U = \mathrm{diag}(\mathbf{u})$:
+
+$$
+\mathbf{u} = \begin{bmatrix}
+2 \\
+-1 \\
+3
+\end{bmatrix}
+\qquad \longrightarrow \qquad
+U = \mathrm{diag}(\mathbf{u}) = \begin{bmatrix}
+2 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 3
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{scales branch 1 by } 2 \\
+\leftarrow \text{scales branch 2 by } -1 \\
+\leftarrow \text{scales branch 3 by } 3
+\end{matrix}
+$$
+
+Multiplying a diagonal matrix by a vector scales each row independently without mixing entries, so the factors commute ($U \mathbf{q} = Q \mathbf{u}$):
 
 $$
 \underset{U\ (3\times 3)}{\begin{bmatrix}
@@ -47,6 +72,11 @@ $$
 -5 \\
 18
 \end{bmatrix}
+\begin{matrix}
+\leftarrow 2 \times 4 \\
+\leftarrow -1 \times 5 \\
+\leftarrow 3 \times 6
+\end{matrix}
 $$"""
 import numpy as np
 from typing import TypeAlias
@@ -56,18 +86,22 @@ FloatVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 
 u_example = np.array([2.0, -1.0, 3.0])
 U_example = np.diag(u_example)
+print("U_example = diag(u_example):\n", U_example)
 
 
 # %% explain
-r"""* `np.diag(u_example)` turns the `(3,)` vector into a `(3, 3)` diagonal matrix; `np.diag(u) @ q`, `np.diag(q) @ u`, and `u * q` all compute the same element-wise product."""
+r"""* `np.diag(u_example)` places the `(3,)` vector on the main diagonal of the `(3, 3)` matrix `U_example`; `np.diag(u) @ q`, `np.diag(q) @ u`, and `u * q` all produce $[8, -5, 18]^T$."""
 
 
 # %% [a2] A.2 Network topology: numbering nodes and branches (section 2.1)
-r"""We number the $n = 5$ free inner nodes first ($1 \dots 5$) and the $n_f = 4$ fixed anchors last ($6 \dots 9$) across $m = 12$ directed branches ($i \to k$).
+r"""Number the $n = 5$ **free inner nodes first** ($1 \dots 5$) and the $n_f = 4$ **fixed outer anchor nodes last** ($6 \dots 9$) across the $m = 12$ directed branches ($i \to k$) so the connectivity matrix splits with a single vertical cut.
 
 ![Fig. 2](images/schek_fig2.png)
 
-![Part A Topology and Matrix Operators on the Cable Net](images/fd_sec_a_topology_split.png)"""
+![Part A Topology and Matrix Operators on the Cable Net](images/fd_sec_a_topology_split.png)
+
+* **Total Nodes ($n_s = 9$):** Free inner nodes $1 \dots 5$ ($n = 5$, unknown coordinates) and fixed anchors $6 \dots 9$ ($n_f = 4$, known boundary supports).
+* **Directed Branches ($m = 12$):** Anchor cables $b_1 \dots b_4$: $(1\to 6),\ (2\to 7),\ (3\to 8),\ (4\to 9)$; inner ring $b_5 \dots b_8$: $(1\to 4),\ (1\to 2),\ (2\to 3),\ (3\to 4)$; center spokes $b_9 \dots b_{12}$: $(4\to 5),\ (1\to 5),\ (2\to 5),\ (3\to 5)$."""
 branches: list[tuple[int, int]] = [
     (1, 6), (2, 7), (3, 8), (4, 9),   # 1-4: free corners to fixed anchors
     (1, 4), (1, 2), (2, 3), (3, 4),   # 5-8: inner ring
@@ -75,14 +109,15 @@ branches: list[tuple[int, int]] = [
 ]
 n, n_f = 5, 4                         # free nodes 1..5, fixed nodes 6..9
 m = len(branches)
+print(f"Network counts: m={m} branches, n={n} free nodes, n_f={n_f} fixed anchors")
 
 
 # %% explain
-r"""* `branches` stores `(start_node, end_node)` pairs using 1-based node numbers $1 \dots 9$ (subtract `1` when indexing NumPy arrays)."""
+r"""* `branches` stores `(start_node, end_node)` pairs using Schek's 1-based node numbers $1 \dots 9$ (subtract `1` when indexing NumPy arrays)."""
 
 
 # %% [a3] A.3 Branch-node connectivity matrix and partitioning (section 2.1)
-r"""Row $j$ of the branch-node matrix $C_s$ $(m \times n_s)$ has $+1$ at start node $i$ and $-1$ at end node $k$, and splits into free columns $C$ $(12 \times 5)$ and fixed columns $C_f$ $(12 \times 4)$.
+r"""Encode the directed graph as an $(m \times n_s)$ branch-node incidence matrix $C_s$ ($+1$ at start node $i$, $-1$ at end node $k$), partitioned into free-node columns $C$ $(12 \times 5)$ and fixed-anchor columns $C_f$ $(12 \times 4)$.
 
 ### General Equation
 
@@ -118,6 +153,21 @@ b_{10}\ (1\to 5) & +1 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 \\
 b_{11}\ (2\to 5) & 0 & +1 & 0 & 0 & -1 & 0 & 0 & 0 & 0 \\
 b_{12}\ (3\to 5) & 0 & 0 & +1 & 0 & -1 & 0 & 0 & 0 & 0
 \end{array}\right]
+\begin{matrix}
+\\
+\leftarrow \text{anchor} \\
+\leftarrow \text{anchor} \\
+\leftarrow \text{anchor} \\
+\leftarrow \text{anchor} \\
+\leftarrow \text{ring} \\
+\leftarrow \text{ring} \\
+\leftarrow \text{ring} \\
+\leftarrow \text{ring} \\
+\leftarrow \text{spoke} \\
+\leftarrow \text{spoke} \\
+\leftarrow \text{spoke} \\
+\leftarrow \text{spoke}
+\end{matrix}
 $$"""
 C_s: FloatMatrix = np.zeros((m, n + n_f))
 for j, (i, k) in enumerate(branches):
@@ -125,6 +175,7 @@ for j, (i, k) in enumerate(branches):
     C_s[j, k - 1] = -1.0              # end node k(j): -1
 C: FloatMatrix = C_s[:, :n]           # (m, n)   free-node columns
 C_f: FloatMatrix = C_s[:, n:]         # (m, n_f) fixed-anchor columns
+print("C_s (12x9):\n", C_s.astype(int))
 
 
 # %% explain
@@ -132,9 +183,73 @@ r"""* `C = C_s[:, :n]` slices the first `5` columns (free nodes, `(12, 5)`); `C_
 
 
 # %% [a4] A.4 Step-by-step matrix multiplication for $C^T Q C$
-r"""On a 5-branch, 3-free-node mini-network with $\mathbf{q} = [2, 3, 4, 5, 6]^T$, $Q C$ scales each branch row by $q_j$ and $C^T(Q C)$ sums connected branch stiffnesses at each free node ($D_{ii} = \sum q_j$, $D_{ik} = -q_j$).
+r"""Trace how $D = C^T (Q C)$ assembles nodal equilibrium on a **5-branch, 3-free-node mini-network** (free nodes $1, 2, 3$; fixed supports $4, 5$) with force densities $\mathbf{q} = [2, 3, 4, 5, 6]^T$.
 
-### Matrix Example ($D = C^T Q C$)
+### 1. Free Connectivity $C\ (5 \times 3)$ and Transpose $C^T\ (3 \times 5)$
+
+$$
+C = \begin{bmatrix}
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+1 & -1 & 0 \\
+-1 & 0 & 1 \\
+0 & 1 & -1
+\end{bmatrix}
+\begin{matrix}
+\leftarrow b_1\ (4\to 1) \\
+\leftarrow b_2\ (5\to 2) \\
+\leftarrow b_3\ (2\to 1) \\
+\leftarrow b_4\ (3\to 1) \\
+\leftarrow b_5\ (3\to 2)
+\end{matrix}
+\qquad \overset{\text{transpose}}{\longrightarrow} \qquad
+C^T = \begin{bmatrix}
+1 & 0 & 1 & -1 & 0 \\
+0 & 1 & -1 & 0 & 1 \\
+0 & 0 & 0 & 1 & -1
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Node 1} \\
+\leftarrow \text{Node 2} \\
+\leftarrow \text{Node 3}
+\end{matrix}
+$$
+
+### 2. Step 1 — Compute $Q C$ (Force Density per Cable, $5 \times 3$)
+
+$$
+Q C =
+\underset{Q\ (5\times 5)}{\begin{bmatrix}
+2 & 0 & 0 & 0 & 0 \\
+0 & 3 & 0 & 0 & 0 \\
+0 & 0 & 4 & 0 & 0 \\
+0 & 0 & 0 & 5 & 0 \\
+0 & 0 & 0 & 0 & 6
+\end{bmatrix}}
+\underset{C\ (5\times 3)}{\begin{bmatrix}
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+1 & -1 & 0 \\
+-1 & 0 & 1 \\
+0 & 1 & -1
+\end{bmatrix}} =
+\underset{Q C\ (5\times 3)}{\begin{bmatrix}
+2 & 0 & 0 \\
+0 & 3 & 0 \\
+4 & -4 & 0 \\
+-5 & 0 & 5 \\
+0 & 6 & -6
+\end{bmatrix}}
+\begin{matrix}
+\leftarrow q_1 = 2 \\
+\leftarrow q_2 = 3 \\
+\leftarrow q_3 = 4 \\
+\leftarrow q_4 = 5 \\
+\leftarrow q_5 = 6
+\end{matrix}
+$$
+
+### 3. Step 2 — Compute $D = C^T (Q C)$ (Sum at Nodes, $3 \times 3$)
 
 $$
 D =
@@ -160,6 +275,11 @@ q_1+q_3+q_4 & -q_3 & -q_4 \\
 -4 & 13 & -6 \\
 -5 & -6 & 11
 \end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Node 1: } 2+4+5=11 \\
+\leftarrow \text{Node 2: } 3+4+6=13 \\
+\leftarrow \text{Node 3: } 5+6=11
+\end{matrix}
 $$"""
 C_mini = np.array(
     [[1, 0, 0], [0, 1, 0], [1, -1, 0], [-1, 0, 1], [0, 1, -1]],
@@ -168,14 +288,15 @@ C_mini = np.array(
 q_mini = np.array([2.0, 3.0, 4.0, 5.0, 6.0])
 QC_mini = np.diag(q_mini) @ C_mini
 D_mini = C_mini.T @ QC_mini
+print("D_mini = C_mini.T @ diag(q_mini) @ C_mini:\n", D_mini.astype(int))
 
 
 # %% explain
-r"""* `np.diag(q_mini) @ C_mini` weights each branch row by $q_j$, and `C_mini.T @ QC_mini` sums those rows at each free node."""
+r"""* `np.diag(q_mini) @ C_mini` weights each branch row by $q_j$, and `C_mini.T @ QC_mini` sums those weighted rows at each free node ($D_{ii} = \sum q_j$, $D_{ik} = -q_j$)."""
 
 
 # %% [b1] B.1 Inputs: fixed anchor coordinates and nodal loads (section 2.2)
-r"""Fixed anchors $6, 8$ sit at $z_f = 0\text{ m}$ and lifted anchors $7, 9$ sit at $z_f = 1\text{ m}$, while each of the 5 free nodes carries a vertical load $p_z = -0.5\text{ kN}$.
+r"""Specify the known boundary support coordinates $(\mathbf{x}_f, \mathbf{y}_f, \mathbf{z}_f)$ in $\text{m}$ ($4 \times 3$) and external free-node loads $(\mathbf{p}_x, \mathbf{p}_y, \mathbf{p}_z)$ in $\text{kN}$ ($5 \times 3$, $+z$ up).
 
 ### Matrix Example (Inputs)
 
@@ -188,10 +309,10 @@ $$
 0 & -2 & 1
 \end{bmatrix}
 \begin{matrix}
-\leftarrow \text{Anchor 6} \\
-\leftarrow \text{Anchor 7} \\
-\leftarrow \text{Anchor 8} \\
-\leftarrow \text{Anchor 9}
+\leftarrow \text{Anchor 6 (ground)} \\
+\leftarrow \text{Anchor 7 (lifted } +1\text{ m)} \\
+\leftarrow \text{Anchor 8 (ground)} \\
+\leftarrow \text{Anchor 9 (lifted } +1\text{ m)}
 \end{matrix},
 \qquad
 \begin{bmatrix} \mathbf{p}_x & \mathbf{p}_y & \mathbf{p}_z \end{bmatrix} =
@@ -203,11 +324,11 @@ $$
 0 & 0 & -0.5
 \end{bmatrix}
 \begin{matrix}
-\leftarrow \text{Node 1} \\
-\leftarrow \text{Node 2} \\
-\leftarrow \text{Node 3} \\
-\leftarrow \text{Node 4} \\
-\leftarrow \text{Node 5}
+\leftarrow \text{Node 1 (}-0.5\text{ kN)} \\
+\leftarrow \text{Node 2 (}-0.5\text{ kN)} \\
+\leftarrow \text{Node 3 (}-0.5\text{ kN)} \\
+\leftarrow \text{Node 4 (}-0.5\text{ kN)} \\
+\leftarrow \text{Node 5 (}-0.5\text{ kN)}
 \end{matrix}
 $$"""
 x_f: FloatVector = np.array([-2.0, 0.0, 2.0, 0.0], dtype=np.float64)
@@ -216,6 +337,7 @@ z_f: FloatVector = np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float64)
 p_x: FloatVector = np.zeros(n, dtype=np.float64)
 p_y: FloatVector = np.zeros(n, dtype=np.float64)
 p_z: FloatVector = np.full(n, -0.5, dtype=np.float64)
+print("Fixed anchors [x_f, y_f, z_f] (4x3):\n", np.c_[x_f, y_f, z_f])
 
 
 # %% explain
@@ -223,17 +345,77 @@ r"""* `x_f, y_f, z_f` have shape `(4,)` for anchors $6 \dots 9$; `p_x, p_y, p_z`
 
 
 # %% [b2] B.2 Coordinate differences and cable lengths, equation (1)
-r"""For each branch $j\ (i \to k)$, the coordinate differences $(u_j, v_j, w_j) = (x_i - x_k,\ y_i - y_k,\ z_i - z_k)$ form the sides of its 3D bounding box and $l_j$ is its length.
+r"""For each branch $j\ (i \to k)$, compute the coordinate differences $(u_j, v_j, w_j) = (x_i - x_k,\ y_i - y_k,\ z_i - z_k)$ and the Euclidean cable length $l_j$.
 
 ![Section B.2 Geometric Meaning of Coordinate Differences u, v, w and Cable Length l](images/fd_sec_b2_uvw_geometry.png)
 
-### General Equations (Eq. 1) & Matrix Example (Flat Trial Coordinates $\mathbf{z} = \mathbf{0}$)
+### General Equations (Eq. 1)
 
 $$
 \mathbf{u} = C \mathbf{x} + C_f \mathbf{x}_f, \qquad
 \mathbf{v} = C \mathbf{y} + C_f \mathbf{y}_f, \qquad
 \mathbf{w} = C \mathbf{z} + C_f \mathbf{z}_f, \qquad
 l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}
+$$
+
+### Matrix Example (Flat Trial Coordinates $\mathbf{x} = [-1, 0, 1, 0, 0]^T,\ \mathbf{y} = [0, -1, 0, 1, 0]^T,\ \mathbf{z} = \mathbf{0}$)
+
+$$
+\underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
+1 \\
+0 \\
+-1 \\
+0 \\
+-1 \\
+-1 \\
+-1 \\
+1 \\
+0 \\
+-1 \\
+0 \\
+1
+\end{bmatrix}} =
+\underset{C\ (12\times 5)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0 \\
+1 & 0 & 0 & -1 & 0 \\
+1 & -1 & 0 & 0 & 0 \\
+0 & 1 & -1 & 0 & 0 \\
+0 & 0 & 1 & -1 & 0 \\
+0 & 0 & 0 & 1 & -1 \\
+1 & 0 & 0 & 0 & -1 \\
+0 & 1 & 0 & 0 & -1 \\
+0 & 0 & 1 & 0 & -1
+\end{bmatrix}}
+\underset{\mathbf{x}\ (5\times 1)}{\begin{bmatrix}
+-1 \\
+0 \\
+1 \\
+0 \\
+0
+\end{bmatrix}} +
+\underset{C_f\ (12\times 4)}{\begin{bmatrix}
+-1 & 0 & 0 & 0 \\
+0 & -1 & 0 & 0 \\
+0 & 0 & -1 & 0 \\
+0 & 0 & 0 & -1 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0
+\end{bmatrix}}
+\underset{\mathbf{x}_f\ (4\times 1)}{\begin{bmatrix}
+-2 \\
+0 \\
+2 \\
+0
+\end{bmatrix}}
 $$
 
 $$
@@ -267,7 +449,26 @@ $$
 1 \\
 1 \\
 1
+\end{bmatrix}
+\approx
+\begin{bmatrix}
+1.000 \\
+3.162 \\
+1.000 \\
+3.162 \\
+1.414 \\
+1.414 \\
+1.414 \\
+1.414 \\
+1.000 \\
+1.000 \\
+1.000 \\
+1.000
 \end{bmatrix}\text{ m}
+$$
+
+$$
+L^{-1} = \mathrm{diag}(1 / \mathbf{l}) = \mathrm{diag}\left(1,\ \tfrac{1}{\sqrt{10}},\ 1,\ \tfrac{1}{\sqrt{10}},\ \tfrac{1}{\sqrt{2}},\ \dots,\ 1\right)
 $$"""
 def coordinate_differences(
     C: FloatMatrix,
@@ -287,25 +488,179 @@ def coordinate_differences(
     return u, v, w, l
 
 
+u_flat, v_flat, w_flat, l_flat = coordinate_differences(
+    C, np.array([-1.0, 0.0, 1.0, 0.0, 0.0]), np.array([0.0, -1.0, 0.0, 1.0, 0.0]), np.zeros(n), C_f, x_f, y_f, z_f
+)
+print("Flat trial cable lengths l (m):", l_flat)
+
+
 # %% explain
-r"""* `C @ x + C_f @ x_f` computes $x_{\text{start}} - x_{\text{end}}$ for all 12 branches at once, and `np.sqrt(u**2 + v**2 + w**2)` computes the `(12,)` length vector `l`."""
+r"""* `C @ x + C_f @ x_f` evaluates $(12, 5) \times (5,) + (12, 4) \times (4,) \to (12,)$, computing $x_{\text{start}} - x_{\text{end}}$ for all 12 branches at once."""
 
 
 # %% [b3] B.3 Nonlinear equilibrium in 4 stages, equation (2)
-r"""Projecting branch tension $s_j$ by direction cosines $(u_j/l_j,\ v_j/l_j,\ w_j/l_j)$ and summing at free nodes via $C^T$ gives the out-of-balance residual $\mathbf{e}$.
+r"""Project branch tensions $\mathbf{s} = [1, \dots, 1]^T\text{ kN}$ by direction cosines $(u_j/l_j,\ v_j/l_j,\ w_j/l_j)$ and sum at free nodes via $C^T$, reading the matrix product **right to left** in 4 stages.
 
 ![Section B.3 Four-Stage Nonlinear Equilibrium and Flat Net Imbalance](images/fd_sec_b3_nonlinear_stages.png)
 
 ### General Equation (Eq. 2)
 
 $$
-\mathbf{e}_x = \underset{\text{Stage 3: sum at nodes}}{C^T} \quad \underset{\text{Stage 2: }\times u_j}{U} \quad \underset{\text{Stage 1: }s_j / l_j}{L^{-1} \mathbf{s}} \quad - \quad \underset{\text{Stage 4: load}}{\mathbf{p}_x}
+\mathbf{e}_x = \underbrace{C^T}_{\text{Stage 3: to nodes}} \quad \underbrace{U}_{\text{Stage 2: project } x} \quad \underbrace{L^{-1} \mathbf{s}}_{\text{Stage 1: } q_j = s_j / l_j} \quad - \quad \underbrace{\mathbf{p}_x}_{\text{Stage 4: load}}
 $$
 
-### Matrix Example (Flat Trial Shape with $s_j = 1\text{ kN}$)
+### Stage-by-Stage Matrix Breakdown
+
+#### Stage 1 — Force Density Ratios: $\mathbf{q} = L^{-1} \mathbf{s}\ (12 \times 1)$
+
+$$
+\mathbf{q} = L^{-1} \mathbf{s} =
+\begin{bmatrix}
+1 \\
+\tfrac{1}{\sqrt{10}} \\
+1 \\
+\tfrac{1}{\sqrt{10}} \\
+\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+1 \\
+1 \\
+1 \\
+1
+\end{bmatrix}
+\approx
+\begin{bmatrix}
+1.000 \\
+0.316 \\
+1.000 \\
+0.316 \\
+0.707 \\
+0.707 \\
+0.707 \\
+0.707 \\
+1.000 \\
+1.000 \\
+1.000 \\
+1.000
+\end{bmatrix}\text{ kN/m}
+$$
+
+#### Stage 2 — Projected Branch Force Components: $\mathbf{F}_x = U \mathbf{q},\ \mathbf{F}_y = V \mathbf{q},\ \mathbf{F}_z = W \mathbf{q}\ (12 \times 1)$
+
+$$
+\mathbf{F}_x = U \mathbf{q} =
+\begin{bmatrix}
+1 \\
+0 \\
+-1 \\
+0 \\
+-\tfrac{1}{\sqrt{2}} \\
+-\tfrac{1}{\sqrt{2}} \\
+-\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+0 \\
+-1 \\
+0 \\
+1
+\end{bmatrix},
+\qquad
+\mathbf{F}_y = V \mathbf{q} =
+\begin{bmatrix}
+0 \\
+-\tfrac{3}{\sqrt{10}} \\
+0 \\
+\tfrac{3}{\sqrt{10}} \\
+-\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+-\tfrac{1}{\sqrt{2}} \\
+-\tfrac{1}{\sqrt{2}} \\
+1 \\
+0 \\
+-1 \\
+0
+\end{bmatrix},
+\qquad
+\mathbf{F}_z = W \mathbf{q} =
+\begin{bmatrix}
+0 \\
+-\tfrac{1}{\sqrt{10}} \\
+0 \\
+-\tfrac{1}{\sqrt{10}} \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}\text{ kN}
+$$
+
+#### Stage 3 — Sum Cable Forces at Free Nodes: $C^T \mathbf{F}_x\ (5 \times 1)$
+
+$$
+C^T \mathbf{F}_x =
+\underset{C^T\ (5\times 12)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & -1 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 & -1 & 0 & 0 & -1 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & -1 & -1 & -1
+\end{bmatrix}}
+\underset{\mathbf{F}_x\ (12\times 1)}{\begin{bmatrix}
+1 \\
+0 \\
+-1 \\
+0 \\
+-0.707 \\
+-0.707 \\
+-0.707 \\
+0.707 \\
+0 \\
+-1 \\
+0 \\
+1
+\end{bmatrix}} =
+\begin{bmatrix}
+-1.414 \\
+0 \\
+1.414 \\
+0 \\
+0
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Node 1} \\
+\leftarrow \text{Node 2} \\
+\leftarrow \text{Node 3} \\
+\leftarrow \text{Node 4} \\
+\leftarrow \text{Node 5}
+\end{matrix}
+$$
+
+$$
+(C^T \mathbf{F}_x)_1 = F_{x,1} + F_{x,5} + F_{x,6} + F_{x,10} = 1 - 0.707 - 0.707 - 1 = -1.414\text{ kN}
+$$
+
+#### Stage 4 — Subtract Applied Loads to Check Equilibrium: $\mathbf{e} = C^T \mathbf{F} - \mathbf{p}\ (5 \times 1)$
 
 $$
 \mathbf{e}_x =
+\begin{bmatrix}
+-1.414 \\
+0 \\
+1.414 \\
+0 \\
+0
+\end{bmatrix} -
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix} =
 \begin{bmatrix}
 -1.414 \\
 0 \\
@@ -321,8 +676,24 @@ $$
 0 \\
 3.363 \\
 0
-\end{bmatrix},
-\qquad
+\end{bmatrix} -
+\begin{bmatrix}
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix} =
+\begin{bmatrix}
+0 \\
+-3.363 \\
+0 \\
+3.363 \\
+0
+\end{bmatrix}\text{ kN}
+$$
+
+$$
 \mathbf{e}_z =
 \begin{bmatrix}
 0 \\
@@ -344,7 +715,14 @@ $$
 0.500 \\
 0.184 \\
 0.500
-\end{bmatrix}\text{ kN}
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Node 1 out of balance} \\
+\leftarrow \text{Node 2 out of balance} \\
+\leftarrow \text{Node 3 out of balance} \\
+\leftarrow \text{Node 4 out of balance} \\
+\leftarrow \text{Node 5 out of balance}
+\end{matrix}
 $$"""
 def equilibrium_error(x, y, z, s):
     """Eq. (2): C^T U L^-1 s - p along (x, y, z). Zero means equilibrium."""
@@ -362,21 +740,27 @@ y_guess = np.array([0.0, -1.0, 0.0, 1.0, 0.0])
 z_guess = np.zeros(n)
 s_guess = np.ones(m)                             # 1 kN in every branch
 ex, ey, ez = equilibrium_error(x_guess, y_guess, z_guess, s_guess)
+print("Flat guess out-of-balance residual e_z (kN):", ez)
 
 
 # %% explain
-r"""* Solving Eq. (2) directly for $(\mathbf{x}, \mathbf{y}, \mathbf{z})$ is nonlinear because $L^{-1} = \mathrm{diag}(1/\mathbf{l})$ divides by $\sqrt{u_j^2 + v_j^2 + w_j^2}$."""
+r"""* `L_inv = np.diag(1.0 / l)` builds the `(12, 12)` diagonal inverse-length matrix $L^{-1}$, and `C.T @ np.diag(u) @ L_inv @ s - p_x` chains Stages 1–4 right-to-left (nonlinear in $\mathbf{x}, \mathbf{y}, \mathbf{z}$ because $L^{-1}$ divides by $\sqrt{u_j^2 + v_j^2 + w_j^2}$)."""
 
 
 # %% [c1] C.1 The force density trick and the diagonal swap, equations (4) to (6)
-r"""Prescribing force density $q_j = s_j / l_j$ ($\text{kN/m}$) cancels the nonlinear length $l_j$ out of $s_j(u_j / l_j) = q_j u_j$, making equilibrium linear in the coordinate differences $\mathbf{u}, \mathbf{v}, \mathbf{w}$.
+r"""In Section B.3, the horizontal branch force $F_{x,j} = s_j (u_j / l_j)$ was nonlinear because the unknown length $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ sat in the denominator. If instead we prescribe the **force density** $q_j = s_j / l_j$ ($\text{kN/m}$, so $s_j = q_j l_j$), then $l_j$ in the numerator and denominator cancels out: $F_{x,j} = (q_j l_j)(u_j / l_j) = q_j u_j$.
 
 ![Section C.1 How Force Density Uses Coordinate Difference u to Linearize Equilibrium](images/fd_sec_c1_force_density_trick.png)
 
 ### General Equations (Eqs. 4–6) & Meaning of $u$
 
 $$
-q_j = \frac{s_j}{l_j} \quad (\mathbf{q} = L^{-1} \mathbf{s}), \qquad
+q_j = \frac{s_j}{l_j} \quad (\mathbf{q} = L^{-1} \mathbf{s})
+\qquad \Longrightarrow \qquad
+F_{x, j} = s_j \frac{u_j}{l_j} = (q_j l_j) \frac{u_j}{l_j} = q_j u_j = q_j (x_i - x_k)
+$$
+
+$$
 C^T U \mathbf{q} = C^T Q \mathbf{u} = \mathbf{p}_x, \qquad
 C^T V \mathbf{q} = C^T Q \mathbf{v} = \mathbf{p}_y, \qquad
 C^T W \mathbf{q} = C^T Q \mathbf{w} = \mathbf{p}_z
@@ -385,16 +769,61 @@ $$
 * **$u_j$, $\mathbf{u}$ $(12 \times 1)$, and $U = \mathrm{diag}(\mathbf{u})$ $(12 \times 12)$:** $u_j = x_i - x_k$ is the $x$-coordinate difference ($\text{m}$) between start node $i$ and end node $k$ of branch $j$ (similarly $v_j = y_i - y_k$ in $V$, $w_j = z_i - z_k$ in $W$).
 * **Why we swap $U \mathbf{q} = Q \mathbf{u}$:** moves the **unknown** coordinate vector $\mathbf{u}$ to the right of the **known** diagonal force-density matrix $Q = \mathrm{diag}(\mathbf{q})$.
 
-### Matrix Example (Prescribed Force Densities)
+### Matrix Example ($\mathbf{F}_x = U \mathbf{q} = Q \mathbf{u}$ with Prescribed Force Densities)
 
 $$
-\mathbf{q} = \begin{bmatrix}
-2 & 2 & 2 & 2 & 1 & 1 & 1 & 1 & 1 & 1 & 1 & 1
-\end{bmatrix}^T\text{ kN/m},
-\qquad
-Q = \mathrm{diag}(\mathbf{q})_{(12\times 12)}
+\mathbf{F}_x =
+\underset{U\ (12\times 12)}{\begin{bmatrix}
+u_1 & & & & & \\
+ & \ddots & & & & \\
+ & & u_4 & & & \\
+ & & & u_5 & & \\
+ & & & & \ddots & \\
+ & & & & & u_{12}
+\end{bmatrix}}
+\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+2 \\
+\vdots \\
+2 \\
+1 \\
+\vdots \\
+1
+\end{bmatrix}} =
+\underset{Q\ (12\times 12)}{\begin{bmatrix}
+2 & & & & & \\
+ & \ddots & & & & \\
+ & & 2 & & & \\
+ & & & 1 & & \\
+ & & & & \ddots & \\
+ & & & & & 1
+\end{bmatrix}}
+\underset{\mathbf{u}\ (12\times 1)}{\begin{bmatrix}
+u_1 \\
+\vdots \\
+u_4 \\
+u_5 \\
+\vdots \\
+u_{12}
+\end{bmatrix}} =
+\begin{bmatrix}
+2(x_1 - x_6) \\
+\vdots \\
+2(x_4 - x_9) \\
+1(x_1 - x_4) \\
+\vdots \\
+1(x_3 - x_5)
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Anchor cable 1 } (q_1 = 2\text{ kN/m}) \\
+\vdots \\
+\leftarrow \text{Anchor cable 4 } (q_4 = 2\text{ kN/m}) \\
+\leftarrow \text{Ring cable 5 } (q_5 = 1\text{ kN/m}) \\
+\vdots \\
+\leftarrow \text{Spoke cable 12 } (q_{12} = 1\text{ kN/m})
+\end{matrix}
 $$"""
 q = np.array([2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], dtype=float)
+print("Prescribed force densities q (kN/m):", q)
 
 
 # %% explain
@@ -402,19 +831,19 @@ r"""* `q` assigns $2\text{ kN/m}$ to the 4 outer anchor branches (`0..3`) and $1
 
 
 # %% [c2] C.2 System matrices $D$ and $D_f$, equations (7) and (8)
-r"""Substituting $\mathbf{u} = C \mathbf{x} + C_f \mathbf{x}_f$ into $C^T Q \mathbf{u} = \mathbf{p}_x$ gives the linear system $D \mathbf{x} = \mathbf{p}_x - D_f \mathbf{x}_f$ with $D = C^T Q C$ and $D_f = C^T Q C_f$.
+r"""Substituting $\mathbf{u} = C \mathbf{x} + C_f \mathbf{x}_f$ into $C^T Q \mathbf{u} = \mathbf{p}_x$ separates unknown free-node coordinates $\mathbf{x}$ from known anchor coordinates $\mathbf{x}_f$ via $D = C^T Q C\ (5 \times 5)$ and $D_f = C^T Q C_f\ (5 \times 4)$.
 
 ![Sections C.2 to D.1 Physical Meaning of D and Solved 3D Saddle Equilibrium Net](images/fd_sec_c2_c3_solved_net.png)
 
 ### General Equations (Eqs. 7–8)
 
 $$
-D = C^T Q C, \qquad
-D_f = C^T Q C_f, \qquad
-D \mathbf{x} = \mathbf{p}_x - D_f \mathbf{x}_f
+(C^T Q C)\mathbf{x} + (C^T Q C_f)\mathbf{x}_f = \mathbf{p}_x
+\qquad \Longrightarrow \qquad
+D \mathbf{x} = \mathbf{p}_x - D_f \mathbf{x}_f = \mathbf{b}_x
 $$
 
-### Matrix Example ($D$, $D_f$, and Right-Hand Side $\mathbf{b}_z = \mathbf{p}_z - D_f \mathbf{z}_f$)
+### 1. Symbolic Structure of $D$ and Schek Fig. 4 ($q_j = j$)
 
 $$
 D =
@@ -424,7 +853,22 @@ q_1+q_5+q_6+q_{10} & -q_6 & 0 & -q_5 & -q_{10} \\
 0 & -q_7 & q_3+q_7+q_8+q_{12} & -q_8 & -q_{12} \\
 -q_5 & 0 & -q_8 & q_4+q_5+q_8+q_9 & -q_9 \\
 -q_{10} & -q_{11} & -q_{12} & -q_9 & q_9+q_{10}+q_{11}+q_{12}
-\end{bmatrix} =
+\end{bmatrix},
+\qquad
+D_{(q_j = j)} =
+\begin{bmatrix}
+22 & -6 & 0 & -5 & -10 \\
+-6 & 26 & -7 & 0 & -11 \\
+0 & -7 & 30 & -8 & -12 \\
+-5 & 0 & -8 & 26 & -9 \\
+-10 & -11 & -12 & -9 & 42
+\end{bmatrix}
+$$
+
+### 2. Actual Matrices $D$, $D_f$, and Right-Hand Side $\mathbf{b}_z = \mathbf{p}_z - D_f \mathbf{z}_f$
+
+$$
+D = C^T Q C =
 \begin{bmatrix}
 5 & -1 & 0 & -1 & -1 \\
 -1 & 5 & -1 & 0 & -1 \\
@@ -432,9 +876,14 @@ q_1+q_5+q_6+q_{10} & -q_6 & 0 & -q_5 & -q_{10} \\
 -1 & 0 & -1 & 5 & -1 \\
 -1 & -1 & -1 & -1 & 4
 \end{bmatrix}
-$$
-
-$$
+\begin{matrix}
+\leftarrow \text{Node 1: } 2+1+1+1=5 \\
+\leftarrow \text{Node 2: } 2+1+1+1=5 \\
+\leftarrow \text{Node 3: } 2+1+1+1=5 \\
+\leftarrow \text{Node 4: } 2+1+1+1=5 \\
+\leftarrow \text{Node 5: } 1+1+1+1=4
+\end{matrix},
+\qquad
 D_f = C^T Q C_f =
 \begin{bmatrix}
 -2 & 0 & 0 & 0 \\
@@ -442,9 +891,38 @@ D_f = C^T Q C_f =
 0 & 0 & -2 & 0 \\
 0 & 0 & 0 & -2 \\
 0 & 0 & 0 & 0
-\end{bmatrix},
-\qquad
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Node 1 to Anchor 6} \\
+\leftarrow \text{Node 2 to Anchor 7} \\
+\leftarrow \text{Node 3 to Anchor 8} \\
+\leftarrow \text{Node 4 to Anchor 9} \\
+\leftarrow \text{Node 5 (no anchor)}
+\end{matrix}
+$$
+
+$$
 \mathbf{b}_z = \mathbf{p}_z - D_f \mathbf{z}_f =
+\begin{bmatrix}
+-0.5 \\
+-0.5 \\
+-0.5 \\
+-0.5 \\
+-0.5
+\end{bmatrix} -
+\begin{bmatrix}
+-2 & 0 & 0 & 0 \\
+0 & -2 & 0 & 0 \\
+0 & 0 & -2 & 0 \\
+0 & 0 & 0 & -2 \\
+0 & 0 & 0 & 0
+\end{bmatrix}
+\begin{bmatrix}
+0 \\
+1 \\
+0 \\
+1
+\end{bmatrix} =
 \begin{bmatrix}
 -0.5 \\
 -0.5 \\
@@ -466,11 +944,21 @@ D_f = C^T Q C_f =
 1.5 \\
 -0.5
 \end{bmatrix}\text{ kN}
+\begin{matrix}
+\leftarrow \text{Node 1 (Anchor 6 at } z_6=0\text{)} \\
+\leftarrow \text{Node 2 (Anchor 7 at } z_7=1\text{ pulls up }+2.0\text{ kN)} \\
+\leftarrow \text{Node 3 (Anchor 8 at } z_8=0\text{)} \\
+\leftarrow \text{Node 4 (Anchor 9 at } z_9=1\text{ pulls up }+2.0\text{ kN)} \\
+\leftarrow \text{Node 5 (no direct anchor cable)}
+\end{matrix}
 $$"""
 Q = np.diag(q)
 D = C.T @ Q @ C                                 # (n, n)   eq. (8)
 D_f = C.T @ Q @ C_f                             # (n, n_f)
 rhs = np.c_[p_x - D_f @ x_f, p_y - D_f @ y_f, p_z - D_f @ z_f]
+print("D (5x5):\n", D)
+print("D_f (5x4):\n", D_f)
+print("RHS [b_x, b_y, b_z] (5x3):\n", rhs)
 
 
 # %% explain
@@ -488,7 +976,40 @@ D \mathbf{y} = \mathbf{p}_y - D_f \mathbf{y}_f, \qquad
 D \mathbf{z} = \mathbf{p}_z - D_f \mathbf{z}_f
 $$
 
-### Matrix Example (Solved 3D Free-Node Coordinates)
+### Matrix Example (Vertical Equilibrium Solve $D \mathbf{z} = \mathbf{b}_z$ and 3D Coordinates)
+
+$$
+\underset{D\ (5\times 5)}{\begin{bmatrix}
+5 & -1 & 0 & -1 & -1 \\
+-1 & 5 & -1 & 0 & -1 \\
+0 & -1 & 5 & -1 & -1 \\
+-1 & 0 & -1 & 5 & -1 \\
+-1 & -1 & -1 & -1 & 4
+\end{bmatrix}}
+\underset{\mathbf{z}\ (5\times 1)}{\begin{bmatrix}
+z_1 \\
+z_2 \\
+z_3 \\
+z_4 \\
+z_5
+\end{bmatrix}} =
+\underset{\mathbf{b}_z\ (5\times 1)}{\begin{bmatrix}
+-0.5 \\
+1.5 \\
+-0.5 \\
+1.5 \\
+-0.5
+\end{bmatrix}}
+\qquad \overset{\text{solve}}{\longrightarrow} \qquad
+\mathbf{z} =
+\begin{bmatrix}
+0.045 \\
+0.330 \\
+0.045 \\
+0.330 \\
+0.063
+\end{bmatrix}\text{ m}
+$$
 
 $$
 \begin{bmatrix} \mathbf{x} & \mathbf{y} & \mathbf{z} \end{bmatrix} =
@@ -501,15 +1022,16 @@ $$
 \end{bmatrix}\text{ m}
 \begin{matrix}
 \leftarrow \text{Node 1 (low corner)} \\
-\leftarrow \text{Node 2 (high corner)} \\
+\leftarrow \text{Node 2 (pulled up by Anchor 7)} \\
 \leftarrow \text{Node 3 (low corner)} \\
-\leftarrow \text{Node 4 (high corner)} \\
+\leftarrow \text{Node 4 (pulled up by Anchor 9)} \\
 \leftarrow \text{Node 5 (center saddle)}
 \end{matrix}
 $$"""
 x: FloatVector = np.linalg.solve(D, p_x - D_f @ x_f)    # eq. (9)
 y: FloatVector = np.linalg.solve(D, p_y - D_f @ y_f)
 z: FloatVector = np.linalg.solve(D, p_z - D_f @ z_f)
+print("Solved free-node coordinates [x, y, z] (5x3):\n", np.c_[x, y, z])
 
 
 # %% explain
@@ -536,7 +1058,11 @@ $$
 2.0 \\
 2.0 \\
 1.0 \\
-\vdots \\
+1.0 \\
+1.0 \\
+1.0 \\
+1.0 \\
+1.0 \\
 1.0 \\
 1.0
 \end{bmatrix}} \odot
@@ -546,7 +1072,11 @@ $$
 1.201 \\
 1.374 \\
 1.167 \\
-\vdots \\
+1.167 \\
+1.167 \\
+1.167 \\
+0.844 \\
+0.800 \\
 0.844 \\
 0.800
 \end{bmatrix}} =
@@ -556,7 +1086,11 @@ $$
 2.402 \\
 2.748 \\
 1.167 \\
-\vdots \\
+1.167 \\
+1.167 \\
+1.167 \\
+0.844 \\
+0.800 \\
 0.844 \\
 0.800
 \end{bmatrix}}
@@ -567,10 +1101,28 @@ $$
 1.195 \\
 1.367 \\
 1.164 \\
-\vdots \\
+1.164 \\
+1.164 \\
+1.164 \\
+0.842 \\
+0.799 \\
 0.842 \\
 0.799
 \end{bmatrix}}
+\begin{matrix}
+\leftarrow b_1\ (1\to 6,\ e_1 = 5.7\text{ mm}) \\
+\leftarrow b_2\ (2\to 7,\ e_2 = 7.5\text{ mm}) \\
+\leftarrow b_3\ (3\to 8,\ e_3 = 5.7\text{ mm}) \\
+\leftarrow b_4\ (4\to 9,\ e_4 = 7.5\text{ mm}) \\
+\leftarrow b_5\ (1\to 4,\ e_5 = 2.7\text{ mm}) \\
+\leftarrow b_6\ (1\to 2,\ e_6 = 2.7\text{ mm}) \\
+\leftarrow b_7\ (2\to 3,\ e_7 = 2.7\text{ mm}) \\
+\leftarrow b_8\ (3\to 4,\ e_8 = 2.7\text{ mm}) \\
+\leftarrow b_9\ (4\to 5,\ e_9 = 1.4\text{ mm}) \\
+\leftarrow b_{10}\ (1\to 5,\ e_{10} = 1.3\text{ mm}) \\
+\leftarrow b_{11}\ (2\to 5,\ e_{11} = 1.4\text{ mm}) \\
+\leftarrow b_{12}\ (3\to 5,\ e_{12} = 1.3\text{ mm})
+\end{matrix}
 $$"""
 u, v, w, l = coordinate_differences(C, x, y, z, C_f, x_f, y_f, z_f)
 s = l * q                                       # eq. (10): axial forces (kN)
@@ -581,6 +1133,10 @@ xyz_free = np.c_[x, y, z]
 max_eq_error = max(
     np.abs(e).max() for e in equilibrium_error(x, y, z, s)
 )
+print("Lengths l (m):      ", l)
+print("Forces s (kN):      ", s)
+print("Cutting l_0 (m):    ", l_cutting)
+print("Max equilibrium err:", f"{max_eq_error:.2e}")
 
 
 # %% explain
@@ -605,16 +1161,22 @@ $$
 $$
 \mathbf{R}_f = C_f^T Q \mathbf{U}_{xyz} =
 \begin{bmatrix}
+R_{6x} & R_{6y} & R_{6z} \\
+R_{7x} & R_{7y} & R_{7z} \\
+R_{8x} & R_{8y} & R_{8z} \\
+R_{9x} & R_{9y} & R_{9z}
+\end{bmatrix} =
+\begin{bmatrix}
 -2.400 & 0.000 & -0.089 \\
 0.000 & 2.400 & 1.339 \\
 2.400 & 0.000 & -0.089 \\
 0.000 & -2.400 & 1.339
 \end{bmatrix}\text{ kN}
 \begin{matrix}
-\leftarrow \text{Anchor 6 (ground hold-down)} \\
-\leftarrow \text{Anchor 7 (lifted mast)} \\
-\leftarrow \text{Anchor 8 (ground hold-down)} \\
-\leftarrow \text{Anchor 9 (lifted mast)}
+\leftarrow \text{Anchor 6 (ground hold-down: }-0.089\text{ kN)} \\
+\leftarrow \text{Anchor 7 (lifted mast: }+1.339\text{ kN)} \\
+\leftarrow \text{Anchor 8 (ground hold-down: }-0.089\text{ kN)} \\
+\leftarrow \text{Anchor 9 (lifted mast: }+1.339\text{ kN)}
 \end{matrix}
 $$"""
 def form_finding(branches, n_free, xyz_fixed, q, p):
@@ -646,7 +1208,29 @@ r"""Moving anchors $\mathbf{X}_f$ only updates the right-hand side, changing $\m
 
 ![Parts D, E and F Parameter Study, Energy Minimization and Target Length Constraints](images/fd_sec_e_f_constraints.png)
 
-### Matrix Comparison Across 4 Runs
+### Matrix Example (Free-Node Heights $\mathbf{z}$ Across 4 Cases)
+
+$$
+\begin{bmatrix}
+\mathbf{z}_{\text{case 1}} & \mathbf{z}_{\text{case 2}} & \mathbf{z}_{\text{case 3}} & \mathbf{z}_{\text{case 4}}
+\end{bmatrix} =
+\begin{bmatrix}
+0.045 & 1.045 & 0.104 & 0.045 \\
+0.330 & 1.330 & 0.771 & 0.330 \\
+0.045 & 1.045 & 0.104 & 0.045 \\
+0.330 & 1.330 & 0.771 & 0.330 \\
+0.063 & 1.063 & 0.313 & 0.063
+\end{bmatrix}\text{ m}
+\begin{matrix}
+\leftarrow \text{Node 1} \\
+\leftarrow \text{Node 2} \\
+\leftarrow \text{Node 3} \\
+\leftarrow \text{Node 4} \\
+\leftarrow \text{Node 5 (center)}
+\end{matrix},
+\qquad
+\mathbf{s}_{\text{case 4}} = 2\mathbf{s}_{\text{case 1}}
+$$
 
 | Case | Matrix $D\ (5\times 5)$ | RHS $\mathbf{P} - D_f \mathbf{X}_f$ | Center Height $z_5\ (\text{m})$ | Max Force $\max(\mathbf{s})$ |
 |---|---|---|---|---|
@@ -671,6 +1255,10 @@ xyz3, *_ = form_finding(branches, n, xyz_fixed, q_stiff_anchors, p)
 xyz4, l4, s4, R4 = form_finding(branches, n, xyz_fixed, 2.0 * q, 2.0 * p)
 scale_invariance_xyz_diff = np.abs(xyz4 - xyz1).max()
 z_center_cases = (xyz1[4, 2], xyz2[4, 2], xyz3[4, 2], xyz4[4, 2])
+print("Support reactions R_f (4x3):\n", R1)
+print("Vertical reaction sum (kN):", R1[:, 2].sum())
+print("Center z_5 across Cases 1..4 (m):", np.round(z_center_cases, 3))
+print("Scale invariance max |xyz4 - xyz1|:", scale_invariance_xyz_diff)
 
 
 # %% explain
@@ -683,9 +1271,9 @@ r"""For an unloaded network ($\mathbf{P} = \mathbf{0}$), solving $D\mathbf{X} = 
 ### General Equations (Eqs. 37–40)
 
 $$
-\Phi(\mathbf{x}, \mathbf{y}, \mathbf{z}) = \sum_{j=1}^m q_j l_j^2 \longrightarrow \min
+\Phi(\mathbf{x}, \mathbf{y}, \mathbf{z}) = \mathbf{u}^T Q \mathbf{u} + \mathbf{v}^T Q \mathbf{v} + \mathbf{w}^T Q \mathbf{w} = \sum_{j=1}^m q_j l_j^2 \longrightarrow \min
 \qquad \Longleftrightarrow \qquad
-\frac{\partial \Phi}{\partial \mathbf{x}} = 2 (D \mathbf{x} + D_f \mathbf{x}_f) = \mathbf{0}
+\frac{\partial \Phi}{\partial \mathbf{x}} = 2 C^T Q \mathbf{u} = 2 (D \mathbf{x} + D_f \mathbf{x}_f) = \mathbf{0}
 $$
 
 ### Matrix Example (Unloaded Saddle $\mathbf{P} = \mathbf{0}$)
@@ -697,7 +1285,14 @@ $$
 0.800 & 0.000 & 0.357 \\
 0.000 & -0.800 & 0.643 \\
 0.000 & 0.000 & 0.500
-\end{bmatrix}\text{ m},
+\end{bmatrix}\text{ m}
+\begin{matrix}
+\leftarrow \text{Node 1 (low corner, } z_1 = 5/14 \approx 0.357\text{ m)} \\
+\leftarrow \text{Node 2 (high corner, } z_2 = 9/14 \approx 0.643\text{ m)} \\
+\leftarrow \text{Node 3 (low corner, } z_3 = 5/14 \approx 0.357\text{ m)} \\
+\leftarrow \text{Node 4 (high corner, } z_4 = 9/14 \approx 0.643\text{ m)} \\
+\leftarrow \text{Node 5 (exact saddle midpoint } z_5 = 0.500\text{ m)}
+\end{matrix},
 \qquad
 \nabla \Phi(\mathbf{X}_0) = 2 C^T Q \mathbf{U}_0 = \mathbf{0}_{5\times 3}
 $$"""
@@ -709,6 +1304,8 @@ gradient = 2 * C.T @ np.diag(q) @ uvw0             # Theorem 1: dPhi/dX == 0
 max_grad_unloaded = np.abs(gradient).max()
 q_const = 1.0 / l0                                 # Theorem 2: q = 1 / l
 s_uniform = l0 * q_const                           # all forces equal 1.0 kN
+print("Theorem 1 max |dPhi/dX|:", f"{max_grad_unloaded:.2e}")
+print("Theorem 2 uniform forces s (kN):", s_uniform)
 
 
 # %% explain
@@ -749,10 +1346,18 @@ $$
 +0.001 \\
 +0.174
 \end{bmatrix}\text{ m}
+\begin{matrix}
+\leftarrow \text{Branch 1 (}+1\text{ mm error)} \\
+\leftarrow \text{Branch 2 (lifted anchor: }+17.4\text{ cm too long)} \\
+\leftarrow \text{Branch 3 (}+1\text{ mm error)} \\
+\leftarrow \text{Branch 4 (lifted anchor: }+17.4\text{ cm too long)}
+\end{matrix}
 $$"""
 length_rows = [0, 1, 2, 3]                    # the four anchor branches
 target_lengths = np.full(4, 1.2)              # target length 1.2 m on each
 g_lengths = l[length_rows] - target_lengths   # constraint residual vector
+print("Initial anchor lengths (m):", l[length_rows])
+print("Length residual g*(q) (m): ", g_lengths)
 
 
 # %% explain
@@ -771,15 +1376,16 @@ $$
 ### Matrix Example (Before vs. After on Anchor Cables 1–4)
 
 $$
-\mathbf{q} _ {1..4}^{(0)} =
+\text{Initial:}\quad
+\mathbf{q}_{1..4}^{(0)} =
 \begin{bmatrix}
 2.000 \\
 2.000 \\
 2.000 \\
 2.000
-\end{bmatrix},
+\end{bmatrix}\text{ kN/m},
 \quad
-\mathbf{l} _ {1..4}^{(0)} =
+\mathbf{l}_{1..4}^{(0)} =
 \begin{bmatrix}
 1.201 \\
 1.374 \\
@@ -787,15 +1393,16 @@ $$
 1.374
 \end{bmatrix}\text{ m}
 \qquad \longrightarrow \qquad
-\mathbf{q} _ {1..4}^{\ast} =
+\text{Solved:}\quad
+\mathbf{q}_{1..4}^{\ast} =
 \begin{bmatrix}
 1.972 \\
 2.412 \\
 1.972 \\
 2.412
-\end{bmatrix},
+\end{bmatrix}\text{ kN/m},
 \quad
-\mathbf{l} _ {1..4}^{\ast} =
+\mathbf{l}_{1..4}^{\ast} =
 \begin{bmatrix}
 1.200 \\
 1.200 \\
@@ -838,6 +1445,8 @@ q_m, xyz_m, l_m, s_m, tries_m, err_m = fit_force_densities(
     length_rows=[8, 9, 10, 11], l_v=[0.9] * 4,
     force_rows=[0, 1, 2, 3], s_v=[2.0] * 4,
 )
+print(f"Optimized q*_[1..4]: {q_c[:4]} -> lengths l*_[1..4]: {l_c[:4]} (err={err_c:.1e})")
+print(f"Mixed target spokes l*_[9..12]: {l_m[8:]} m, anchor forces s*_[1..4]: {s_m[:4]} kN (err={err_m:.1e})")
 
 
 # %% explain
@@ -856,7 +1465,7 @@ $$
 G^T = \frac{\partial \mathbf{g}^{\ast}}{\partial \mathbf{q}}
 $$
 
-### Matrix Example (Anchor Length Jacobian $G^T_{1..4,\ 1..4}$)
+### Matrix Example (Anchor Length Jacobian $G^T_{1..4,\ 1..4}$ and Height Sensitivity $\partial \mathbf{z} / \partial \mathbf{q}_{1..4}$)
 
 $$
 G^T_{1..4,\ 1..4} =
@@ -866,6 +1475,30 @@ G^T_{1..4,\ 1..4} =
 0.073 & 0.002 & -0.313 & 0.002 \\
 0.002 & 0.044 & 0.002 & -0.358
 \end{bmatrix}
+\begin{matrix}
+\leftarrow \partial l_1 / \partial q_{1..4}\ (\text{tightening } q_1\text{ shortens } l_1) \\
+\leftarrow \partial l_2 / \partial q_{1..4}\ (\text{tightening } q_2\text{ shortens } l_2) \\
+\leftarrow \partial l_3 / \partial q_{1..4}\ (\text{tightening } q_3\text{ shortens } l_3) \\
+\leftarrow \partial l_4 / \partial q_{1..4}\ (\text{tightening } q_4\text{ shortens } l_4)
+\end{matrix}
+$$
+
+$$
+\frac{\partial \mathbf{z}}{\partial \mathbf{q}_{1..4}} = -D^{-1} C^T W_{:, 1..4} =
+\begin{bmatrix}
+-0.012 & 0.060 & -0.003 & 0.060 \\
+-0.004 & 0.175 & -0.004 & 0.041 \\
+-0.003 & 0.060 & -0.012 & 0.060 \\
+-0.004 & 0.041 & -0.004 & 0.175 \\
+-0.006 & 0.084 & -0.006 & 0.084
+\end{bmatrix}
+\begin{matrix}
+\leftarrow \text{Node 1} \\
+\leftarrow \text{Node 2 (rises }+0.175\text{ m per kN/m of } q_2\text{)} \\
+\leftarrow \text{Node 3} \\
+\leftarrow \text{Node 4 (rises }+0.175\text{ m per kN/m of } q_4\text{)} \\
+\leftarrow \text{Node 5 (center rises }+0.084\text{ m per kN/m of } q_2, q_4\text{)}
+\end{matrix}
 $$"""
 def sensitivity(q_vec, rows, step=1e-6):
     """Finite-difference Jacobian d(l[rows]) / dq of shape (r, m)."""
@@ -880,6 +1513,7 @@ def sensitivity(q_vec, rows, step=1e-6):
 
 
 G_t = sensitivity(q, [0, 1, 2, 3])
+print("Jacobian block G_t[:, :4] (4x4):\n", G_t[:, :4])
 
 
 # %% explain
@@ -990,6 +1624,10 @@ def keep(name, brs, xyz_free_nodes, xyz_fixed_nodes, fixed_nodes):
     }
 
 
+print(f"Fig. 5 tent: {free5} free nodes, {len(fixed5)} fixed supports, {len(branches5)} branches")
+print(f"Branch counts: {int(is_border.sum())} border, {int(is_spoke.sum())} radial spokes, {int((~is_border & ~is_spoke).sum())} interior")
+
+
 # %% explain
 r"""* Boolean masks `is_spoke`, `is_border`, and `touches_border` (`shape (110,)`) classify each branch so we can selectively modify $q$ or slice lengths `l[is_spoke]`.
 * A $200\times$ ratio between border cables ($q = 100$) and radial cables ($q = 0.5$) keeps the boundary scallops taut while letting the radial cables drape steeply to the $16\text{ m}$ apex."""
@@ -1016,6 +1654,7 @@ for name, (dx, dy) in fig6_shifts:
         branches5, free5, anchors5(dx, dy), q5, p5
     )
     keep(name, branches5, xyz_6, anchors5(dx, dy), fixed5)
+    print(f"{name}: radial l in [{l_6[is_spoke].min():.1f}, {l_6[is_spoke].max():.1f}] m, apex R_z = {R_6[5, 2]:.1f} kN")
 
 xyz_fig1, *_ = form_finding(branches5, free5, anchors5(), q5, p5)
 keep("fig1", branches5, xyz_fig1, anchors5(), fixed5)
@@ -1047,6 +1686,7 @@ for name, qs in zip(["fig7_1", "fig7_2", "fig7_3"], [1.0, 0.7, 0.3]):
         branches5, free5, anchors5(), q_spoke_run, p5
     )
     keep(name, branches5, xyz_7, anchors5(), fixed5)
+    print(f"{name} (q_spoke={qs}): radial l in [{l_7[is_spoke].min():.1f}, {l_7[is_spoke].max():.1f}] m")
 
 for name, qb in zip(["fig8_1", "fig8_2", "fig8_3"], [10.0, 5.0, 1.0]):
     q_border_run = np.where(is_border, qb, q5)
@@ -1054,6 +1694,7 @@ for name, qb in zip(["fig8_1", "fig8_2", "fig8_3"], [10.0, 5.0, 1.0]):
         branches5, free5, anchors5(), q_border_run, p5
     )
     keep(name, branches5, xyz_8, anchors5(), fixed5)
+    print(f"{name} (q_border={qb}): border l in [{l_8[is_border].min():.1f}, {l_8[is_border].max():.1f}] m")
 
 
 # %% explain
@@ -1088,6 +1729,7 @@ for name, (l_radial, ring_factor) in fig9_runs:
         length_rows=inner, l_v=l_v,
     )
     keep(name, branches5, xyz_9, anchors5(), fixed5)
+    print(f"{name}: {tries_9} evals, max length residual = {err_9:.2e} m")
 
 
 # %% explain
@@ -1170,6 +1812,9 @@ q_10_3, xyz_10_3, l_10_3, s_10_3, tries_10_3, err_10_3 = (
     )
 )
 keep("fig10_3", grid, xyz_10_3, anchors10b, [renum[c] for c in corners])
+print(f"fig10_1: err={err_10_1:.2e} m, forces in [{s_10_1.min():.2f}, {s_10_1.max():.2f}] kN")
+print(f"fig10_2: inner lengths in [{l_10_2[inner10].min():.2f}, {l_10_2[inner10].max():.2f}] m")
+print(f"fig10_3: err={err_10_3:.2e}, uniform inner l={l_10_3[inner10].mean():.3f} m, link s={s_10_3[link10].mean():.3f} kN")
 
 
 # %% explain
@@ -1196,6 +1841,7 @@ base_dir = (
 out = base_dir / "viewer_scenes/json/shapes.json"
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(json.dumps(shapes))
+print(f"Saved {len(shapes)} shapes ({list(shapes.keys())}) to {out.name}")
 
 
 # %% explain

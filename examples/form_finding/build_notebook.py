@@ -33,10 +33,18 @@ A runnable version of [compas_fd.md](compas_fd.md). **Run the cells in order**.
 
 ![Physical and geometric foundation of the Force Density Method](images/fd_linkwitz_intuition.png)
 
-* **Force density ($q_j = s_j / l_j$):** Dividing branch tension $s_j$ by branch length $l_j = \sqrt{u_j^2 + v_j^2 + w_j^2}$ cancels $l_j$ out of the direction cosine $u_j / l_j$, turning nonlinear equilibrium into a linear system where each free node $P_0$ settles at the $q$-weighted average of its neighbors (Linkwitz 2014, Sec. 6.2):
+* **1. Why cable equilibrium is nonlinear:** A cable $j$ between node $i$ and node $k$ has length $l_j = \sqrt{(x_i - x_k)^2 + (y_i - y_k)^2 + (z_i - z_k)^2}$ and tension $s_j$ ($\text{kN}$). By similar triangles, its $x$-force component is $F_{x,j} = s_j \frac{x_i - x_k}{l_j}$. Because the unknown coordinates $(x, y, z)$ sit inside the square root $l_j$ in the denominator, solving for node positions directly from forces $s_j$ is **nonlinear**.
+* **2. How force density ($q_j = s_j / l_j$) makes it linear:** Prescribe the **force-to-length ratio** $q_j = s_j / l_j$ ($\text{kN/m}$), so $s_j = q_j l_j$. Substituting $s_j = q_j l_j$ into $F_{x,j}$ cancels the unknown length $l_j$ in the numerator and denominator:
 
 $$
-q_j = \frac{s_j}{l_j}, \qquad
+F_{x,j} = s_j \frac{x_i - x_k}{l_j} = (q_j l_j) \frac{x_i - x_k}{l_j} = q_j (x_i - x_k)
+$$
+
+* **3. Physical meaning at a node (Linkwitz 2014, Sec. 6.2):** For a free node $P_0$ connected to neighbors $P_1, P_2, P_3, P_4$ with force densities $q_a, q_b, q_c, q_d$, force balance $\sum q_j (x_0 - x_k) = p_x$ is a **linear equation** whose solution places $P_0$ at the $q$-weighted average of its neighbors (and then recovers unstressed cutting length $l_{0,j}$ from Hooke's law):
+
+$$
+q_a(x_0 - x_1) + q_b(x_0 - x_2) + q_c(x_0 - x_3) + q_d(x_0 - x_4) = p_x
+\quad \Longrightarrow \quad
 x_0 = \frac{p_x + q_a x_1 + q_b x_2 + q_c x_3 + q_d x_4}{q_a + q_b + q_c + q_d}, \qquad
 l _ {0,j} = \frac{l_j}{1 + s_j / EA_j}
 $$
