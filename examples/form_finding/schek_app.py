@@ -568,31 +568,48 @@ r"""* `C @ x + C_f @ x_f` evaluates $(12, 5) \times (5,) + (12, 4) \times (4,) \
 
 
 # %% [b3] B.3 Nonlinear equilibrium in 4 stages, equation (2)
-r"""Project branch tensions $\mathbf{s} = [1, \dots, 1]^T\text{ kN}$ by direction cosines $(u_j/l_j,\ v_j/l_j,\ w_j/l_j)$ and sum at free nodes via $C^T$, reading the matrix product **right to left** in 4 stages.
+r"""From a single cable's tension $s_j$ and length $l_j$, we derive the 4-stage matrix equilibrium equation $\mathbf{e}_x = C^T U L^{-1} \mathbf{s} - \mathbf{p}_x$, reading the matrix product **right to left** from Stage 1 to Stage 4.
 
 ![Section B.3 Four-Stage Nonlinear Equilibrium and Flat Net Imbalance](images/fd_sec_b3_nonlinear_stages.png)
 
-### General Equation (Eq. 2)
+### How Stages 1–4 Are Derived (From One Cable to Matrix Form, Eq. 2)
+
+1. **Single cable $j\ (i \to k)$:** Cable $j$ pulls with axial tension $s_j$ ($\text{kN}$) along its 3D length $l_j$ ($\text{m}$). By similar triangles, its direction cosine along $x$ is $u_j / l_j = (x_i - x_k) / l_j$, so its horizontal force component is:
 
 $$
-\mathbf{e}_x = \underbrace{C^T}_{\text{Stage 3: to nodes}} \quad \underbrace{U}_{\text{Stage 2: project } x} \quad \underbrace{L^{-1} \mathbf{s}}_{\text{Stage 1: } q_j = s_j / l_j} \quad - \quad \underbrace{\mathbf{p}_x}_{\text{Stage 4: load}}
+F_{x,j} = s_j \frac{u_j}{l_j} = u_j \underbrace{\left(\frac{s_j}{l_j}\right)}_{\text{Stage 1: } q_j}
 $$
 
-### Stage-by-Stage Matrix Breakdown
+2. **All 12 cables in matrix form (Stages 1 & 2):** Using the diagonal matrices $L^{-1} = \mathrm{diag}(1/l_1, \dots, 1/l_{12})$ and $U = \mathrm{diag}(u_1, \dots, u_{12})$:
+   * **Stage 1:** $\mathbf{q} = L^{-1} \mathbf{s}\ (12 \times 1)$ divides each cable's tension $s_j$ by its length $l_j$ ($q_j = s_j / l_j$).
+   * **Stage 2:** $\mathbf{F}_x = U \mathbf{q} = U L^{-1} \mathbf{s}\ (12 \times 1)$ multiplies each cable's ratio $q_j$ by its span $u_j$ ($F_{x,j} = u_j q_j$).
+3. **Force balance at the 5 free nodes (Stages 3 & 4):** Row $i$ of $C^T\ (5 \times 12)$ has $+1$ for cables starting at node $i$ and $-1$ for cables ending at node $i$, so multiplying by $C^T$ sums the cable forces at each free node $i = 1 \dots 5$, and subtracting external load $\mathbf{p}_x\ (5 \times 1)$ gives the out-of-balance residual:
+
+$$
+\mathbf{e}_x = \underbrace{C^T}_{\text{Stage 3: sum at nodes } (5\times 12)} \quad \underbrace{U}_{\text{Stage 2: project } x\ (12\times 12)} \quad \underbrace{L^{-1} \mathbf{s}}_{\text{Stage 1: } q_j = s_j / l_j\ (12\times 1)} \quad - \quad \underbrace{\mathbf{p}_x}_{\text{Stage 4: load } (5\times 1)}
+$$
+
+---
+
+### Stage-by-Stage Matrix Breakdown (Flat Trial Net with $s_j = 1\text{ kN}$)
 
 #### Stage 1 — Force Density Ratios: $\mathbf{q} = L^{-1} \mathbf{s}\ (12 \times 1)$
 
-Multiplying the $(12 \times 12)$ inverse-length matrix $L^{-1} = \mathrm{diag}(1/l_1, \dots, 1/l_{12})$ by a trial tension vector $\mathbf{s} = [1, 1, \dots, 1]^T\text{ kN}$ ($s_j = 1\text{ kN}$ in every branch) divides each cable's force $s_j$ by its length $l_j$ ($q_j = s_j / l_j$):
-
 $$
-\mathbf{q} = L^{-1} \mathbf{s} =
+\mathbf{q} =
 \underset{L^{-1}\ (12\times 12)}{\begin{bmatrix}
-1 & & & & & \\
- & \tfrac{1}{\sqrt{10}} & & & & \\
- & & 1 & & & \\
- & & & \tfrac{1}{\sqrt{10}} & & \\
- & & & & \tfrac{1}{\sqrt{2}} & \\
- & & & & & \ddots
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & \tfrac{1}{\sqrt{10}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & \tfrac{1}{\sqrt{2}} & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}}
 \underset{\mathbf{s}\ (12\times 1)}{\begin{bmatrix}
 1 \\
@@ -600,22 +617,27 @@ $$
 1 \\
 1 \\
 1 \\
-\vdots \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
+1 \\
 1
-\end{bmatrix}\text{ kN}} =
+\end{bmatrix}} =
 \begin{bmatrix}
-1 / 1 \\
-1 / \sqrt{10} \\
-1 / 1 \\
-1 / \sqrt{10} \\
-1 / \sqrt{2} \\
-1 / \sqrt{2} \\
-1 / \sqrt{2} \\
-1 / \sqrt{2} \\
-1 / 1 \\
-1 / 1 \\
-1 / 1 \\
-1 / 1
+1 \\
+\tfrac{1}{\sqrt{10}} \\
+1 \\
+\tfrac{1}{\sqrt{10}} \\
+\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+\tfrac{1}{\sqrt{2}} \\
+1 \\
+1 \\
+1 \\
+1
 \end{bmatrix}
 \approx
 \begin{bmatrix}
@@ -638,21 +660,53 @@ $$
 
 $$
 \mathbf{F}_x = U \mathbf{q} =
+\underset{U\ (12\times 12)}{\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & -1 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1
+\end{bmatrix}}
+\underset{\mathbf{q}\ (12\times 1)}{\begin{bmatrix}
+1.000 \\
+0.316 \\
+1.000 \\
+0.316 \\
+0.707 \\
+0.707 \\
+0.707 \\
+0.707 \\
+1.000 \\
+1.000 \\
+1.000 \\
+1.000
+\end{bmatrix}} =
 \begin{bmatrix}
-1 \\
+1.000 \\
 0 \\
--1 \\
+-1.000 \\
 0 \\
--\tfrac{1}{\sqrt{2}} \\
--\tfrac{1}{\sqrt{2}} \\
--\tfrac{1}{\sqrt{2}} \\
-\tfrac{1}{\sqrt{2}} \\
+-0.707 \\
+-0.707 \\
+-0.707 \\
+0.707 \\
 0 \\
--1 \\
+-1.000 \\
 0 \\
-1
-\end{bmatrix},
-\qquad
+1.000
+\end{bmatrix}\text{ kN}
+$$
+
+Similarly along $y$ ($\mathbf{F}_y = V \mathbf{q}$) and $z$ ($\mathbf{F}_z = W \mathbf{q}$):
+
+$$
 \mathbf{F}_y = V \mathbf{q} =
 \begin{bmatrix}
 0 \\
@@ -667,7 +721,22 @@ $$
 0 \\
 -1 \\
 0
-\end{bmatrix},
+\end{bmatrix}
+\approx
+\begin{bmatrix}
+0 \\
+-0.949 \\
+0 \\
+0.949 \\
+-0.707 \\
+0.707 \\
+-0.707 \\
+-0.707 \\
+1.000 \\
+0 \\
+-1.000 \\
+0
+\end{bmatrix}\text{ kN},
 \qquad
 \mathbf{F}_z = W \mathbf{q} =
 \begin{bmatrix}
@@ -675,6 +744,21 @@ $$
 -\tfrac{1}{\sqrt{10}} \\
 0 \\
 -\tfrac{1}{\sqrt{10}} \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0 \\
+0
+\end{bmatrix}
+\approx
+\begin{bmatrix}
+0 \\
+-0.316 \\
+0 \\
+-0.316 \\
 0 \\
 0 \\
 0 \\
