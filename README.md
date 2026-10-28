@@ -34,7 +34,7 @@ integration.
 - [Contributing](docs/contributing/README.md) — add knowledge or computational tools.
 - [Architecture](docs/architecture.md) — file structure and implementation details.
 - [Skills](skills/README.md) — portable workflows and optional client shortcuts.
-- [Remote server](deploy/huggingface/DEPLOY.md) — the same server over HTTP, used by the CAS website's BRG terminal.
+- [Remote server](deploy/README.md) — the same server over HTTP, used by the CAS website's BRG terminal.
 
 ## Available now
 

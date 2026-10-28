@@ -1,0 +1,22 @@
+# The tests, on every push and pull request. Render deploys main only when they pass (render.yaml).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.22"
+      - name: Test
+        # failing tests also appear as annotations on the run page
+        run: |
+          set -o pipefail
+          uv run --locked --extra dev pytest -q -rf 2>&1 | tee pytest.log || {
+            grep -E "^(FAILED|ERROR)" pytest.log | sed 's/^/::error::/' ; exit 1; }

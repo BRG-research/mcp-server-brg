@@ -1,5 +1,5 @@
 # The BRG MCP server over Streamable HTTP, for clients that cannot start it locally (the CAS website's
-# BRG terminal, through the Claude API's MCP connector). Deployed as a Hugging Face Space (deploy/huggingface).
+# BRG terminal, through the Claude API's MCP connector). Deployed on Render (render.yaml, deploy/README.md).
 #   docker build -t brg-mcp . && docker run -p 8000:8000 brg-mcp   # then http://localhost:8000/mcp
 FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:0.8.22 /uv /bin/uv
