@@ -26,7 +26,11 @@ jobs:
         with:
           version: "0.8.22"
       - name: Test
-        run: uv run --locked --extra dev pytest -q
+        # failing tests also appear as annotations on the run page
+        run: |
+          set -o pipefail
+          uv run --locked --extra dev pytest -q -rf 2>&1 | tee pytest.log || {
+            grep -E "^(FAILED|ERROR)" pytest.log | sed 's/^/::error::/' ; exit 1; }
       - name: Stage the Space
         # only what the image needs; the Space card (deploy/huggingface/README.md) becomes its README
         run: |
