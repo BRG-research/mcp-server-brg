@@ -44,8 +44,18 @@ def main() -> None:
     else:
         # Stateless JSON responses: every request stands alone, so any instance can answer it
         # (the Claude API's MCP connector, a container that sleeps and restarts).
-        create_server(args.data_root, host=args.host, port=args.port,
-                      stateless_http=True, json_response=True).run(transport="streamable-http")
+        import uvicorn
+        server = create_server(args.data_root, host=args.host, port=args.port,
+                               stateless_http=True, json_response=True)
+        uvicorn.run(http_app(server), host=args.host, port=args.port, log_level="info")
+
+
+def http_app(server: FastMCP):
+    """The Streamable HTTP app, callable from web pages too (CORS): the CAS website lists the notebook
+    tools as slash commands and calls them directly. The server is read-only and holds no secrets."""
+    from starlette.middleware.cors import CORSMiddleware
+    return CORSMiddleware(server.streamable_http_app(), allow_origins=["*"], allow_methods=["GET", "POST", "OPTIONS"],
+                          allow_headers=["*"], expose_headers=["mcp-session-id"])
 
 
 if __name__ == "__main__":

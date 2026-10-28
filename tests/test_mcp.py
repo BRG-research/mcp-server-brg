@@ -56,3 +56,23 @@ def test_stdio_protocol(tmp_path):
                     await session.get_prompt("books_process", {"source": " "})
 
     asyncio.run(asyncio.wait_for(check(), timeout=20))
+
+
+def test_http_app_allows_web_pages_to_list_and_call_tools():
+    from starlette.testclient import TestClient
+    from brg_mcp.server import create_server, http_app
+    rpc = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
+           "Origin": "https://brg-teaching.github.io"}
+    # as deployed: bound to 0.0.0.0 (no localhost-only host check), stateless JSON
+    server = create_server(Path(__file__).resolve().parents[1], host="0.0.0.0", stateless_http=True, json_response=True)
+    with TestClient(http_app(server), base_url="http://127.0.0.1:8000") as client:
+        preflight = client.options("/mcp", headers={"Origin": "https://brg-teaching.github.io",
+                                                    "Access-Control-Request-Method": "POST",
+                                                    "Access-Control-Request-Headers": "content-type"})
+        assert preflight.status_code == 200 and preflight.headers["access-control-allow-origin"] in ("*", "https://brg-teaching.github.io")
+        tools = client.post("/mcp", headers=rpc, json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}})
+        assert tools.headers["access-control-allow-origin"] == "*"
+        assert "compas_box_notebook" in {t["name"] for t in tools.json()["result"]["tools"]}
+        box = client.post("/mcp", headers=rpc, json={"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                                                     "params": {"name": "compas_box_notebook", "arguments": {"xsize": 3}}})
+        assert '"brg_mcp.ipynb"' in box.json()["result"]["content"][0]["text"]
