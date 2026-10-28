@@ -12,19 +12,27 @@ dependencies = [
     "mcp>=1.28,<2",
     "PyYAML>=6,<7",
     "httpx>=0.28,<1",
-    # the BRG terminal (`uv run brg`): the prompt, the transcript and the account engines
-    "prompt-toolkit>=3.0.50,<4",
-    "rich>=13,<15",
-    "claude-agent-sdk>=0.2,<1",
-    "anthropic>=1.15,<2",
-    "openai>=3,<4",
-    "unicodeit>=0.7,<1",
     "pillow>=10,<13",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "pytest-asyncio>=0.23,<2"]
 cli = []  # kept for `uv sync --extra cli`; the terminal is now in the main dependencies
+
+# The BRG terminal (`uv run brg`): the prompt, the transcript and the account engines. A default group, so
+# `uv sync` installs it as before; the server's Docker image leaves it out (`--no-default-groups`).
+[dependency-groups]
+terminal = [
+    "prompt-toolkit>=3.0.50,<4",
+    "rich>=13,<15",
+    "claude-agent-sdk>=0.2,<1",
+    "anthropic>=1.15,<2",
+    "openai>=3,<4",
+    "unicodeit>=0.7,<1",
+]
+
+[tool.uv]
+default-groups = ["terminal"]
 
 [project.scripts]
 brg-mcp = "brg_mcp.server:main"

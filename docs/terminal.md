@@ -9,7 +9,7 @@ knowledge notes and the book library while it answers.
 ## Install and run
 
 ```bash
-uv sync                      # everything, including the terminal
+uv sync                      # everything, including the terminal (its default dependency group)
 uv run brg                   # from the checkout, or: uv run brg --data-root /path/to/mcp-server-brg
 ```
 
