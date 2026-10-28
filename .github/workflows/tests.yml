@@ -1,4 +1,4 @@
-# The tests, on every push and pull request. Render deploys main only when they pass (render.yaml).
+# The tests, on every push and pull request. Render deploys every push to main (render.yaml).
 name: Tests
 
 on:

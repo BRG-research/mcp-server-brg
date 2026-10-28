@@ -6,14 +6,14 @@ connector. It is the same server with the same tools as `uv run brg-mcp`. There 
 tools on the website.
 
 ```
-git push (main) ──▶ GitHub Action "Tests" ──passes──▶ Render builds the Dockerfile
+git push (main) ──▶ Render builds the Dockerfile      (GitHub Action "Tests" runs alongside)
                                                       https://brg-mcp.onrender.com/mcp
 ```
 
 - `Dockerfile` (repository root) runs `brg-mcp --transport http` with `config/` and `knowledge/`.
   The server is stateless and read-only. Books are read live from the public R2 bucket, so a newly
   published book needs no deploy.
-- `render.yaml` (repository root) describes the service: Docker, free plan, deploy after the tests pass.
+- `render.yaml` (repository root) describes the service: Docker, free plan, deploy on every push to `main`.
 - A free service sleeps after 15 minutes without requests. The next request wakes it in about a minute.
   The website pings the server when the library page opens, so it is usually awake before the first
   question.
