@@ -4,6 +4,7 @@ terminal driven through a pipe (prompt_toolkit's test input)."""
 import asyncio
 import io
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -201,6 +202,8 @@ async def drive(terminal, pipe, lines, timeout=90):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not (shutil.which("claude") and shutil.which("codex")),
+                    reason="drives the signed-in Claude Code and Codex CLIs (not on CI)")
 async def test_terminal_application(tmp_path, monkeypatch):
     """Drive the full-screen application: commands typed into a pipe, output read from the transcript."""
     from prompt_toolkit.document import Document
