@@ -7,7 +7,7 @@ name: Deploy MCP server
 on:
   push:
     branches: [main]
-    paths: [src/**, config/**, knowledge/**, skills/**, pyproject.toml, uv.lock, Dockerfile, deploy/huggingface/**]
+    paths: [src/**, config/**, knowledge/**, skills/**, pyproject.toml, uv.lock, Dockerfile, deploy/huggingface/**, .github/workflows/deploy-mcp.yml]
   workflow_dispatch:
 
 concurrency:
