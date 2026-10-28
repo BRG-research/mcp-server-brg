@@ -1,0 +1,42 @@
+# Every push to main that changes the server or its knowledge: run the tests, then deploy the MCP server
+# as a Hugging Face Space (https://brghuggingface-brg-mcp.hf.space/mcp), where the CAS website's BRG
+# terminal reaches it. Books need no deploy: the server reads them live from the public R2 bucket.
+# Repository secret: HF_TOKEN, a Hugging Face access token with write access (huggingface.co/settings/tokens).
+name: Deploy MCP server
+
+on:
+  push:
+    branches: [main]
+    paths: [src/**, config/**, knowledge/**, skills/**, pyproject.toml, uv.lock, Dockerfile, deploy/huggingface/**]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mcp
+  cancel-in-progress: false
+
+env:
+  SPACE: brghuggingface/brg-mcp
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.22"
+      - name: Test
+        run: uv run --locked --extra dev pytest -q
+      - name: Stage the Space
+        # only what the image needs; the Space card (deploy/huggingface/README.md) becomes its README
+        run: |
+          mkdir space
+          cp -r Dockerfile .dockerignore pyproject.toml uv.lock src skills config knowledge space/
+          cp deploy/huggingface/README.md space/README.md
+      - name: Upload to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          uvx --from "huggingface_hub==2.2.0" hf repos create "$SPACE" --type space --sdk docker --public --exist-ok
+          uvx --from "huggingface_hub==2.2.0" hf upload "$SPACE" space . --repo-type space --delete "*" \
+            --commit-message "Deploy ${GITHUB_SHA::7} from GitHub"

@@ -5,8 +5,28 @@ from pathlib import Path, PurePosixPath
 import re
 from urllib.parse import quote, urlsplit
 
+import unicodedata
+
 import httpx
 import yaml
+
+
+def _words(text: str) -> list[str]:
+    """Words, lower case, without accents, so "funiculaire" and "Lévy" match as typed."""
+    plain = unicodedata.normalize("NFD", text.casefold())
+    return re.findall(r"[a-z0-9]+", "".join(c for c in plain if not unicodedata.combining(c)))
+
+
+def _has(words: list[str], term: str) -> bool:
+    return any(word.startswith(term) for word in words)
+
+
+_FOUNDERS = re.compile(r"levy|culmann|cremona|maxwell|wolfe|ritter|rankine|varignon|mohr|muller.breslau|henneberg|bow\b")
+
+
+def _historical(book: dict) -> bool:
+    year = re.search(r"\b(1[5-9]\d\d)\b", book["title"])
+    return bool(year and int(year.group(1)) < 1950) or bool(_FOUNDERS.search(" ".join(_words(book["id"] + " " + book["title"]))))
 
 
 class PublicBooks:
@@ -100,14 +120,45 @@ class PublicBooks:
     def search(self, query: str, book: str | None = None, limit: int = 10) -> list[dict]:
         if not 1 <= limit <= 50:
             raise ValueError("limit must be between 1 and 50")
-        terms = query.casefold().split()
+        terms = _words(query)
         if not terms:
             return []
-        entries = self.sections(book) if book is not None else [
-            section for item in self._catalog().values() for section in item["sections"]]
-        return [entry for entry in entries if all(
-            term in (entry["title"] + " " + entry["summary"]).casefold() for term in terms
-        )][:limit]
+        books = self._catalog()
+        if book is not None and book not in books:
+            raise ValueError(f"Unknown book ID: {book}")
+        hits = []
+        for item in books.values() if book is None else [books[book]]:
+            old, in_book = _historical(item), _words(item["title"])
+            for entry in item["sections"]:
+                in_title, in_summary = _words(entry["title"]), _words(entry["summary"])
+                # a word in the chapter title counts most, then the summary, then the book's title
+                score = sum(3 * _has(in_title, t) + _has(in_summary, t) + _has(in_book, t) for t in terms)
+                if score:
+                    hits.append((old, score, {**entry, "historical": old}))
+        # historical books first (before 1950, or by the founders of graphic statics), as the course reads them
+        hits.sort(key=lambda hit: (hit[0], hit[1]), reverse=True)
+        return [entry for _, _, entry in hits[:limit]]
+
+    def figure(self, url: str) -> tuple[bytes, str]:
+        """An image in the library, as bytes and its format, from a URL or a path relative to the library."""
+        if url.startswith("https://"):
+            if not url.startswith(self.base_url + "/"):
+                raise ValueError("Only images in the library can be shown")
+            url = url[len(self.base_url) + 1:]
+        extension = PurePosixPath(url).suffix.lower()
+        formats = {".png": "png", ".jpg": "jpeg", ".jpeg": "jpeg", ".gif": "gif", ".webp": "webp"}
+        if extension not in formats:
+            raise ValueError("A figure is a .png, .jpg, .gif or .webp file")
+        try:
+            with httpx.Client(timeout=30, transport=self.transport, follow_redirects=False) as client:
+                response = client.get(self.url(url))
+        except httpx.HTTPError as error:
+            raise ValueError(f"Could not retrieve the figure ({type(error).__name__}); try again later") from None
+        if response.status_code != 200:
+            raise ValueError(f"Book storage returned HTTP {response.status_code} for {url}")
+        if len(response.content) > 10_000_000:
+            raise ValueError("The figure exceeds the 10 MB limit")
+        return response.content, formats[extension]
 
     def read(self, book: str, section: str, start_line: int = 1, line_count: int = 100,
              representation: str = "published") -> dict:

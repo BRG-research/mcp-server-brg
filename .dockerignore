@@ -1,0 +1,13 @@
+.git
+.venv
+.claude
+**/__pycache__
+.pytest_cache
+dist
+data
+books-tools
+deploy
+docs
+examples
+scripts
+tests

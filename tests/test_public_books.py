@@ -7,6 +7,9 @@ LIBRARY = """# Library map
 ## `example-book/` — Example book, Author, 1886
 1 files
   - `01-chapter.md` **Funicular polygons** (pp. 12–14) — Equilibrium and reciprocal diagrams.
+## `modern-notes/` — Modern notes, 2020
+1 files
+  - `01-notes.md` **Reciprocal diagrams** Equilibrium of a funicular polygon, after Lévy.
 """
 
 
@@ -22,6 +25,8 @@ def make_books():
             return httpx.Response(200, text="First line\nSecond line\nThird line\n")
         if request.url.path == "/example-book/src/01-chapter.md":
             return httpx.Response(200, text="Exact source formula: $`EI`$\n")
+        if request.url.path == "/example-book/figures/fig001.png":
+            return httpx.Response(200, content=b"\x89PNG")
         if request.url.path == "/example-book/GRAPHIC-STATICS-NOTATION.md":
             return httpx.Response(200, text="Roman numerals label nodes.\n")
         return httpx.Response(404)
@@ -100,3 +105,23 @@ def test_library_schema_errors_and_optional_config(tmp_path):
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "sources.yaml").write_text("[]\n")
     assert PublicBooks.from_config(tmp_path) is None
+
+
+def test_search_ranks_historical_books_first_and_ignores_accents():
+    books, _ = make_books()
+    # the modern chapter has both words in its title, but the 1886 book comes first
+    assert [(hit["book"], hit["historical"]) for hit in books.search("reciprocal diagrams")] == [
+        ("example-book", True), ("modern-notes", False)]
+    assert books.search("lévy")[0]["book"] == "modern-notes"   # "Lévy" in a summary, typed with or without accent
+    assert books.search("levy funicul", book="modern-notes")[0]["section"] == "01-notes.md"
+    with pytest.raises(ValueError, match="Unknown book"):
+        books.search("x", book="missing")
+
+
+def test_figure_only_from_the_library():
+    books, _ = make_books()
+    assert books.figure("example-book/figures/fig001.png") == (b"\x89PNG", "png")
+    assert books.figure("https://example.test/example-book/figures/fig001.png")[1] == "png"
+    for url in ("https://other.test/example-book/figures/fig001.png", "example-book/01-chapter.md", "../x.png"):
+        with pytest.raises(ValueError):
+            books.figure(url)

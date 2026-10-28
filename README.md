@@ -34,10 +34,11 @@ integration.
 - [Contributing](docs/contributing/README.md) — add knowledge or computational tools.
 - [Architecture](docs/architecture.md) — file structure and implementation details.
 - [Skills](skills/README.md) — portable workflows and optional client shortcuts.
+- [Remote server](deploy/huggingface/DEPLOY.md) — the same server over HTTP, used by the CAS website's BRG terminal.
 
 ## Available now
 
 - Course domains, local knowledge search, and package discovery.
-- Public book search over chapter summaries and selected chapter reads.
+- Public book search over chapter summaries (historical books first), chapter reads, and figures as images.
 - Book-processing guidance; conversion runs through your agent's local tools.
 - Computational solvers and full-text book search are not implemented.
