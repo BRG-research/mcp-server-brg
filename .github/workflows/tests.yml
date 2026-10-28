@@ -1,13 +1,12 @@
-# The tests on every push and pull request; on a push to main that passes them, deploy the MCP server on
-# Render by calling its deploy hook (Render → brg-mcp → Settings → Deploy Hook, saved as the repository
-# secret RENDER_DEPLOY_HOOK). See deploy/README.md.
+# The tests, on every push and pull request. Render deploys every push to main by itself
+# (Auto-Deploy: On Commit; render.yaml, deploy/README.md).
 name: Tests
 
 on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:   # Actions → Tests → Run workflow: test and deploy main by hand
+  workflow_dispatch:
 
 jobs:
   test:
@@ -23,20 +22,3 @@ jobs:
           set -o pipefail
           uv run --locked --extra dev pytest -q -rf 2>&1 | tee pytest.log || {
             grep -E "^(FAILED|ERROR)" pytest.log | sed 's/^/::error::/' ; exit 1; }
-
-  deploy:
-    needs: test
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    concurrency:
-      group: deploy
-      cancel-in-progress: false
-    steps:
-      - name: Deploy on Render
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-        run: |
-          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-            echo "::error::Add the repository secret RENDER_DEPLOY_HOOK (Render → brg-mcp → Settings → Deploy Hook)"; exit 1
-          fi
-          curl -fsS -X POST "$RENDER_DEPLOY_HOOK" > /dev/null && echo "Render deploy started for ${GITHUB_SHA::7}"

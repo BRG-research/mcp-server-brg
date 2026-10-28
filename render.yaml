@@ -1,6 +1,6 @@
 # The BRG MCP server on Render's free plan (a Blueprint: render.com → New → Blueprint → this repository).
-# GitHub deploys it: after the tests pass on a push to main, .github/workflows/tests.yml calls Render's
-# deploy hook (secret RENDER_DEPLOY_HOOK), so Render's own auto-deploy stays off. The service
+# Render builds the Dockerfile and deploys every push to main (Auto-Deploy: On Commit); GitHub runs the
+# tests on each push too. A build takes about 5–15 minutes on the free plan; pushes queue. The service
 # sleeps after 15 minutes without requests; the next request wakes it in about a minute.
 services:
   - type: web
@@ -9,7 +9,7 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    autoDeployTrigger: "off"
+    autoDeployTrigger: commit
     envVars:
       - key: PORT
         value: "8000"
