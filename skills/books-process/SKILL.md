@@ -48,12 +48,16 @@ Input: a local PDF path or HTTPS URL supplied by the user.
    and log it in `REVIEW-*.md`. Then one book-wide consistency pass (terms, notation, title line)
    and `tools/fix_anchors.py`. Claim independent review only if a separate reviewer actually performed it.
 5. Label structural figures (`tools/structlabels.py` as a first pass). Create README, INDEX, GLOSSARY,
-   and FIGURES; follow the guide's construction rules. Publish the scanned pages with `tools/scan_index.py`
+   and FIGURES; follow the guide's construction rules. `INDEX.md` is the chapter list, one `## [Chapter title](NN-file.md)` heading
+   plus a summary per published chapter (`tools/merge_index.py`): LIBRARY.md and the website read chapters only
+   from it, so a book without these headings is listed as "0 files" and hidden. The book's own subject index is a
+   chapter file (`NN-index.md`, as in `graphic-statics-foeppl/08-index.md`), never INDEX.md. Publish the scanned pages with `tools/scan_index.py`
    (`scans/` images + `SCANS.md`, printed page → scan) and link SCANS.md from README, so every page can be checked.
    Add `cover.jpg` (the scanned cover, or the title page; ≈600 px wide, scanner edges trimmed) for the library shelf.
 6. After upload, add the book to R2 `PROCESSED.md` (`| \`<id>/\` | YYYY-MM-DD | done |`; only `done` entries appear
    in LIBRARY.md and on the course website, with that date), then regenerate and upload `LIBRARY.md`
    (`tools/r2_library_map.sh --upload`); verify build reports. Unfinished books get no `done` row.
+   Check the book's block in the new LIBRARY.md: it must list every chapter, not "0 files".
 7. Record what is still missing or unreadable (pages, plates, sources) in the repo's
    `docs/books/books_missing_pages.md`: a short needs-only list; remove items once resolved and books once complete.
 
