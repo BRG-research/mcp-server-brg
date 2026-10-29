@@ -88,5 +88,5 @@ Every MCP tool named `compas_<name>_add` becomes `/add-<name>`, and returns the 
 1. **Copy** `primitives_add` in [`src/brg_mcp/tools/additions.py`](src/brg_mcp/tools/additions.py) and its
    `compas_primitives_add` block in `register()`; rename both.
 2. **Test:** add the function to `ADDITIONS` in [`tests/test_additions.py`](tests/test_additions.py).
-3. **Push**, then on the website: open a notebook, click a cell, type `/add-<name>`.
+3. **Push**, then on the website: open a notebook, click a cell, type `/add-<name>`; `/undo` takes it back.
 
