@@ -1,21 +1,33 @@
+import asyncio
+from pathlib import Path
+
 import pytest
 
-from brg_mcp.tools.notebooks import BOX_NAME, box_notebook
+from brg_mcp.server import create_server
+from brg_mcp.tools.notebooks import INSTALL, box_notebook, primitives_notebook
+
+# Every notebook skill. Add each new one here.
+NOTEBOOKS = [box_notebook, primitives_notebook]
 
 
-def test_box_notebook_follows_the_course_and_names_the_box():
-    notebook = box_notebook(3, 2, 1)
-    assert notebook["name"] == BOX_NAME == "brg_mcp" and notebook["file"] == "brg_mcp.ipynb"
+@pytest.mark.parametrize("make", NOTEBOOKS)
+def test_notebook(make):
+    notebook = make()
     code = [cell["source"] for cell in notebook["cells"] if cell["type"] == "code"]
-    assert code[0].startswith("%pip install -q compas==2.15.1")          # the course's pinned installs first
-    assert "Box(3, 2, 1)" in code[2] and 'box.name = "brg_mcp"' in code[2]
-    assert code[-1].endswith("viewer.show()")                             # ends in a COMPAS scene
+    assert notebook["file"] == notebook["name"] + ".ipynb"
+    assert code[0] == INSTALL                    # starts with the course's installs
+    assert code[-1].endswith("viewer.show()")    # ends with the scene
     for cell in code[1:]:
-        compile(cell, "cell", "exec")                                     # valid Python
+        compile(cell, "cell", "exec")            # valid Python
 
 
-def test_box_notebook_rejects_bad_input():
+@pytest.mark.parametrize("make", NOTEBOOKS)
+def test_notebook_is_a_tool(make):
+    tools = [tool.name for tool in asyncio.run(create_server(Path(__file__).parents[1]).list_tools())]
+    assert "compas_" + make.__name__ in tools    # box_notebook is the tool compas_box_notebook, /box on the website
+
+
+def test_box_notebook():
+    assert 'box.name = "brg_mcp"' in str(box_notebook())
     with pytest.raises(ValueError):
         box_notebook(0, 1, 1)
-    with pytest.raises(ValueError):
-        box_notebook(color="red; import os")

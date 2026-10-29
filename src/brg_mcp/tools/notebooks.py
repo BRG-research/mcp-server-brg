@@ -13,6 +13,7 @@ from mcp.server.fastmcp import FastMCP
 INSTALL = ("%pip install -q compas==2.15.1 pythreejs==2.4.2\n"
            "%pip install -q compas_notebook==0.11.0 --no-deps")
 BOX_NAME = "brg_mcp"
+PRIMITIVES_NAME = "primitives_mcp"
 
 
 def box_notebook(xsize: float = 2.0, ysize: float = 1.0, zsize: float = 1.5, color: str = "#5552bb") -> dict:
@@ -43,6 +44,37 @@ def box_notebook(xsize: float = 2.0, ysize: float = 1.0, zsize: float = 1.5, col
     return {"name": BOX_NAME, "file": f"{BOX_NAME}.ipynb", "cells": cells}
 
 
+def primitives_notebook() -> dict:
+    """Create primitives such as a box, sphere, point, line, polyline and etc."""
+
+    cells = [
+        {"type": "markdown", "source": f"# Primitives: {PRIMITIVES_NAME}"},
+        {"type": "code", "source": INSTALL},
+        {"type": "code", "source": "from compas.geometry import Box, Frame, Line, Point, Sphere, Polyline\n"
+                                   "from compas_notebook import Viewer\n"
+                                   "from compas_notebook.config import Config"},
+        {"type": "markdown", "source": "## Box, sphere, point, line, polyline"},
+        {"type": "code", "source": "box = Box(1, 2, 3, frame=Frame([0, 0, 1.5]))\n"
+                                   "sphere = Sphere(1.5, point=[4, 0, 1.5])\n"
+                                   "point = Point(7, 0, 0)\n"
+                                   "line = Line([9, 0, 0], [9, 0, 3])\n"
+                                   "polyline = Polyline([[0,0,0], [1,0,0], [2,0,0], [3,0,0]])\n"
+                                   },
+        {"type": "markdown", "source": "## Scene"},
+        {"type": "code", "source": "config = Config()\n"
+                                   "config.view.width, config.view.height = 700, 360\n"
+                                   "config.view.camera.position = [4.5, -12, 6]\n"
+                                   "config.view.camera.target = [4.5, 0, 1.5]\n"
+                                   "viewer = Viewer(config=config)\n"
+                                   "viewer.scene.add(box.to_mesh())\n"
+                                   "viewer.scene.add(sphere.to_mesh(u=32, v=16))\n"
+                                   "viewer.scene.add(point)\n"
+                                   "viewer.scene.add(line)\n"
+                                   "viewer.scene.add(polyline)\n"
+                                   "viewer.show()"},
+    ]
+    return {"name": PRIMITIVES_NAME, "file": f"{PRIMITIVES_NAME}.ipynb", "cells": cells}
+
 def register(server: FastMCP) -> None:
     @server.tool()
     def compas_box_notebook(xsize: float = 2.0, ysize: float = 1.0, zsize: float = 1.5,
@@ -54,3 +86,12 @@ def register(server: FastMCP) -> None:
         unchanged to the notebook tool, which writes and opens the notebook for the user to run.
         """
         return box_notebook(xsize, ysize, zsize, color)
+
+    @server.tool()
+    def compas_primitives_notebook() -> dict:
+        """A runnable course notebook with COMPAS primitives: a box, a sphere, a point, a line and a polyline in one scene.
+
+        Call it when the user asks to create primitives in the notebook. Returns the notebook's file name and
+        its cells; pass them unchanged to the notebook tool, which writes and opens the notebook for the user to run.
+        """
+        return primitives_notebook()
