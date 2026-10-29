@@ -58,7 +58,7 @@ def primitives_notebook() -> dict:
                                    "sphere = Sphere(1.5, point=[4, 0, 1.5])\n"
                                    "point = Point(7, 0, 0)\n"
                                    "line = Line([9, 0, 0], [9, 0, 3])\n"
-                                   "polyline = Polyline([[0,0,0], [1,0,0], [2,0,0], [3,0,0]])\n"
+                                   "polyline = Polyline([[0,0,0], [1,0,0], [2,0,0], [3,0,1]])\n"
                                    },
         {"type": "markdown", "source": "## Scene"},
         {"type": "code", "source": "config = Config()\n"
