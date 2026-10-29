@@ -1,5 +1,6 @@
-# The tests, on every push and pull request. Render deploys every push to main by itself
-# (Auto-Deploy: On Commit; render.yaml, deploy/README.md).
+# The tests on every push and pull request. On main, when they pass, GitHub starts the Render deploy itself
+# by calling the service's deploy hook (repository secret RENDER_DEPLOY_HOOK): Render does not see pushes
+# to this repository on its own. Actions → Tests → Run workflow does the same by hand. See deploy/README.md.
 name: Tests
 
 on:
@@ -22,3 +23,20 @@ jobs:
           set -o pipefail
           uv run --locked --extra dev pytest -q -rf 2>&1 | tee pytest.log || {
             grep -E "^(FAILED|ERROR)" pytest.log | sed 's/^/::error::/' ; exit 1; }
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    steps:
+      - name: Deploy on Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::error::Add the repository secret RENDER_DEPLOY_HOOK (Render → brg-mcp → Settings → Deploy Hook)"; exit 1
+          fi
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK" > /dev/null && echo "Render deploy started for ${GITHUB_SHA::7}"
