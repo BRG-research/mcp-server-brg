@@ -13,6 +13,7 @@ from brg_mcp.tools.discovery import register as register_tools
 from brg_mcp.tools.books import register as register_books
 from brg_mcp.tools.drawing import register as register_drawing
 from brg_mcp.tools.notebooks import register as register_notebooks
+from brg_mcp.tools.additions import register as register_additions
 from brg_mcp.prompts.books import register as register_book_prompts
 
 
@@ -24,6 +25,7 @@ def create_server(data_root: Path, **settings) -> FastMCP:
     register_book_prompts(server)
     register_drawing(server)
     register_notebooks(server)
+    register_additions(server)
     books = PublicBooks.from_config(data_root)
     if books is not None:
         register_books(server, books)

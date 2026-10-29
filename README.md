@@ -41,7 +41,8 @@ integration.
 - Course domains, local knowledge search, and package discovery.
 - Public book search over chapter summaries (historical books first), chapter reads, and figures as images.
 - Book-processing guidance; conversion runs through your agent's local tools.
-- Notebook skills: `compas_box_notebook` (`/box` on the CAS website) writes a runnable COMPAS notebook.
+- Notebook skills: `compas_box_notebook` (`/box` on the CAS website) writes a runnable COMPAS notebook;
+  `compas_primitives_add` (`/add-primitives`) adds to the notebook that is open.
 - Computational solvers and full-text book search are not implemented.
 
 ## Add a notebook skill (`/box`, `/primitives`, …)
@@ -71,3 +72,21 @@ git push
 ```
 
 More detail: [Contributing → Add a notebook skill](docs/contributing/README.md#add-a-notebook-skill-box-).
+
+## Add to the open notebook (`/add-primitives`, …)
+
+A notebook skill writes a **new** notebook. An addition adds a few lines to the notebook the student **has open**.
+Every MCP tool named `compas_<name>_add` becomes `/add-<name>`, and returns the parts, not a notebook:
+
+| Part | Where the website puts it |
+|---|---|
+| `imports` | merged into the first imports cell (only the missing names) |
+| `code` | a new cell below the clicked cell (after the imports, before the scene) |
+| `scene` | `viewer.scene.add(...)` lines, before the notebook's `viewer.show()` |
+| `viewer` | used only when the notebook has no `viewer.show()`: the new cell gets its own viewer |
+
+1. **Copy** `primitives_add` in [`src/brg_mcp/tools/additions.py`](src/brg_mcp/tools/additions.py) and its
+   `compas_primitives_add` block in `register()`; rename both.
+2. **Test:** add the function to `ADDITIONS` in [`tests/test_additions.py`](tests/test_additions.py).
+3. **Push**, then on the website: open a notebook, click a cell, type `/add-<name>`.
+
