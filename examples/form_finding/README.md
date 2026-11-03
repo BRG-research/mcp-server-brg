@@ -13,6 +13,8 @@ additional length and force conditions. Each step builds on the preceding steps.
 | `build_notebook.py` | NumPy, SciPy, nbformat, nbclient | Turns the same cells into `knowledge/04_form_finding/compas_fd.ipynb` and runs it so every output is stored. |
 | `check_math_rendering.py` | `gh` CLI | Sends the note through GitHub's own `/markdown` API and fails if any formula would show as literal dollar signs. Run it after editing the note. |
 | `schek_equations.py` | NumPy, SciPy | Checks the equations, analytic Jacobians against finite differences, and constrained iterations. |
+| `linkwitz_app.py` | NumPy, Matplotlib | Linkwitz's Chapter 6 (Force density method) in the order of the book's sections, every equation computed on the chapter's single-node example; one `# %%` cell per step. |
+| `build_linkwitz_notebook.py` | nbformat, nbclient | Turns those cells into `knowledge/04_form_finding/force_density_linkwitz.ipynb` and runs it so every output is stored. |
 
 Run from the repository root with Python 3.11 or later:
 

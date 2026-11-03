@@ -6,6 +6,7 @@
 |---|---|---|
 | [Force density method with compas_fd](compas_fd.md) | `compas_fd` — linear and constrained force density solvers; full derivation of Schek (1974) | <https://github.com/BlockResearchGroup/compas_fd> |
 | [The same tutorial as a notebook](compas_fd.ipynb) | runnable cells with their outputs already stored | generated from `examples/form_finding/schek_app.py` |
+| [Linkwitz's chapter on the book's single node, as a notebook](force_density_linkwitz.ipynb) | the force density method in the order of Linkwitz's sections (§ 6.2.1 – § 6.5), every equation computed on one free node with four bars (exercise 2 of the chapter); outputs stored | generated from `examples/form_finding/linkwitz_app.py` by `build_linkwitz_notebook.py` |
 | [Dynamic relaxation with compas_dr](compas_dr.md) | `compas_dr` — iterative solver with prescribed forces, lengths, and elastic bars | <https://github.com/BlockResearchGroup/compas_dr> |
 | [COMPAS FormFinder (compas-FoFin)](compas_fofin.md) | Rhino 8 plugin that drives `compas_fd` interactively | <https://github.com/BlockResearchGroup/compas-FoFin> |
 
