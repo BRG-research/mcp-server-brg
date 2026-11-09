@@ -41,7 +41,12 @@ def test_stdio_protocol(tmp_path):
                 assert not result.isError
                 assert "Processing a new book" in result.content[0].text
                 prompts = await session.list_prompts()
-                assert "books_process" in {prompt.name for prompt in prompts.prompts}
+                prompt_names = {prompt.name for prompt in prompts.prompts}
+                assert "books_process" in prompt_names
+                assert "fd" in prompt_names
+                fd_prompt = await session.get_prompt("fd", {"question": "What is the force density method?"})
+                assert "Schek" in fd_prompt.messages[0].content.text
+                assert "What is the force density method?" in fd_prompt.messages[0].content.text
                 source = "/tmp/scans/A book.pdf"
                 prompt = await session.get_prompt("books_process", {
                     "source": source, "workspace": "/tmp/Books", "language": "English"
@@ -76,3 +81,22 @@ def test_http_app_allows_web_pages_to_list_and_call_tools():
         box = client.post("/mcp", headers=rpc, json={"jsonrpc": "2.0", "id": 2, "method": "tools/call",
                                                      "params": {"name": "compas_box_notebook", "arguments": {"xsize": 3}}})
         assert '"brg_mcp.ipynb"' in box.json()["result"]["content"][0]["text"]
+
+
+def test_stdio_without_data_root():
+    async def check():
+        # Do not supply --data-root: auto-detection should find the repo checkout
+        params = StdioServerParameters(
+            command=sys.executable,
+            args=["-m", "brg_mcp.server"],
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                initialized = await session.initialize()
+                assert "get_book_guide" in initialized.instructions
+                tools = await session.list_tools()
+                assert "search_knowledge" in {tool.name for tool in tools.tools}
+                prompts = await session.list_prompts()
+                assert "fd" in {prompt.name for prompt in prompts.prompts}
+
+    asyncio.run(asyncio.wait_for(check(), timeout=20))

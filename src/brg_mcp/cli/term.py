@@ -70,12 +70,23 @@ APP_STYLE = Style.from_dict({
 
 
 def find_data_root(start: Path | None = None) -> Path:
-    """The checkout that holds config/ and knowledge/: the given path, the cwd, or the package's own repo."""
+    """The checkout that holds config/ and knowledge/: the given path, cwd, repo, or package directory."""
     candidates = [start] if start else []
-    candidates += [Path.cwd(), Path(__file__).resolve().parents[3]]
+    candidates += [
+        Path.cwd(),
+        Path(__file__).resolve().parents[3],
+        Path(__file__).resolve().parents[1],
+    ]
     for c in candidates:
         if c and (c / "config" / "knowledge.yaml").is_file():
             return c.resolve()
+    from importlib.resources import files
+    try:
+        res = Path(str(files("brg_mcp")))
+        if (res / "config" / "knowledge.yaml").is_file():
+            return res.resolve()
+    except Exception:
+        pass
     raise SystemExit("could not find a BRG checkout (config/knowledge.yaml); pass --data-root")
 
 

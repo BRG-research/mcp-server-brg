@@ -1,22 +1,59 @@
-# Other users
+# Quick Start for Students and Other Users
 
-Install [uv](https://docs.astral.sh/uv/), then:
+Connect BRG tools directly to your local chatbot (Claude, Cursor, Antigravity) with a single command.
 
+---
+
+## 1-Line Installation
+
+### Option A: Automatic Installer (Claude Desktop, Cursor, Antigravity)
+In your terminal (macOS or Linux):
 ```bash
-git clone https://github.com/BRG-research/mcp-server-brg.git
-cd mcp-server-brg
-uv sync --python 3.12 --locked
+curl -fsSL https://raw.githubusercontent.com/BRG-research/mcp-server-brg/main/install.sh | bash
+```
+This automatically verifies `uv`, configures your installed chatbot's config file, and registers the BRG tools.
+
+### Option B: Claude Code CLI
+```bash
 claude mcp add --transport stdio --scope user brg -- \
-  uv --directory "$PWD" run --locked brg-mcp --data-root "$PWD"
+  uvx --refresh --from git+https://github.com/BRG-research/mcp-server-brg brg-mcp
 ```
 
-- Open Claude Code, sign in with your account, and check `/mcp`.
-- Other clients: adapt [mcp-client.json](../../examples/mcp-client.json) with your checkout's absolute paths.
-- If `uv` is not found, use its absolute executable path in the client configuration.
-- Public book reading needs no R2 keys. Your AI client handles model access and billing.
-- The client starts the local server; keep the checkout for its catalogs and local knowledge.
-- Updates: `git pull --ff-only`, then `uv sync --locked`, then restart MCP.
-- This setup requires a client supporting local stdio MCP, not only remote URLs.
-- Skills are installed separately from MCP; see [Books](../books/README.md#process).
+### Option C: Manual Configuration (Claude Desktop / Cursor / Antigravity)
+Add this to your client's MCP configuration (`~/.config/Claude/claude_desktop_config.json` or `~/.gemini/config/mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "brg": {
+      "command": "uvx",
+      "args": [
+        "--refresh",
+        "--from",
+        "git+https://github.com/BRG-research/mcp-server-brg",
+        "brg-mcp"
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Asking Form Finding Questions (`/fd`)
+
+Once connected, ask questions directly about form finding, Linkwitz, or Schek's force density method using the `/fd` prompt or skill:
+
+```text
+/fd What is the linear equilibrium system in the force density method?
+/fd How do I partition free and fixed nodes in Schek (1974)?
+/fd How do I use compas_fd with fixed support points?
+```
+
+---
+
+## Local Development (Contributing)
+
+If you are modifying the knowledge or adding computational tools, see [Local development](../development/README.md).
 
 [Main README](../../README.md) · [Books](../books/README.md)

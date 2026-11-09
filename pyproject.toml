@@ -42,6 +42,9 @@ brg = "brg_mcp.cli.term:main"
 packages = ["src/brg_mcp"]
 
 [tool.hatch.build.targets.wheel.force-include]
+"config" = "brg_mcp/config"
+"knowledge" = "brg_mcp/knowledge"
+"skills" = "brg_mcp/skills"
 "skills/books-process/SKILL.md" = "brg_mcp/books_process_skill.md"
 
 [tool.pytest.ini_options]
