@@ -1,1 +1,1 @@
-"""BRG knowledge and computational workflows exposed through MCP."""
+"""The BRG MCP server."""

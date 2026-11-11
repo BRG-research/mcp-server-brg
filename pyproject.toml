@@ -5,48 +5,21 @@ build-backend = "hatchling.build"
 [project]
 name = "brg-mcp"
 version = "0.1.0"
-description = "Knowledge and computation interface for Block Research Group workflows"
+description = "MCP server of the Block Research Group"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "mcp>=1.28,<2",
-    "PyYAML>=6,<7",
-    "httpx>=0.28,<1",
-    "pillow>=10,<13",
-]
+dependencies = ["mcp>=1.28,<2"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "pytest-asyncio>=0.23,<2"]
-cli = []  # kept for `uv sync --extra cli`; the terminal is now in the main dependencies
-
-# The BRG terminal (`uv run brg`): the prompt, the transcript and the account engines. A default group, so
-# `uv sync` installs it as before; the server's Docker image leaves it out (`--no-default-groups`).
-[dependency-groups]
-terminal = [
-    "prompt-toolkit>=3.0.50,<4",
-    "rich>=13,<15",
-    "claude-agent-sdk>=0.2,<1",
-    "anthropic>=1.15,<2",
-    "openai>=3,<4",
-    "unicodeit>=0.7,<1",
-]
-
-[tool.uv]
-default-groups = ["terminal"]
+dev = ["pytest>=8,<10", "ruff"]
 
 [project.scripts]
-brg-mcp = "brg_mcp.server:main"
-brg = "brg_mcp.cli.term:main"
+brg-mcp = "brg_mcp.server:mcp.run"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/brg_mcp"]
+[tool.ruff]
+line-length = 179
+extend-exclude = ["*.ipynb"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"config" = "brg_mcp/config"
-"knowledge" = "brg_mcp/knowledge"
-"skills" = "brg_mcp/skills"
-"skills/books-process/SKILL.md" = "brg_mcp/books_process_skill.md"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+isort = { force-single-line = true }

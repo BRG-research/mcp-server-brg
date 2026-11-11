@@ -1,6 +1,0 @@
-name = "fig4"
-
-[[items]]
-file = "pb/fig4_matrix.pb"
-name = "fig4_matrix"
-at = [0, 0, 0]
