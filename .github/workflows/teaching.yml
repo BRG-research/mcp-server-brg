@@ -1,0 +1,38 @@
+# Copy the notebooks of the commands to the BRG Teaching website, so that their links open them in the browser.
+# Needs the secret TEACHING_TOKEN: a GitHub token that may write the contents of BRG-teaching/Teaching.
+
+name: Publish notebooks to Teaching
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/brg_mcp/**", ".github/workflows/teaching.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: teaching
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: BRG-teaching/Teaching
+          token: ${{ secrets.TEACHING_TOKEN }}
+          path: teaching
+          sparse-checkout: |
+            CAS/website/notebooks
+            CAS/jupyter
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run brg-publish teaching/CAS/website
+      - working-directory: teaching
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add CAS/website/notebooks CAS/website/notebook-exercises.js CAS/jupyter/jupyter-lite.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Notebooks from mcp-server-brg ${GITHUB_SHA::7}"
+          git push

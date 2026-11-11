@@ -16,13 +16,16 @@ Each command reaches the chatbot in two ways:
 
 """
 
-import json
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
+from brg_mcp.teaching import link
+from brg_mcp.teaching import notebooks_of
+from brg_mcp.teaching import plain
+from brg_mcp.teaching import title
+
 HERE = Path(__file__).parent
-COLAB = "https://colab.research.google.com/github/BRG-research/mcp-server-brg/blob/main/src/brg_mcp/{}"
 
 # ==============================================================================
 # Commands
@@ -44,36 +47,19 @@ def command_name(path):
 
     """
     folder, page = path.relative_to(HERE).with_suffix("").parts
-    return folder if page == "readme" else "{}_{}".format(folder, page.lstrip("0123456789_"))
+    return folder if page == "readme" else "{}_{}".format(folder, plain(page))
 
 
 # Finds the file names.
 COMMANDS = {command_name(path): path for path in sorted(HERE.glob("*/*.md"))}
 
 
-def title(notebook):
-    """The title of a notebook: the first heading of its first cell, ``Exercise 01 Forces`` for ``exercise_01_forces.ipynb``.
-
-    Parameters
-    ----------
-    notebook : :class:`pathlib.Path`
-        The ``.ipynb`` file.
-
-    Returns
-    -------
-    str
-
-    """
-    cells = json.loads(notebook.read_text(encoding="utf-8"))["cells"]
-    lines = "".join(cells[0]["source"]).splitlines() if cells else []
-    return next((line[2:].strip() for line in lines if line.startswith("# ")), notebook.stem)
-
-
 def reply(name):
     """The text of a command, with the instruction to repeat it as it is.
 
     The ``readme.md`` of a folder ends with the list of the other pages in that folder, in the order of their numbers.
-    A page with a folder of the same name, such as ``08_answers.md`` and ``08_answers/``, ends with a Colab link to each notebook in it.
+    A page with a notebook folder of the same name, numbers aside, such as ``06_exercises.md`` and ``07_exercises/``, ends with a link
+    to each notebook in it, which opens the notebook in the Jupyter of the teaching website.
 
     Parameters
     ----------
@@ -90,11 +76,9 @@ def reply(name):
     if path.stem == "readme":
         pages = [other for other in COMMANDS if other != name and COMMANDS[other].parent == path.parent]
         text += "\n\nMore information:\n\n" + "\n".join("- {}: mcp_brg_{}".format(page.removeprefix(name + "_").capitalize(), page) for page in pages)
-    notebooks = sorted(path.with_suffix("").glob("*.ipynb"))
+    notebooks = notebooks_of(path)
     if notebooks:
-        text += "\n\nNotebooks, open in Google Colab:\n\n" + "\n".join(
-            "- {}: {}".format(title(notebook), COLAB.format(notebook.relative_to(HERE).as_posix())) for notebook in notebooks
-        )
+        text += "\n\nNotebooks:\n\n" + "\n".join("- {}: {}".format(title(notebook), link(notebook)) for notebook in notebooks)
     return "Reply with exactly this text, word for word, nothing added:\n\n" + text.strip()
 
 

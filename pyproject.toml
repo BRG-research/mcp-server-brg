@@ -15,6 +15,7 @@ dev = ["pytest>=8,<10", "ruff"]
 
 [project.scripts]
 brg-mcp = "brg_mcp.server:mcp.run"
+brg-publish = "brg_mcp.teaching:main"
 
 [tool.ruff]
 line-length = 179

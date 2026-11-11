@@ -7,9 +7,12 @@ The MCP server of the Block Research Group. A chatbot connects to it and gets sh
 ```text
 README.md  pyproject.toml  uv.lock
 src/brg_mcp/server.py              the server
+src/brg_mcp/teaching.py            copies the notebooks to the teaching website (brg-publish)
 src/brg_mcp/fd/readme.md           the command fd (form finding, force density)
-src/brg_mcp/fd/01_algorithm.md     the command fd_algorithm (also applications, keywords, references, presentations)
-tests/test_server.py               starts the server and checks what it offers
+src/brg_mcp/fd/01_algorithm.md     the command fd_algorithm (also applications, keywords, references, ...)
+src/brg_mcp/fd/07_exercises/       the notebooks of fd_exercises (08_answers/: of fd_answers)
+.github/workflows/teaching.yml     publishes the notebooks on every push
+tests/                             start the server, check what it offers and what it publishes
 ```
 
 ## Connect a chatbot
@@ -49,8 +52,17 @@ Every file `src/brg_mcp/<folder>/<page>.md` is a command. `readme.md` is the com
 every other page is `<folder>_<page>`, for example `fd/03_keywords.md` is `fd_keywords`; the number only orders the pages.
 Write in it what the command should answer. The reply of `readme.md` ends with the list of the other pages
 in its folder (`- Keywords: mcp_brg_fd_keywords`), made by the server.
-A page with a folder of the same name (`08_answers.md` and `08_answers/`) ends with a Google Colab link to each notebook
-in that folder. The links open once the notebooks are pushed to `main` on GitHub.
+
+## Notebooks
+
+A page with a notebook folder of the same name, numbers aside (`06_exercises.md` and `07_exercises/`), ends with a link
+to each notebook. The link opens the notebook in the Jupyter of the
+[teaching website](https://brg-teaching.github.io/Teaching/CAS/website/library.html#/notebook), in the browser.
+
+On every push to `main`, the GitHub Action `.github/workflows/teaching.yml` copies the notebooks to
+`BRG-teaching/Teaching` (`CAS/website/notebooks/<folder>/`, for example `notebooks/fd/`), always overwriting copies of the same name, and the
+teaching website deploys them. The Action needs the repository secret `TEACHING_TOKEN`: a GitHub token that may write
+the contents of `BRG-teaching/Teaching`. By hand: `uv run brg-publish /path/to/Teaching/CAS/website`.
 Restart the chatbot. `server.py` does not change.
 
 ## Test

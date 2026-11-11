@@ -10,6 +10,8 @@ from mcp.client.stdio import stdio_client
 
 from brg_mcp.server import COMMANDS
 from brg_mcp.server import mcp
+from brg_mcp.teaching import link
+from brg_mcp.teaching import notebooks_of
 
 
 def ask(question):
@@ -37,7 +39,8 @@ def test_readme_lists_the_pages_of_its_folder():
 @pytest.mark.parametrize("name", ["fd_exercises", "fd_answers"])
 def test_page_lists_the_notebooks_of_its_folder(name):
     text = ask(lambda session: session.call_tool("command", {"name": name})).content[0].text
-    assert all(notebook.name in text for notebook in COMMANDS[name].with_suffix("").glob("*.ipynb"))
+    notebooks = notebooks_of(COMMANDS[name])
+    assert notebooks and all(link(notebook) in text for notebook in notebooks)
 
 
 def test_server_offers_every_command():
