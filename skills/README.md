@@ -13,6 +13,10 @@ through its prompt and guide tool; the client executes the workflow using its ow
 the server's shared `src/brg_mcp/book_guidance.md`. MCP clients can retrieve that
 guide with `get_book_guide` without installing the skill.
 
+`session-viewer-notebook/SKILL.md` shows how to embed the live session viewer in a Jupyter
+notebook: build a `session_py.Session` and end the cell with `session_jupyter.show(session, name)`.
+Claude shortcut: [`.claude/skills/session-viewer-notebook/`](../.claude/skills/session-viewer-notebook/SKILL.md).
+
 Add graphic-statics, form-finding, thrust-network-analysis, or constructability
 skills once each has a concrete repeatable workflow. Keep the name and description
 in YAML frontmatter and describe inputs, method-specific checks, and outputs.
