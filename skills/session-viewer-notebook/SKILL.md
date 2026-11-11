@@ -69,5 +69,5 @@ WebGPU launch flags).
 
 ## Example
 
-`knowledge/04_form_finding/force_density_method/notebooks/` — four force density exercises, each
+`knowledge/04_form_finding/force_density_method/notebooks/`: four force density exercises, each
 picture one `Session` and one `show`.
