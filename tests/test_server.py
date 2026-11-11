@@ -36,7 +36,7 @@ def test_readme_lists_the_pages_of_its_folder():
     assert all("mcp_brg_{}".format(name) in text for name in COMMANDS if name.startswith("fd_"))
 
 
-@pytest.mark.parametrize("name", ["fd_exercises", "fd_answers"])
+@pytest.mark.parametrize("name", ["fd_exercises", "fd_answers", "fd_extensions"])
 def test_page_lists_the_notebooks_of_its_folder(name):
     text = ask(lambda session: session.call_tool("command", {"name": name})).content[0].text
     notebooks = notebooks_of(COMMANDS[name])
