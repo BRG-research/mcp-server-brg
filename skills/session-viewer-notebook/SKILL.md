@@ -55,14 +55,14 @@ and returns a frame with `https://petrasvestartas.github.io/session/?scene=view_
 
 ## Environment
 
-`session_jupyter` and `session_py` live in the `session` repository
-(`wood_research/session/session_jupyter`, `…/session_py`). Until they are released, run with the
-local copies:
-
 ```bash
-uv run --python 3.12 --with jupyterlab --with numpy \
-  --with-editable <session>/session_py --with-editable <session>/session_jupyter jupyter lab
+pip install numpy session-jupyter        # brings session-py with it
 ```
+
+Both packages are released from the `session` repository on every push to `main`
+(`session_py`, `session_jupyter`). Say so in the notebook's first cell: `Needs: pip install numpy session-jupyter`.
+To try unreleased kernel code, install the local copies instead:
+`--with-editable <session>/session_py --with-editable <session>/session_jupyter`.
 
 The viewer needs WebGPU in the program that shows the notebook (Chrome; VS Code on Linux needs the
 WebGPU launch flags).
