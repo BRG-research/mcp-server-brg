@@ -68,3 +68,19 @@ def test_mcp_brg_lists_the_commands(typed):
 def test_every_command_named_in_a_text_exists(name):
     for named in re.findall(r"mcp_brg_([a-z_]+)", COMMANDS[name].read_text(encoding="utf-8")):
         assert named in COMMANDS
+
+
+@pytest.mark.parametrize("name", ["compas_fd_hypar", "compas_fd_selfweight"])
+@pytest.mark.parametrize("editor", [None, "vscode"])
+def test_code_is_shown_in_a_terminal_and_written_in_an_editor(monkeypatch, editor, name):
+    from brg_mcp.server import reply
+
+    monkeypatch.delenv("CLAUDE_CODE_ENTRYPOINT", raising=False)
+    monkeypatch.delenv("TERMINAL_EMULATOR", raising=False)
+    if editor:
+        monkeypatch.setenv("TERM_PROGRAM", editor)
+    else:
+        monkeypatch.delenv("TERM_PROGRAM", raising=False)
+    text = reply(name)
+    assert "{}.py".format(name.replace("compas_", "")) in text
+    assert text.startswith("Write each Python example") == bool(editor)
