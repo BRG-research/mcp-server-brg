@@ -30,11 +30,13 @@ jobs:
           python3 -c '
           import os, re, sys, textwrap
           key = os.environ["KEY"].replace("\r", "")
-          if "PRIVATE KEY-----" not in key or "-----END" not in key:
-              kind = "empty" if not key.strip() else "a public key (ssh-ed25519 ...)" if key.strip().startswith("ssh-") else "no BEGIN and END lines"
-              print("::error::TEACHING_DEPLOY_KEY is {}: {} characters, {} lines. Paste the private key from -----BEGIN to -----END.".format(kind, len(key), key.count(chr(10)) + 1))
+          if "PRIVATE KEY-----" in key and "-----END" in key:
+              key = key.split("PRIVATE KEY-----", 1)[1].split("-----END", 1)[0]
+          body = re.sub(r"\s+", "", key)  # with or without the BEGIN and END lines
+          if not re.fullmatch(r"[A-Za-z0-9+/=]{100,}", body):
+              kind = "empty" if not body else "a public key (ssh-ed25519 ...)" if body.startswith("ssh-") else "not a private key"
+              print("::error::TEACHING_DEPLOY_KEY is {}: {} characters. Paste the private key.".format(kind, len(key)))
               sys.exit(1)
-          body = re.sub(r"\s+", "", key.split("PRIVATE KEY-----", 1)[1].split("-----END", 1)[0])
           text = "-----BEGIN OPENSSH PRIVATE KEY-----\n" + "\n".join(textwrap.wrap(body, 70)) + "\n-----END OPENSSH PRIVATE KEY-----\n"
           open(os.path.expanduser("~/.ssh/teaching"), "w").write(text)
           '
