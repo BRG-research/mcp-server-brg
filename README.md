@@ -61,8 +61,8 @@ to each notebook. The link opens the notebook in the Jupyter of the
 
 On every push to `main`, the GitHub Action `.github/workflows/teaching.yml` copies the notebooks to
 `BRG-teaching/Teaching` (`CAS/website/notebooks/<folder>/`, for example `notebooks/fd/`), always overwriting copies of the same name, and the
-teaching website deploys them. The Action needs the repository secret `TEACHING_TOKEN`: a GitHub token that may write
-the contents of `BRG-teaching/Teaching`. By hand: `uv run brg-publish /path/to/Teaching/CAS/website`.
+teaching website deploys them. The Action needs a deploy key: its public half in `BRG-teaching/Teaching` (Settings, Deploy keys,
+with write access) and its private half as the secret `TEACHING_DEPLOY_KEY` here. By hand: `uv run brg-publish /path/to/Teaching/CAS/website`.
 Restart the chatbot. `server.py` does not change.
 
 ## Test

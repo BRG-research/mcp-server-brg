@@ -1,5 +1,5 @@
 # Copy the notebooks of the commands to the BRG Teaching website, so that their links open them in the browser.
-# Needs the secret TEACHING_TOKEN: a GitHub token that may write the contents of BRG-teaching/Teaching.
+# Needs the secret TEACHING_DEPLOY_KEY: the private half of an SSH deploy key with write access on BRG-teaching/Teaching.
 
 name: Publish notebooks to Teaching
 
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: BRG-teaching/Teaching
-          token: ${{ secrets.TEACHING_TOKEN }}
+          ssh-key: ${{ secrets.TEACHING_DEPLOY_KEY }}
           path: teaching
           sparse-checkout: |
             CAS/website/notebooks
