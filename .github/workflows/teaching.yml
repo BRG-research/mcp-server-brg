@@ -13,22 +13,36 @@ concurrency:
   group: teaching
   cancel-in-progress: false
 
+env:
+  GIT_SSH_COMMAND: ssh -i ~/.ssh/teaching -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: BRG-teaching/Teaching
-          ssh-key: ${{ secrets.TEACHING_DEPLOY_KEY }}
-          path: teaching
-          sparse-checkout: |
-            CAS/website/notebooks
-            CAS/jupyter
+      - name: Deploy key
+        # A pasted key often loses its line breaks or gains spaces: rebuild it from the text between the markers.
+        env:
+          KEY: ${{ secrets.TEACHING_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          python3 -c '
+          import os, re, textwrap
+          key = os.environ["KEY"].replace("\r", "")
+          body = re.sub(r"\s+", "", key.split("PRIVATE KEY-----", 1)[1].split("-----END", 1)[0])
+          print("-----BEGIN OPENSSH PRIVATE KEY-----\n" + "\n".join(textwrap.wrap(body, 70)) + "\n-----END OPENSSH PRIVATE KEY-----")
+          ' > ~/.ssh/teaching
+          chmod 600 ~/.ssh/teaching
+          ssh-keygen -l -f ~/.ssh/teaching
+      - name: Clone Teaching
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse git@github.com:BRG-teaching/Teaching.git teaching
+          git -C teaching sparse-checkout set CAS/website/notebooks CAS/jupyter
       - uses: astral-sh/setup-uv@v6
       - run: uv run brg-publish teaching/CAS/website
-      - working-directory: teaching
+      - name: Push Teaching
+        working-directory: teaching
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
