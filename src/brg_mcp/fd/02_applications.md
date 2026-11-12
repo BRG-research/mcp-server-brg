@@ -14,3 +14,17 @@ Applications
 - **Olympic Stadium Montreal roof re-optimization**, 1988, https://en.wikipedia.org/wiki/Olympic_Stadium
 - **Mina Valley Tent City Pilgrim's Tents Phase II (Hajj)**, 1999, https://www.tensinet.com/project_files/4127/MinaAllPages.pdf
 - **Solemar Therme Bad Dürrheim (timber grid shell)**, 1987, https://www.researchgate.net/publication/393217031_Rethinking_elastic_timber_gridshells
+- **Multihalle Mannheim (timber grid shell)**, 1975, https://mannheim-multihalle.de/
+- **Museum of Hamburg History Courtyard Roof**, 1989, https://www.sbp.de/en/project/museum-for-hamburg-history-courtyard-roof/
+- **Prophet's Mosque Courtyard Shading Umbrellas Medina**, 1992, https://www.sl-rasch.com/en/projects/courtyard/
+- **Hotel Kempinski Munich Airport Cable-Net Facade**, 1993, https://www.sbp.de/en/project/facade-hilton-munich-airport-former-hotel-kempinski/
+- **Hippo House Zoo Berlin**, 1996, https://www.sbp.de/en/project/house-for-hippopotamus-zoo-berlin/
+- **DZ Bank Atrium Glass Roof Berlin**, 2000, https://www.sbp.de/en/project/glass-roof-for-dz-bank/
+- **Sony Center Forum Roof Berlin**, 2000, https://www.arup.com/projects/sony-center/
+- **Commerzbank-Arena Convertible Cable Roof Frankfurt**, 2005, https://www.sbp.de/en/project/deutsche-bank-park/
+- **Moses Mabhida Stadium Cable-Net Roof Durban**, 2009, https://www.sbp.de/en/project/moses-mabhida-stadium/
+- **Khan Shatyr Entertainment Center Astana**, 2010, https://en.wikipedia.org/wiki/Khan_Shatyr_Entertainment_Center
+- **BC Place Retractable Cable-Net Roof Vancouver**, 2011, https://www.sbp.de/en/project/rehabilitation-of-bc-place-stadium/
+- **National Stadium Spoked Cable-Net Roof Warsaw**, 2012, https://www.sbp.de/en/project/national-stadium-warsaw/
+- **KnitCandela Cable-Net and Knitted Formwork Shell Mexico City**, 2018, https://brg.ethz.ch/research/prototypes/742
+- **NEST HiLo Doubly Curved Concrete Roof Dübendorf**, 2021, https://brg.ethz.ch/research/demonstrators/725
