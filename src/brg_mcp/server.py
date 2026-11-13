@@ -28,6 +28,8 @@ from brg_mcp.teaching import title
 
 HERE = Path(__file__).parent
 
+
+
 # ==============================================================================
 # Commands
 # ==============================================================================
@@ -159,3 +161,15 @@ def command(name: str):
     if name not in COMMANDS:
         return "Reply with exactly this list, nothing added:\n\n" + "\n".join("mcp_brg_{}".format(command) for command in COMMANDS)
     return reply(name)
+
+# ==============================================================================
+# FastMCP
+# ==============================================================================
+
+@mcp.tool()
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+
+if __name__ == "__main__":
+    mcp.run()
