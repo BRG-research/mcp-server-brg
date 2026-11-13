@@ -19,7 +19,7 @@ Each command reaches the chatbot in two ways:
 import os
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from brg_mcp.teaching import link
 from brg_mcp.teaching import notebooks_of
@@ -27,7 +27,6 @@ from brg_mcp.teaching import plain
 from brg_mcp.teaching import title
 
 HERE = Path(__file__).parent
-
 
 
 # ==============================================================================
@@ -162,9 +161,11 @@ def command(name: str):
         return "Reply with exactly this list, nothing added:\n\n" + "\n".join("mcp_brg_{}".format(command) for command in COMMANDS)
     return reply(name)
 
+
 # ==============================================================================
 # FastMCP
 # ==============================================================================
+
 
 @mcp.tool()
 def greet(name: str) -> str:
